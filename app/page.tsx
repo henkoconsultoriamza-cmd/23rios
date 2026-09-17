@@ -547,9 +547,6 @@ export default function Home() {
           <div className="hero-welcome-banner">
             <h1>{appSettings.heroTitle} <em>{appSettings.heroHighlight}</em></h1>
             <p className="hero-tagline">{appSettings.heroDescription}</p>
-            <div className="hero-actions">
-              <a href="#carta" className="primary-button">{tr("Ver la carta")} <Icon name="arrow" size={18}/></a>
-            </div>
           </div>
         </div>
       </section>
