@@ -530,9 +530,9 @@ footer img { width: 80px; height: 58px; object-fit: contain; mix-blend-mode: scr
   .hero { min-height: 0; }
   .hero-copy { padding: 40px 0 0; }
   .hero-logo-carta { width: clamp(120px, 35vw, 180px); margin-bottom: 18px; }
-  .string-lights-overlay { height: 320px; aspect-ratio: unset; }
+  .string-lights-overlay { height: 310px; aspect-ratio: unset; overflow: hidden; }
   .lights-desktop { display: none; }
-  .lights-mobile { display: block; width: 100%; height: 320px; }
+  .lights-mobile { display: block; width: 100%; height: 100%; }
 
   .hero-welcome-banner { border-radius: 16px 16px 0 0; padding: 22px 18px 36px; }
   .hero-welcome-banner::before { left: -16px; right: -16px; }
