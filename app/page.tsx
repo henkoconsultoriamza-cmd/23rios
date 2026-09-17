@@ -53,7 +53,7 @@ const events = [
   },
 ];
 
-function Icon({ name, size = 20 }: { name: "search" | "spark" | "arrow" | "close" | "heart" | "expand" | "bell" | "receipt" | "plus"; size?: number }) {
+function Icon({ name, size = 20 }: { name: "search" | "spark" | "arrow" | "close" | "heart" | "expand" | "bell" | "receipt" | "plus" | "filter"; size?: number }) {
   const common = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
   if (name === "search") return <svg {...common}><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>;
   if (name === "spark") return <svg {...common}><path d="M12 2c.7 5.5 4.5 9.3 10 10-5.5.7-9.3 4.5-10 10-.7-5.5-4.5-9.3-10-10 5.5-.7 9.3-4.5 10-10Z"/></svg>;
@@ -63,6 +63,7 @@ function Icon({ name, size = 20 }: { name: "search" | "spark" | "arrow" | "close
   if (name === "expand") return <svg {...common}><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>;
   if (name === "bell") return <svg {...common}><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>;
   if (name === "receipt") return <svg {...common}><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>;
+  if (name === "filter") return <svg {...common}><path d="M3 6h18M7 12h10M11 18h2"/></svg>;
   return <svg {...common}><path d="M12 5v14M5 12h14"/></svg>;
 }
 
@@ -119,6 +120,7 @@ export default function Home() {
   const { foodGroups, foodPreferences, allergenOptions, drinkGroups, beerStyles } = menuSettings;
   const [language, setLanguage] = useState<Language>("es");
   const [langOpen, setLangOpen] = useState(false);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [category, setCategory] = useState<"Cocina" | "Cervezas">("Cocina");
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [selectedPreferences, setSelectedPreferences] = useState<string[]>([]);
@@ -571,8 +573,22 @@ export default function Home() {
           <label className="search-box"><Icon name="search" size={18}/><input type="search" placeholder={tr("Buscar en el menú")} value={query} onChange={(event) => setQuery(event.target.value)} aria-label={tr("Buscar en el menú")}/></label>
         </div>
 
+        <button className="filter-drawer-trigger" onClick={() => setFilterDrawerOpen(true)} aria-label="Abrir filtros">
+          <Icon name="filter" size={18}/>
+          <span>{tr("Filtros")}</span>
+          {(selectedGroups.length + selectedPreferences.length + excludedAllergens.length + selectedBeerStyles.length) > 0 && (
+            <span className="filter-badge">{selectedGroups.length + selectedPreferences.length + excludedAllergens.length + selectedBeerStyles.length}</span>
+          )}
+        </button>
+
+        {filterDrawerOpen && <div className="filter-drawer-backdrop" onClick={() => setFilterDrawerOpen(false)}/>}
+
         <div className="menu-layout">
-          <aside className="vertical-filters" aria-label="Filtros del menú">
+          <aside className={`vertical-filters filter-drawer${filterDrawerOpen ? " open" : ""}`} aria-label="Filtros del menú">
+            <div className="filter-drawer-header">
+              <span>{tr("Filtros")}</span>
+              <button className="filter-drawer-close" onClick={() => setFilterDrawerOpen(false)} aria-label="Cerrar filtros">✕</button>
+            </div>
             <div className="primary-filter-switch">
               <button className={category === "Cocina" ? "active" : ""} onClick={() => changeCategory("Cocina")} aria-pressed={category === "Cocina"}>{tr("Comida")}</button>
               <button className={category === "Cervezas" ? "active" : ""} onClick={() => changeCategory("Cervezas")} aria-pressed={category === "Cervezas"}>{tr("Bebida")}</button>
