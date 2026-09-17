@@ -521,8 +521,9 @@ footer img { width: 80px; height: 58px; object-fit: contain; mix-blend-mode: scr
   .order-history-link b { position: absolute; right: -4px; top: -4px; border: 2px solid var(--ink); }
   .assistant-link { min-height: 42px; padding: 9px 12px; font-size: 10px; }
   .language-bar { min-height: 46px; padding: 6px 15px; justify-content: flex-end; gap: 0; position: sticky; top: 72px; }
-  .lang-picker { flex-wrap: wrap; justify-content: flex-end; gap: 1px 8px; }
-  .lang-picker-label { width: 100%; text-align: right; font-size: 7px; line-height: 1; }
+  .lang-picker-label { display: none; }
+  .lang-picker-btn { flex-direction: column; gap: 1px; padding: 3px 14px; min-height: 34px; }
+  .lang-picker-btn::before { content: "IDIOMA"; font-size: 6px; font-weight: 800; letter-spacing: .14em; opacity: .75; }
   .lang-picker-list { right: 0; min-width: 130px; }
   .hero { min-height: 0; }
   .hero-copy { padding: 40px 0 0; }
