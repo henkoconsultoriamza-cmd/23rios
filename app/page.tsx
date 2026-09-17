@@ -439,23 +439,23 @@ export default function Home() {
       {/* Luces de guirnalda: caen desde las esquinas superiores en diagonal */}
       <div className="string-lights-overlay" aria-hidden="true">
         {/* SVG mobile: paths diseñados para proporciones de teléfono */}
-        <svg className="lights-mobile" viewBox="0 0 390 450" preserveAspectRatio="xMidYMin slice" xmlns="http://www.w3.org/2000/svg">
+        <svg className="lights-mobile" viewBox="0 0 390 310" preserveAspectRatio="xMidYMin slice" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <filter id="glow-m">
               <feGaussianBlur stdDeviation="3" result="blur"/>
               <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
           </defs>
-          <path d="M 185,0 C 185,150 60,280 0,380" stroke="rgba(30,12,3,0.65)" strokeWidth="2" fill="none" strokeLinecap="round"/>
-          <path d="M 205,0 C 205,150 330,280 390,380" stroke="rgba(30,12,3,0.65)" strokeWidth="2" fill="none" strokeLinecap="round"/>
-          {[[177,66],[156,129],[126,189],[91,246],[54,300],[20,349]].map(([x,y],i) => (
+          <path d="M 185,0 C 185,130 40,230 0,290" stroke="rgba(30,12,3,0.65)" strokeWidth="2" fill="none" strokeLinecap="round"/>
+          <path d="M 205,0 C 205,130 350,230 390,290" stroke="rgba(30,12,3,0.65)" strokeWidth="2" fill="none" strokeLinecap="round"/>
+          {[[177,54],[154,108],[121,161],[84,212],[42,258],[6,285]].map(([x,y],i) => (
             <g key={`bml-${i}`}>
               <circle cx={x} cy={y-4} r="3" fill="rgba(20,8,2,0.8)"/>
               <circle cx={x} cy={y+7} r="8" fill="#f5e060" filter="url(#glow-m)" opacity="0.95"/>
               <circle cx={x} cy={y+7} r="8" fill="none" stroke="rgba(0,0,0,0.2)" strokeWidth="1"/>
             </g>
           ))}
-          {[[213,66],[234,129],[264,189],[299,246],[336,300],[370,349]].map(([x,y],i) => (
+          {[[213,54],[236,108],[269,161],[306,212],[348,258],[384,285]].map(([x,y],i) => (
             <g key={`bmr-${i}`}>
               <circle cx={x} cy={y-4} r="3" fill="rgba(20,8,2,0.8)"/>
               <circle cx={x} cy={y+7} r="8" fill="#f5e060" filter="url(#glow-m)" opacity="0.95"/>
