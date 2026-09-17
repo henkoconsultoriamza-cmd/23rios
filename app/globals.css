@@ -510,22 +510,24 @@ footer img { width: 80px; height: 58px; object-fit: contain; mix-blend-mode: scr
 .empty-state button { border: 0; border-radius: 10px; background: var(--ink); color: var(--yellow); padding: 12px 16px; cursor: pointer; }
 
 @media (max-width: 760px) {
-  .topbar { height: 64px; padding: env(safe-area-inset-top) 15px 0; position: sticky; top: 0; }
-  .brand { height: 52px; width: 61px; }
-  .brand img { height: 58px; width: 70px; }
+  .topbar { height: 72px; padding: env(safe-area-inset-top) 15px 0; position: sticky; top: 0; z-index: 10; }
+  .brand { height: 68px; width: 100px; }
+  .brand img { height: 66px; width: 98px; }
   .general-menu { display: none; }
   .header-actions { gap: 6px; }
   .order-history-link { width: 42px; min-height: 42px; padding: 0; justify-content: center; }
   .order-history-link span { display: none; }
   .order-history-link b { position: absolute; right: -4px; top: -4px; border: 2px solid var(--ink); }
   .assistant-link { min-height: 42px; padding: 9px 12px; font-size: 10px; }
-  .language-bar { min-height: 46px; padding: 6px 10px; justify-content: center; gap: 0; position: sticky; top: 64px; }
-  .language-bar label { width: min(310px, 100%); grid-template-columns: auto minmax(0, 1fr); }
-  .language-bar select { min-height: 34px; }
+  .language-bar { min-height: 46px; padding: 6px 15px; justify-content: flex-end; gap: 0; position: sticky; top: 72px; }
+  .lang-picker-label { font-size: 7px; }
+  .lang-picker-list { right: 0; min-width: 130px; }
   .hero { min-height: 0; }
-  .hero::before { height: 52px; }
-  .hero-copy { padding: 52px 0 0; }
-  .hero-logo-carta { width: clamp(80px, 20vw, 120px); margin-bottom: 18px; }
+  .hero-copy { padding: 40px 0 0; }
+  .hero-logo-carta { width: clamp(120px, 35vw, 180px); margin-bottom: 18px; }
+  .string-lights-overlay { height: 320px; }
+  .string-lights-overlay svg { }
+
   .hero-welcome-banner { border-radius: 16px 16px 0 0; padding: 22px 18px 36px; }
   .hero-welcome-banner::before { left: -16px; right: -16px; }
   .hero h1 { font-size: clamp(24px, 7vw, 36px); }
