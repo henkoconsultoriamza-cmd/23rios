@@ -1,0 +1,10 @@
+{
+  "name": "Casa Numa · Menú interactivo",
+  "short_name": "Casa Numa",
+  "description": "Plantilla de menú digital interactivo para restaurantes.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d0f0e",
+  "theme_color": "#0d0f0e",
+  "icons": []
+}

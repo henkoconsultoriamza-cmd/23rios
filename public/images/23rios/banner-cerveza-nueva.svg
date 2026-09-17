@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0b1a0d"/>
+      <stop offset="50%" style="stop-color:#162b18"/>
+      <stop offset="100%" style="stop-color:#091209"/>
+    </linearGradient>
+    <linearGradient id="beerBody" x1="0%" y1="0%" x2="10%" y2="100%">
+      <stop offset="0%" style="stop-color:#f0c94a"/>
+      <stop offset="40%" style="stop-color:#d4a012"/>
+      <stop offset="100%" style="stop-color:#a07008"/>
+    </linearGradient>
+    <linearGradient id="beerShine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.32"/>
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
+    </linearGradient>
+    <linearGradient id="foamGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff"/>
+      <stop offset="100%" style="stop-color:#ece8dc"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="75%" cy="50%" r="40%">
+      <stop offset="0%" style="stop-color:#c8930a;stop-opacity:0.18"/>
+      <stop offset="100%" style="stop-color:#c8930a;stop-opacity:0"/>
+    </radialGradient>
+    <radialGradient id="glowCenter" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#1e3a20;stop-opacity:0.8"/>
+      <stop offset="100%" style="stop-color:#091209;stop-opacity:0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Fondo -->
+  <rect width="1200" height="400" fill="url(#bg)"/>
+  <rect width="1200" height="400" fill="url(#glowCenter)"/>
+  <!-- Halo ambar -->
+  <ellipse cx="900" cy="200" rx="320" ry="260" fill="url(#glow)"/>
+
+  <!-- Líneas decorativas sutiles horizontales -->
+  <line x1="0" y1="1" x2="1200" y2="1" stroke="#1e3a20" stroke-width="1"/>
+  <line x1="0" y1="399" x2="1200" y2="399" stroke="#1e3a20" stroke-width="1"/>
+
+  <!-- Círculos de lúpulo decorativos -->
+  <circle cx="120" cy="80" r="38" fill="none" stroke="#1e3a20" stroke-width="1.5" opacity="0.6"/>
+  <circle cx="120" cy="80" r="20" fill="none" stroke="#1e3a20" stroke-width="1" opacity="0.4"/>
+  <circle cx="200" cy="340" r="55" fill="none" stroke="#1e3a20" stroke-width="1.5" opacity="0.5"/>
+  <circle cx="1100" cy="60" r="45" fill="none" stroke="#1e3a20" stroke-width="1.5" opacity="0.4"/>
+  <circle cx="50" cy="300" r="25" fill="none" stroke="#c8930a" stroke-width="1" opacity="0.12"/>
+
+  <!-- Puntos esparcidos -->
+  <circle cx="300" cy="50" r="2.5" fill="#c8930a" opacity="0.2"/>
+  <circle cx="400" cy="370" r="2" fill="#c8930a" opacity="0.15"/>
+  <circle cx="600" cy="30" r="3" fill="#c8930a" opacity="0.18"/>
+  <circle cx="1050" cy="350" r="2" fill="#c8930a" opacity="0.2"/>
+
+  <!-- ═══ VASO DE CERVEZA ═══ -->
+  <!-- Sombra del vaso -->
+  <ellipse cx="870" cy="375" rx="95" ry="18" fill="#000" opacity="0.35"/>
+
+  <!-- Cuerpo del vaso (trapezoide) -->
+  <path d="M790 360 L818 82 L932 82 L960 360 Z" fill="url(#beerBody)"/>
+  <!-- Brillo izquierdo -->
+  <path d="M790 360 L818 82 L848 82 L820 360 Z" fill="url(#beerShine)"/>
+  <!-- Burbuja grande interna izquierda -->
+  <ellipse cx="835" cy="230" rx="5" ry="20" fill="#fff" opacity="0.08"/>
+
+  <!-- Asa del vaso -->
+  <path d="M960 130 Q1030 130 1030 200 Q1030 270 960 270" fill="none" stroke="url(#beerBody)" stroke-width="28" stroke-linecap="round"/>
+  <path d="M960 130 Q1020 130 1020 200 Q1020 270 960 270" fill="none" stroke="url(#beerShine)" stroke-width="10" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- Espuma superior -->
+  <ellipse cx="875" cy="82" rx="65" ry="24" fill="url(#foamGrad)"/>
+  <!-- Picos de espuma -->
+  <ellipse cx="838" cy="72" rx="22" ry="18" fill="url(#foamGrad)"/>
+  <ellipse cx="862" cy="66" rx="26" ry="20" fill="url(#foamGrad)"/>
+  <ellipse cx="890" cy="62" rx="28" ry="22" fill="url(#foamGrad)"/>
+  <ellipse cx="916" cy="68" rx="22" ry="17" fill="url(#foamGrad)"/>
+  <ellipse cx="934" cy="76" rx="16" ry="13" fill="url(#foamGrad)"/>
+  <!-- Sombra interna de la espuma -->
+  <ellipse cx="875" cy="90" rx="60" ry="8" fill="#d4c8a0" opacity="0.3"/>
+
+  <!-- Burbujas internas del vaso -->
+  <circle cx="840" cy="300" r="4" fill="#fff" opacity="0.12"/>
+  <circle cx="855" cy="250" r="3" fill="#fff" opacity="0.10"/>
+  <circle cx="900" cy="310" r="5" fill="#fff" opacity="0.08"/>
+  <circle cx="920" cy="200" r="3" fill="#fff" opacity="0.10"/>
+  <circle cx="870" cy="180" r="2.5" fill="#fff" opacity="0.09"/>
+  <circle cx="845" cy="150" r="2" fill="#fff" opacity="0.08"/>
+  <circle cx="910" cy="270" r="2.5" fill="#fff" opacity="0.09"/>
+
+  <!-- Reborde inferior -->
+  <rect x="784" y="355" width="182" height="10" rx="5" fill="#8a6005" opacity="0.8"/>
+</svg>
