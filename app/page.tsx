@@ -790,15 +790,13 @@ export default function Home() {
     </main>
 
     {/* Drawer de filtros: fuera del site-shell para evitar stacking context */}
-    {menuVisible && (
-      <button className="filter-drawer-trigger" onClick={() => setFilterDrawerOpen(true)} aria-label="Abrir filtros">
-        <Icon name="filter" size={18}/>
-        <span>{tr("Filtros")}</span>
-        {(selectedGroups.length + selectedPreferences.length + excludedAllergens.length + selectedBeerStyles.length) > 0 && (
-          <span className="filter-badge">{selectedGroups.length + selectedPreferences.length + excludedAllergens.length + selectedBeerStyles.length}</span>
-        )}
-      </button>
-    )}
+    <button className="filter-drawer-trigger" onClick={() => setFilterDrawerOpen(true)} aria-label="Abrir filtros">
+      <Icon name="filter" size={18}/>
+      <span>{tr("Filtros")}</span>
+      {(selectedGroups.length + selectedPreferences.length + excludedAllergens.length + selectedBeerStyles.length) > 0 && (
+        <span className="filter-badge">{selectedGroups.length + selectedPreferences.length + excludedAllergens.length + selectedBeerStyles.length}</span>
+      )}
+    </button>
     {filterDrawerOpen && <div className="filter-drawer-backdrop" onClick={() => setFilterDrawerOpen(false)}/>}
     <aside className={`filter-drawer${filterDrawerOpen ? " open" : ""}`} aria-label="Filtros del menú" aria-hidden={!filterDrawerOpen}>
       <div className="filter-drawer-header">
