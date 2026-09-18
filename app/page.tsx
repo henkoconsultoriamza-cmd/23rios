@@ -442,6 +442,7 @@ export default function Home() {
   }
 
   return (
+    <>
     <main className={orderItems.length ? "site-shell has-active-order" : "site-shell"} style={{ "--yellow": appSettings.accentColor } as CSSProperties}>
       <div className="bg-wave bg-wave-1" aria-hidden="true"/>
       <div className="bg-wave bg-wave-2" aria-hidden="true"/>
@@ -581,57 +582,7 @@ export default function Home() {
           <label className="search-box"><Icon name="search" size={18}/><input type="search" placeholder={tr("Buscar en el menú")} value={query} onChange={(event) => setQuery(event.target.value)} aria-label={tr("Buscar en el menú")}/></label>
         </div>
 
-        {menuVisible && (
-          <button className="filter-drawer-trigger" onClick={() => setFilterDrawerOpen(true)} aria-label="Abrir filtros">
-            <Icon name="filter" size={18}/>
-            <span>{tr("Filtros")}</span>
-            {(selectedGroups.length + selectedPreferences.length + excludedAllergens.length + selectedBeerStyles.length) > 0 && (
-              <span className="filter-badge">{selectedGroups.length + selectedPreferences.length + excludedAllergens.length + selectedBeerStyles.length}</span>
-            )}
-          </button>
-        )}
-
-        {filterDrawerOpen && <div className="filter-drawer-backdrop" onClick={() => setFilterDrawerOpen(false)}/>}
-
         <div className="menu-layout">
-          <aside className={`vertical-filters filter-drawer${filterDrawerOpen ? " open" : ""}`} aria-label="Filtros del menú">
-            <div className="filter-drawer-header">
-              <span>{tr("Filtros")}</span>
-              <button className="filter-drawer-close" onClick={() => setFilterDrawerOpen(false)} aria-label="Cerrar filtros">✕</button>
-            </div>
-            <div className="primary-filter-switch">
-              <button className={category === "Cocina" ? "active" : ""} onClick={() => changeCategory("Cocina")} aria-pressed={category === "Cocina"}>{tr("Comida")}</button>
-              <button className={category === "Cervezas" ? "active" : ""} onClick={() => changeCategory("Cervezas")} aria-pressed={category === "Cervezas"}>{tr("Bebida")}</button>
-            </div>
-
-            {category === "Cocina" ? <>
-              <div className="filter-family">
-                <p>{tr("Tipo de comida")}</p>
-                {foodGroups.map((filter) => <button key={filter} className={selectedGroups.includes(filter) ? "selected" : ""} onClick={() => { toggleListValue(filter, setSelectedGroups); trackEvent("filter_use", { filterName: filter, filterType: "foodGroup" }); }}><span>{selectedGroups.includes(filter) ? "✓" : ""}</span>{tr(filter)}</button>)}
-              </div>
-              <div className="filter-family">
-                <p>{tr("Preferencias")}</p>
-                {foodPreferences.map((filter) => <button key={filter} className={selectedPreferences.includes(filter) ? "selected" : ""} onClick={() => { toggleListValue(filter, setSelectedPreferences); trackEvent("filter_use", { filterName: filter, filterType: "preference" }); }}><span>{selectedPreferences.includes(filter) ? "✓" : ""}</span>{tr(filter)}</button>)}
-              </div>
-              <div className="filter-family allergen-family">
-                <p>{tr("Evitar alérgenos")}</p>
-                {allergenOptions.map((filter) => <button key={filter} className={excludedAllergens.includes(filter) ? "selected" : ""} onClick={() => { toggleListValue(filter, setExcludedAllergens); trackEvent("filter_use", { filterName: filter, filterType: "allergen" }); }}><span>{excludedAllergens.includes(filter) ? "✓" : ""}</span>{tr(filter)}</button>)}
-              </div>
-            </> : <>
-              <div className="filter-family">
-                <p>{tr("Tipo de bebida")}</p>
-                {drinkGroups.map((filter) => <button key={filter} className={selectedGroups.includes(filter) ? "selected" : ""} onClick={() => { toggleListValue(filter, setSelectedGroups); trackEvent("filter_use", { filterName: filter, filterType: "drinkGroup" }); }}><span>{selectedGroups.includes(filter) ? "✓" : ""}</span>{tr(filter)}</button>)}
-              </div>
-              {selectedGroups.includes("Cerveza") && <div className="filter-family nested-filter">
-                <p>{tr("Estilo de cerveza")}</p>
-                {beerStyles.map((filter) => <button key={filter} className={selectedBeerStyles.includes(filter) ? "selected" : ""} onClick={() => { toggleListValue(filter, setSelectedBeerStyles); trackEvent("filter_use", { filterName: filter, filterType: "beerStyle" }); }}><span>{selectedBeerStyles.includes(filter) ? "✓" : ""}</span>{tr(filter)}</button>)}
-              </div>}
-            </>}
-
-            {(selectedGroups.length + selectedPreferences.length + excludedAllergens.length + selectedBeerStyles.length) > 0 && <button className="clear-sidebar" onClick={clearSidebarFilters}>{tr("Limpiar filtros")}</button>}
-            <p className="filter-demo-note">Datos demostrativos hasta validar la carta.</p>
-          </aside>
-
           <div className="menu-results">
             <div className="results-summary"><strong>{tr(category === "Cocina" ? "Comida" : "Bebida")}</strong><span>{visibleProducts.length} {tr(visibleProducts.length === 1 ? "resultado" : "resultados")}</span></div>
             <div className="photo-note"><Icon name="expand" size={18}/><p><strong>{tr("Tocá una foto para verla completa.")}</strong><span>{tr("Mostramos el producto real, en primer plano y sin sorpresas.")}</span></p></div>
@@ -837,5 +788,55 @@ export default function Home() {
         </section>
       </div>}
     </main>
+
+    {/* Drawer de filtros: fuera del site-shell para evitar stacking context */}
+    {menuVisible && (
+      <button className="filter-drawer-trigger" onClick={() => setFilterDrawerOpen(true)} aria-label="Abrir filtros">
+        <Icon name="filter" size={18}/>
+        <span>{tr("Filtros")}</span>
+        {(selectedGroups.length + selectedPreferences.length + excludedAllergens.length + selectedBeerStyles.length) > 0 && (
+          <span className="filter-badge">{selectedGroups.length + selectedPreferences.length + excludedAllergens.length + selectedBeerStyles.length}</span>
+        )}
+      </button>
+    )}
+    {filterDrawerOpen && <div className="filter-drawer-backdrop" onClick={() => setFilterDrawerOpen(false)}/>}
+    <aside className={`filter-drawer${filterDrawerOpen ? " open" : ""}`} aria-label="Filtros del menú" aria-hidden={!filterDrawerOpen}>
+      <div className="filter-drawer-header">
+        <span>{tr("Filtros")}</span>
+        <button className="filter-drawer-close" onClick={() => setFilterDrawerOpen(false)} aria-label="Cerrar filtros">✕</button>
+      </div>
+      <div className="primary-filter-switch">
+        <button className={category === "Cocina" ? "active" : ""} onClick={() => changeCategory("Cocina")} aria-pressed={category === "Cocina"}>{tr("Comida")}</button>
+        <button className={category === "Cervezas" ? "active" : ""} onClick={() => changeCategory("Cervezas")} aria-pressed={category === "Cervezas"}>{tr("Bebida")}</button>
+      </div>
+      {category === "Cocina" ? <>
+        <div className="filter-family">
+          <p>{tr("Tipo de comida")}</p>
+          {foodGroups.map((filter) => <button key={filter} className={selectedGroups.includes(filter) ? "selected" : ""} onClick={() => { toggleListValue(filter, setSelectedGroups); trackEvent("filter_use", { filterName: filter, filterType: "foodGroup" }); }}><span>{selectedGroups.includes(filter) ? "✓" : ""}</span>{tr(filter)}</button>)}
+        </div>
+        <div className="filter-family">
+          <p>{tr("Preferencias")}</p>
+          {foodPreferences.map((filter) => <button key={filter} className={selectedPreferences.includes(filter) ? "selected" : ""} onClick={() => { toggleListValue(filter, setSelectedPreferences); trackEvent("filter_use", { filterName: filter, filterType: "preference" }); }}><span>{selectedPreferences.includes(filter) ? "✓" : ""}</span>{tr(filter)}</button>)}
+        </div>
+        <div className="filter-family allergen-family">
+          <p>{tr("Evitar alérgenos")}</p>
+          {allergenOptions.map((filter) => <button key={filter} className={excludedAllergens.includes(filter) ? "selected" : ""} onClick={() => { toggleListValue(filter, setExcludedAllergens); trackEvent("filter_use", { filterName: filter, filterType: "allergen" }); }}><span>{excludedAllergens.includes(filter) ? "✓" : ""}</span>{tr(filter)}</button>)}
+        </div>
+      </> : <>
+        <div className="filter-family">
+          <p>{tr("Tipo de bebida")}</p>
+          {drinkGroups.map((filter) => <button key={filter} className={selectedGroups.includes(filter) ? "selected" : ""} onClick={() => { toggleListValue(filter, setSelectedGroups); trackEvent("filter_use", { filterName: filter, filterType: "drinkGroup" }); }}><span>{selectedGroups.includes(filter) ? "✓" : ""}</span>{tr(filter)}</button>)}
+        </div>
+        {selectedGroups.includes("Cerveza") && <div className="filter-family nested-filter">
+          <p>{tr("Estilo de cerveza")}</p>
+          {beerStyles.map((filter) => <button key={filter} className={selectedBeerStyles.includes(filter) ? "selected" : ""} onClick={() => { toggleListValue(filter, setSelectedBeerStyles); trackEvent("filter_use", { filterName: filter, filterType: "beerStyle" }); }}><span>{selectedBeerStyles.includes(filter) ? "✓" : ""}</span>{tr(filter)}</button>)}
+        </div>}
+      </>}
+      {(selectedGroups.length + selectedPreferences.length + excludedAllergens.length + selectedBeerStyles.length) > 0 && (
+        <button className="clear-sidebar" onClick={() => { clearSidebarFilters(); setFilterDrawerOpen(false); }}>{tr("Limpiar filtros")}</button>
+      )}
+      <p className="filter-demo-note">Datos demostrativos hasta validar la carta.</p>
+    </aside>
+  </>
   );
 }
