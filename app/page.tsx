@@ -121,6 +121,7 @@ export default function Home() {
   const [language, setLanguage] = useState<Language>("es");
   const [langOpen, setLangOpen] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
   const [category, setCategory] = useState<"Cocina" | "Cervezas">("Cocina");
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [selectedPreferences, setSelectedPreferences] = useState<string[]>([]);
@@ -248,6 +249,13 @@ export default function Home() {
   useEffect(() => {
     if (orderHydrated && orderItems.length === 0 && orderStatus !== "idle") setOrderStatus("idle");
   }, [orderHydrated, orderItems.length, orderStatus]);
+  useEffect(() => {
+    const section = document.getElementById("carta");
+    if (!section) return;
+    const observer = new IntersectionObserver(([entry]) => setMenuVisible(entry.isIntersecting), { threshold: 0.05 });
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
   useEffect(() => {
     if (orderHydrated && orderStatus === "sent" && orderItems.length > 0 && !activeOrderId) {
       const id = `R${Date.now().toString().slice(-6)}`;
@@ -573,13 +581,15 @@ export default function Home() {
           <label className="search-box"><Icon name="search" size={18}/><input type="search" placeholder={tr("Buscar en el menú")} value={query} onChange={(event) => setQuery(event.target.value)} aria-label={tr("Buscar en el menú")}/></label>
         </div>
 
-        <button className="filter-drawer-trigger" onClick={() => setFilterDrawerOpen(true)} aria-label="Abrir filtros">
-          <Icon name="filter" size={18}/>
-          <span>{tr("Filtros")}</span>
-          {(selectedGroups.length + selectedPreferences.length + excludedAllergens.length + selectedBeerStyles.length) > 0 && (
-            <span className="filter-badge">{selectedGroups.length + selectedPreferences.length + excludedAllergens.length + selectedBeerStyles.length}</span>
-          )}
-        </button>
+        {menuVisible && (
+          <button className="filter-drawer-trigger" onClick={() => setFilterDrawerOpen(true)} aria-label="Abrir filtros">
+            <Icon name="filter" size={18}/>
+            <span>{tr("Filtros")}</span>
+            {(selectedGroups.length + selectedPreferences.length + excludedAllergens.length + selectedBeerStyles.length) > 0 && (
+              <span className="filter-badge">{selectedGroups.length + selectedPreferences.length + excludedAllergens.length + selectedBeerStyles.length}</span>
+            )}
+          </button>
+        )}
 
         {filterDrawerOpen && <div className="filter-drawer-backdrop" onClick={() => setFilterDrawerOpen(false)}/>}
 

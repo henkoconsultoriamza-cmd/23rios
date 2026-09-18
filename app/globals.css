@@ -191,7 +191,7 @@ img { display: block; max-width: 100%; }
 
 /* ── Drawer lateral ── */
 .filter-drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 40; }
-.filter-drawer { position: fixed; top: 0; left: -320px; width: 300px; height: 100dvh; z-index: 50; overflow-y: auto; transition: left .28s cubic-bezier(.4,0,.2,1); border-radius: 0 20px 20px 0; }
+.filter-drawer { position: fixed !important; top: 0; left: -320px; width: 300px; height: 100dvh; z-index: 50; overflow-y: auto; transition: left .28s cubic-bezier(.4,0,.2,1); border-radius: 0 20px 20px 0; }
 .filter-drawer.open { left: 0; }
 .filter-drawer-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 10px; border-bottom: 1px solid rgba(26,17,8,.09); margin-bottom: 4px; }
 .filter-drawer-header span { font-size: 15px; font-weight: 800; color: var(--ink); }
