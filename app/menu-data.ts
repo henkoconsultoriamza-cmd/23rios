@@ -235,6 +235,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: "papas-clasicas",
     name: "Papas clásicas",
+    image: "/images/23rios/papas-clasicas.png",
     category: "Cocina",
     description: "Papas fritas crujientes con sal condimentada.",
     tag: "Entrada",
@@ -249,6 +250,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: "papas-23-rios",
     name: "Papas 23 Ríos",
+    image: "/images/23rios/papas-23rios.png",
     category: "Cocina",
     description: "Papas fritas crujientes con salchichas alemanas y queso cheddar.",
     tag: "Entrada",
@@ -263,6 +265,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: "nuggets-brocoli",
     name: "Nuggets de Brócoli",
+    image: "/images/23rios/nuggets-brocoli.png",
     category: "Cocina",
     description: "Bocados de brócoli con lactonesa de ajo, acompañados con guarnición de papas fritas.",
     tag: "Entrada",
@@ -277,6 +280,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: "picada",
     name: "Picada de fiambres",
+    image: "/images/23rios/picada.png",
     category: "Cocina",
     description: "Selección de queso azul, provolone, jamón cocido, bondiola y salamín. Acompañado con dips de mayonesa y pan de bagazo.",
     tag: "Para compartir",
@@ -291,6 +295,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: "provoleta",
     name: "Provoleta Fundida",
+    image: "/images/23rios/provoleta.png",
     category: "Cocina",
     description: "Medallón de 180 gr de provoleta con pesto casero, mix de verdes y encurtidos de cebolla morada.",
     tag: "Entrada",
@@ -305,6 +310,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: "general-tso",
     name: "Poderoso General Tso",
+    image: "/images/23rios/general-tso.png",
     category: "Cocina",
     description: "Pollo crocante con salsa agridulce picante.",
     tag: "Entrada",
@@ -319,6 +325,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: "experiencia-alemana",
     name: "Experiencia Alemana",
+    image: "/images/23rios/experiencia-alemana.png",
     category: "Cocina",
     description: "Salchichas alemanas y polacas, coleslaw, ensalada alemana, chucrut, currywurst y papas fritas. Con pan de bagazo.",
     tag: "Para compartir",
@@ -335,6 +342,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: "pizza-muzzarella",
     name: "Muzzarella",
+    image: "/images/23rios/pizza-muzzarella.png",
     category: "Cocina",
     description: "Pizza de masa madre, muzzarella, chimichurri casero y aceitunas verdes.",
     tag: "Pizza",
@@ -349,6 +357,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: "pizza-napolitana",
     name: "Napolitana",
+    image: "/images/23rios/pizza-napolitana.png",
     category: "Cocina",
     description: "Pizza de masa madre, muzzarella, chimichurri casero, tomate fresco, pesto casero y aceitunas verdes.",
     tag: "Pizza",
@@ -363,6 +372,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: "pizza-calabresa",
     name: "Calabresa",
+    image: "/images/23rios/pizza-calabresa.png",
     category: "Cocina",
     description: "Pizza de masa madre, muzzarella, chimichurri casero, salamín y aceitunas verdes.",
     tag: "Pizza",
@@ -377,6 +387,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: "pizza-americana",
     name: "Americana",
+    image: "/images/23rios/pizza-americana.png",
     category: "Cocina",
     description: "Pizza de masa madre, muzzarella, chimichurri casero, panceta crocante y huevo frito.",
     tag: "Pizza",
@@ -393,6 +404,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: "smash-blue",
     name: "Smash Blue",
+    image: "/images/23rios/smash-blue.png",
     category: "Cocina",
     description: "Pan de papa, doble medallón de carne, cheddar, queso azul y huevo frito.",
     tag: "Hamburguesa",
@@ -407,6 +419,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: "smash-doble-queso",
     name: "Smash doble queso",
+    image: "/images/23rios/smash-doble-queso.png",
     category: "Cocina",
     description: "Pan de papa, doble medallón de carne, doble cheddar.",
     tag: "Hamburguesa",
@@ -421,6 +434,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: "smash-23",
     name: "Smash 23",
+    image: "/images/23rios/smash-23.png",
     category: "Cocina",
     description: "Pan de papa, doble medallón de carne, cebolla caramelizada, salsa tasty y panceta crocante.",
     tag: "Hamburguesa",
@@ -435,6 +449,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: "lomo-clasico",
     name: "Lomo clásico 30 cm",
+    image: "/images/23rios/lomo-clasico.png",
     category: "Cocina",
     description: "Pan francés, lomo liso, salsa de tomate, huevo, mayonesa de ajo, lechuga, queso y jamón.",
     tag: "Sándwich",
@@ -511,6 +526,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: "birramisu",
     name: "Birramisu",
+    image: "/images/23rios/birramisu.png",
     category: "Cocina",
     description: "Vainillas embebidas en nuestra cerveza Stout y almíbar artesanal, cubiertas con crema suave de queso.",
     tag: "Postre",
@@ -525,6 +541,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: "flan",
     name: "Flan",
+    image: "/images/23rios/flan.png",
     category: "Cocina",
     description: "Flan casero de la casa con dulce de leche y crema.",
     tag: "Postre",
