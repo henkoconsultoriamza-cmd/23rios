@@ -582,6 +582,11 @@ export default function Home() {
           <label className="search-box"><Icon name="search" size={18}/><input type="search" placeholder={tr("Buscar en el menú")} value={query} onChange={(event) => setQuery(event.target.value)} aria-label={tr("Buscar en el menú")}/></label>
         </div>
 
+        <div className="category-tabs">
+          <button className={category === "Cocina" ? "active" : ""} onClick={() => changeCategory("Cocina")}>{tr("Comida")}</button>
+          <button className={category === "Cervezas" ? "active" : ""} onClick={() => changeCategory("Cervezas")}>{tr("Bebida")}</button>
+        </div>
+
         <div className="menu-layout">
           <div className="menu-results">
             <div className="results-summary"><strong>{tr(category === "Cocina" ? "Comida" : "Bebida")}</strong><span>{visibleProducts.length} {tr(visibleProducts.length === 1 ? "resultado" : "resultados")}</span></div>

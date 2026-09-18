@@ -197,6 +197,9 @@ img { display: block; max-width: 100%; }
 .filter-drawer-header span { font-size: 15px; font-weight: 800; color: var(--ink); }
 .filter-drawer-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--ink); line-height: 1; padding: 4px 8px; }
 
+.category-tabs { display: flex; gap: 8px; margin-top: 28px; }
+.category-tabs button { flex: 1; min-height: 48px; border: 2px solid rgba(26,17,8,.12); border-radius: 12px; background: transparent; color: #7a6e5f; font-size: 15px; font-weight: 800; cursor: pointer; transition: all .18s; }
+.category-tabs button.active { background: #3a9ad9; border-color: #3a9ad9; color: white; }
 .menu-layout { display: block; margin-top: 20px; }
 .vertical-filters { position: sticky; top: 18px; padding: 15px; background: #fff; color: var(--ink); border-top: 3px solid var(--blue); border-radius: 18px; overflow: hidden; box-shadow: 0 8px 32px rgba(26,17,8,.1); border: 1px solid rgba(26,17,8,.09); }
 .primary-filter-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,.12); }
