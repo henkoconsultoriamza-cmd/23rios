@@ -185,8 +185,8 @@ img { display: block; max-width: 100%; }
 .search-box { width: min(310px, 100%); display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,.38); padding: 12px 2px; color: rgba(255,255,255,.66); }
 .search-box input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: white; }
 .search-box input::placeholder { color: rgba(255,255,255,.45); }
-/* ── Botón abrir filtros ── */
-.filter-drawer-trigger { display: flex; align-items: center; gap: 8px; margin: 24px 0 0; padding: 10px 20px; background: #3a9ad9; color: white; border: none; border-radius: 999px; font-size: 13px; font-weight: 800; cursor: pointer; position: relative; }
+/* ── Botón abrir filtros (FAB fijo) ── */
+.filter-drawer-trigger { display: flex; align-items: center; gap: 8px; position: fixed; bottom: 24px; left: 24px; z-index: 30; padding: 12px 20px; background: #3a9ad9; color: white; border: none; border-radius: 999px; font-size: 13px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 18px rgba(0,0,0,.25); }
 .filter-badge { background: white; color: #3a9ad9; border-radius: 999px; font-size: 10px; font-weight: 900; min-width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
 
 /* ── Drawer lateral ── */
