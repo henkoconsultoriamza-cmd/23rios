@@ -582,7 +582,7 @@ export default function Home() {
 
         <div className="menu-layout">
           <div className="menu-results">
-            <div className="results-summary"><strong>{tr(category === "Cocina" ? "Comida" : "Bebida")}</strong><span>{visibleProducts.length} {tr(visibleProducts.length === 1 ? "resultado" : "resultados")}</span></div>
+            <div className="results-summary"><span>{visibleProducts.length} {tr(visibleProducts.length === 1 ? "resultado" : "resultados")}</span></div>
             <div className="photo-note"><Icon name="expand" size={18}/><p><strong>{tr("Tocá una foto para verla completa.")}</strong><span>{tr("Mostramos el producto real, en primer plano y sin sorpresas.")}</span></p></div>
 
             {visibleProducts.length ? <div className="product-grid">
