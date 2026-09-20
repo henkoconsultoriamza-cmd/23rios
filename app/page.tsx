@@ -795,7 +795,7 @@ export default function Home() {
     </main>
 
     {/* Drawer de filtros: fuera del site-shell para evitar stacking context */}
-    <button className="filter-drawer-trigger" onClick={() => setFilterDrawerOpen(true)} aria-label="Abrir filtros">
+    <button className={`filter-drawer-trigger${orderItems.length > 0 ? " cart-active" : ""}`} onClick={() => setFilterDrawerOpen(true)} aria-label="Abrir filtros">
       <Icon name="filter" size={18}/>
       <span>{tr("Filtros")}</span>
       {(selectedGroups.length + selectedPreferences.length + excludedAllergens.length + selectedBeerStyles.length) > 0 && (
