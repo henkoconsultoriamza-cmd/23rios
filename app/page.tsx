@@ -555,7 +555,6 @@ export default function Home() {
           <img className="hero-logo-carta" src={logoUrl} alt={brandName} />
           <div className="hero-welcome-banner">
             <h1>{appSettings.heroTitle} <em>{appSettings.heroHighlight}</em></h1>
-            <p className="hero-tagline">{appSettings.heroDescription}</p>
           </div>
         </div>
       </section>
