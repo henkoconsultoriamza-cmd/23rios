@@ -101,14 +101,7 @@ function BannerCard({ banner }: { banner: Banner }) {
       href={banner.ctaHref}
       onClick={() => trackEvent("banner_click", { bannerId: banner.id })}
     >
-      {banner.imageUrl && <img src={banner.imageUrl} alt="" className="novedad-img" />}
-      <div className="novedad-content">
-        <div className="novedad-copy">
-          <strong>{banner.title}</strong>
-          {banner.subtitle && <small>{banner.subtitle}</small>}
-        </div>
-        <span className="novedad-cta">{banner.ctaLabel} <Icon name="arrow" size={14} /></span>
-      </div>
+      {banner.imageUrl && <img src={banner.imageUrl} alt={banner.title} className="novedad-img" />}
     </a>
   );
 }
