@@ -107,6 +107,7 @@ function BannerCard({ banner }: { banner: Banner }) {
           <img src={banner.imageUrl} alt={banner.title} className="novedad-img"/>
         </picture>
       )}
+      <span className="novedad-cta-btn">La quiero →</span>
     </a>
   );
 }
