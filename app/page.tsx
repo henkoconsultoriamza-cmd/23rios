@@ -563,11 +563,6 @@ export default function Home() {
         </section>
       )}
 
-      <section className="promise-strip">
-        <p><strong>{tr("Fotos reales")}</strong><span>{tr("Sin imágenes genéricas")}</span></p>
-        <p><strong>Cocina de autor</strong><span>Producto, estación y técnica</span></p>
-        <p><strong>{tr("Elegí mejor")}</strong><span>{tr("Con ayuda cuando la necesites")}</span></p>
-      </section>
 
       <section className="menu-section" id="carta">
         <div className="section-heading">
