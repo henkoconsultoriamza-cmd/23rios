@@ -101,7 +101,12 @@ function BannerCard({ banner }: { banner: Banner }) {
       href={banner.ctaHref}
       onClick={() => trackEvent("banner_click", { bannerId: banner.id })}
     >
-      {banner.imageUrl && <img src={banner.imageUrl} alt={banner.title} className="novedad-img" />}
+      {banner.imageUrl && (
+        <picture>
+          {banner.imageUrlMobile && <source media="(max-width: 760px)" srcSet={banner.imageUrlMobile}/>}
+          <img src={banner.imageUrl} alt={banner.title} className="novedad-img"/>
+        </picture>
+      )}
     </a>
   );
 }

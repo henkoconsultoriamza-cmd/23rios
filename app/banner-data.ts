@@ -3,6 +3,7 @@ export type Banner = {
   title: string;
   subtitle: string;
   imageUrl: string;
+  imageUrlMobile?: string;
   ctaLabel: string;
   ctaHref: string;
   visible: boolean;
@@ -15,7 +16,8 @@ export const DEFAULT_BANNERS: Banner[] = [
     id: "cerveza-salvaja",
     title: "Salvaja · Orange Wheat",
     subtitle: "Una nueva pinta llega a 23 Ríos.",
-    imageUrl: "/images/23rios/banner-salvaja.png",
+    imageUrl: "/images/23rios/banner-salvaja-desktop.png",
+    imageUrlMobile: "/images/23rios/banner-salvaja-mobile.png",
     ctaLabel: "Ver en carta",
     ctaHref: "/#cervezas",
     visible: true,
