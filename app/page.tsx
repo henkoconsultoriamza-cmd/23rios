@@ -293,9 +293,13 @@ export default function Home() {
   const heroImageUrl = appSettings.heroImageUrl.trim() || DEFAULT_APP_SETTINGS.heroImageUrl;
   const displayPrice = (value: number) => formatPrice(value, appSettings.currency);
 
+  const activePool = appSettings.eventModeActive
+    ? catalogProducts.filter((p) => p.eventoMenu)
+    : catalogProducts;
+
   const visibleProducts = useMemo(() => {
     const term = query.trim().toLocaleLowerCase("es");
-    return catalogProducts.filter((product) => {
+    return activePool.filter((product) => {
       const matchesCategory = category === "Cervezas"
         ? product.category === "Cervezas" || product.category === "Bebidas"
         : product.category === "Cocina";
@@ -306,7 +310,7 @@ export default function Home() {
       const matchesBeerStyle = selectedBeerStyles.length === 0 || (product.beerStyle ? selectedBeerStyles.includes(product.beerStyle) : false);
       return matchesCategory && matchesGroup && matchesPreferences && avoidsAllergens && matchesBeerStyle && (!term || content.includes(term));
     });
-  }, [catalogProducts, category, excludedAllergens, query, selectedBeerStyles, selectedGroups, selectedPreferences]);
+  }, [activePool, category, excludedAllergens, query, selectedBeerStyles, selectedGroups, selectedPreferences]);
 
   const relatedProducts = selected
     ? selected.relatedIds
@@ -574,6 +578,8 @@ export default function Home() {
           <div><p className="eyebrow dark">{tr("NUESTRA CARTA")}</p><h2>{tr("Algo para cada momento.")}</h2></div>
           <label className="search-box"><Icon name="search" size={18}/><input type="search" placeholder={tr("Buscar en el menú")} value={query} onChange={(event) => setQuery(event.target.value)} aria-label={tr("Buscar en el menú")}/></label>
         </div>
+
+        {appSettings.eventModeActive && <div className="event-mode-banner"><span>🎉</span><div><strong>{tr("Carta de evento")}</strong><small>{tr("Esta noche mostramos una selección especial.")}</small></div></div>}
 
         <div className="category-tabs">
           <button className={category === "Cocina" ? "active" : ""} onClick={() => changeCategory("Cocina")}>{tr("Comida")}</button>

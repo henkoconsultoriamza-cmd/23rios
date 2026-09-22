@@ -23,7 +23,7 @@ import { AnalyticsEvent, ANALYTICS_STORAGE_KEY, clearStoredEvents, getStoredEven
 import { Banner, BANNERS_STORAGE_KEY } from "../banner-data";
 
 type SettingsKey = keyof MenuSettings;
-type AdminTab = "products" | "filters" | "portal" | "adjustments" | "analytics" | "banners";
+type AdminTab = "products" | "filters" | "portal" | "adjustments" | "analytics" | "banners" | "evento";
 type DateRange = "today" | "7d" | "30d" | "all";
 type AdminCredentials = { username: string; passwordHash: string };
 
@@ -689,13 +689,14 @@ export default function AdminPage() {
           <button className={tab === "portal" ? "active" : ""} onClick={() => setTab("portal")}><span>03</span><div><strong>Portal</strong><small>Portada y accesos</small></div></button>
           <button className={tab === "adjustments" ? "active" : ""} onClick={() => setTab("adjustments")}><span>04</span><div><strong>Ajustes</strong><small>Negocio y seguridad</small></div></button>
           <button className={tab === "banners" ? "active" : ""} onClick={() => setTab("banners")}><span>05</span><div><strong>Novedades</strong><small>Banners y eventos</small></div></button>
-          <button className={tab === "analytics" ? "active" : ""} onClick={() => { setTab("analytics"); setAnalyticsEvents(getStoredEvents()); }}><span>06</span><div><strong>Analíticas</strong><small>Métricas del menú</small></div></button>
+          <button className={tab === "evento" ? "active" : ""} onClick={() => setTab("evento")}><span>06</span><div><strong>Menú Evento</strong><small>Carta reducida para eventos</small></div></button>
+          <button className={tab === "analytics" ? "active" : ""} onClick={() => { setTab("analytics"); setAnalyticsEvents(getStoredEvents()); }}><span>07</span><div><strong>Analíticas</strong><small>Métricas del menú</small></div></button>
           <div className="admin-sidebar-note"><strong>Sesión protegida</strong><p>Este acceso funciona en el dispositivo de demostración. En producción se validará desde el servidor y la base de datos.</p></div>
         </aside>
 
         <section className="admin-content">
           <div className="admin-heading">
-            <div><p>{appSettings.businessName.toLocaleUpperCase("es")} · EXPERIENCIA DIGITAL</p><h1>{tab === "products" ? "Productos del menú" : tab === "filters" ? "Filtros y clasificaciones" : tab === "portal" ? "Portal del restaurante" : tab === "banners" ? "Novedades y banners" : tab === "analytics" ? "Analíticas del menú" : "Ajustes del sistema"}</h1><span>{tab === "products" ? "Editá lo que el cliente ve al abrir cada producto." : tab === "filters" ? "Definí las opciones que aparecen en los filtros y formularios." : tab === "portal" ? "Configurá la portada, los accesos y su orden sin modificar el menú." : tab === "banners" ? "Creá y publicá banners visibles en la carta. El cliente los ve al abrir el menú." : tab === "analytics" ? "Seguimiento de interacciones, conversiones y comportamiento de los clientes." : "Administrá la identidad, los datos del negocio y las credenciales."}</span></div>
+            <div><p>{appSettings.businessName.toLocaleUpperCase("es")} · EXPERIENCIA DIGITAL</p><h1>{tab === "products" ? "Productos del menú" : tab === "filters" ? "Filtros y clasificaciones" : tab === "portal" ? "Portal del restaurante" : tab === "banners" ? "Novedades y banners" : tab === "analytics" ? "Analíticas del menú" : tab === "evento" ? "Menú Evento" : "Ajustes del sistema"}</h1><span>{tab === "products" ? "Editá lo que el cliente ve al abrir cada producto." : tab === "filters" ? "Definí las opciones que aparecen en los filtros y formularios." : tab === "portal" ? "Configurá la portada, los accesos y su orden sin modificar el menú." : tab === "banners" ? "Creá y publicá banners visibles en la carta. El cliente los ve al abrir el menú." : tab === "analytics" ? "Seguimiento de interacciones, conversiones y comportamiento de los clientes." : tab === "evento" ? "Activá la carta reducida para eventos especiales. Solo se muestran los productos marcados." : "Administrá la identidad, los datos del negocio y las credenciales."}</span></div>
             {tab === "products" ? <button className="admin-primary-action" onClick={() => startNew()}>＋ Nuevo producto</button> : tab === "portal" ? <button className="admin-primary-action" onClick={addPortalAction}>＋ Nuevo acceso</button> : tab === "banners" ? <button className="admin-primary-action" onClick={addBanner}>＋ Nueva novedad</button> : tab === "analytics" ? <button className="admin-primary-action" onClick={refreshAnalytics}>↺ Actualizar</button> : null}
           </div>
 
@@ -906,6 +907,40 @@ export default function AdminPage() {
               <p>Los eventos se guardan en este navegador. Al limpiar el historial se pierden permanentemente.</p>
               <button className="admin-delete" onClick={handleClearAnalytics}>Limpiar historial de analíticas</button>
             </div>
+          </div> : tab === "evento" ? <div className="admin-adjustments-grid">
+            <article className="admin-adjustment-card">
+              <div className="admin-adjustment-heading"><span>01</span><div><small>MODO EVENTO</small><h2>Activar carta de evento</h2><p>Cuando está activo, el menú público muestra únicamente los productos marcados como «Evento». Los filtros y las categorías se adaptan automáticamente.</p></div></div>
+              <div className="admin-toggle-list">
+                <label><span><strong>Menú evento activo</strong><small>{appSettings.eventModeActive ? "Los clientes ven la carta reducida de evento." : "Los clientes ven el menú completo."}</small></span><input type="checkbox" checked={appSettings.eventModeActive} onChange={(e) => updateAppSetting("eventModeActive", e.target.checked)}/><i/></label>
+              </div>
+              <div className="admin-adjustment-actions"><button onClick={saveAppSettings}>Guardar y aplicar</button></div>
+            </article>
+
+            <article className="admin-adjustment-card">
+              <div className="admin-adjustment-heading"><span>02</span><div><small>PRODUCTOS DEL EVENTO</small><h2>Seleccioná qué aparece</h2><p>Marcá los productos que van a estar disponibles cuando el modo evento esté activo. El resto queda oculto automáticamente.</p></div></div>
+              <div className="admin-event-product-list">
+                {["Cocina", "Cervezas"].map((cat) => {
+                  const catProducts = products.filter((p) => p.category === cat);
+                  if (!catProducts.length) return null;
+                  return <div key={cat} className="admin-event-category">
+                    <p className="admin-event-cat-label">{cat === "Cocina" ? "Comida" : "Bebida"}</p>
+                    {catProducts.map((p) => <label key={p.id} className="admin-event-product-row">
+                      <input type="checkbox" checked={!!p.eventoMenu} onChange={() => {
+                        const next = products.map((prod) => prod.id === p.id ? { ...prod, eventoMenu: !prod.eventoMenu } : prod);
+                        persistProducts(next);
+                        setNotice(`"${p.name}" ${!p.eventoMenu ? "agregado al" : "quitado del"} menú evento.`);
+                      }}/>
+                      {p.image ? <img src={p.image} alt=""/> : <span className="admin-image-placeholder">CN</span>}
+                      <span><strong>{p.name}</strong><small>{p.group}</small></span>
+                      {p.eventoMenu && <span className="admin-event-badge">Evento</span>}
+                    </label>)}
+                  </div>;
+                })}
+              </div>
+              <div className="admin-adjustment-actions">
+                <span>{products.filter((p) => p.eventoMenu).length} productos marcados para evento</span>
+              </div>
+            </article>
           </div> : tab === "filters" ? <div className="admin-settings-grid">
             {settingsSections.map((section) => <article className="admin-settings-card" key={section.key}>
               <div><small>CONFIGURACIÓN</small><h2>{section.title}</h2><p>{section.description}</p></div>

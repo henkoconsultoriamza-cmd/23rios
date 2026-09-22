@@ -28,6 +28,7 @@ export type Product = {
     srm: string;
   };
   servings?: { label: string; volume: string; price: number }[];
+  eventoMenu?: boolean;
 };
 
 export type MenuSettings = {
@@ -56,6 +57,7 @@ export type AppSettings = {
   serviceNotifications: boolean;
   weeklySummary: boolean;
   orderToken: string;
+  eventModeActive: boolean;
 };
 
 export const MENU_PRODUCTS_STORAGE_KEY = "restaurant-template-products-v1";
@@ -80,6 +82,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   serviceNotifications: true,
   weeklySummary: false,
   orderToken: "",
+  eventModeActive: false,
 };
 
 const nn = { basis: "—", calories: "—", fats: "—", proteins: "—", carbs: "—", sugars: "—" };
