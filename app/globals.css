@@ -844,6 +844,9 @@ textarea, select { font: inherit; }
 .customize-summary { margin: 0; padding: 10px 14px; border-radius: 12px; background: #fdf0ec; color: #b03d23; font: 700 12px/1.4 "Manrope"; }
 .customize-confirm { min-height: 50px; border: 0; border-radius: 14px; background: #3a9ad9; color: white; font: 800 15px "Manrope"; cursor: pointer; margin-top: 4px; }
 .customize-modal-btn { width: 100%; min-height: 46px; margin-bottom: 10px; border: 2px solid rgba(58,154,217,.35); border-radius: 14px; background: transparent; color: #3a9ad9; font: 700 14px/1 "Manrope"; cursor: pointer; }
+.modal-quantity-control { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 50px; border-radius: 14px; background: #f5f3ef; padding: 0 6px; }
+.modal-quantity-control button { width: 40px; height: 40px; border: 0; border-radius: 10px; background: white; font-size: 22px; font-weight: 700; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+.modal-quantity-control span { flex: 1; text-align: center; font: 800 14px/1 "Manrope"; }
 
 .admin-promo-stock { display: flex; flex-direction: column; gap: 18px; }
 .admin-stock-toggle { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 13px; background: #f5f0e8; cursor: pointer; }

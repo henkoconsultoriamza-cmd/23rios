@@ -806,8 +806,17 @@ export default function Home() {
             </section>
             <div className="validation-note"><strong>{tr("Información provisional")}</strong><span>{language === "es" ? selected.note : tr("Información pendiente de validación con la carta oficial.")} {tr("Los precios y valores nutricionales mostrados son demostrativos.")}</span></div>
             {selected.category === "Cocina" && <button className="customize-modal-btn" onClick={() => { const key = selected.id; const existing = orderItems.find(i => i.key === key); if (!existing) { setOrderItems(prev => [...prev, { key, productId: selected.id, name: selected.name, image: selected.image, unitPrice: selected.price, quantity: 1 }]); setOrderStatus("draft"); } setCustomizeItemKey(key); }}>{tr("Le quiero sacar...")}</button>}
-            <button className={orderStatus === "sent" ? "order-button locked" : orderFeedback ? "order-button added" : "order-button"} onClick={addSelectedToOrder} disabled={orderStatus === "sent"}><Icon name={orderStatus === "sent" || orderFeedback ? "receipt" : "plus"} size={19}/><span>{orderStatus === "sent" ? tr("PEDIDO LANZADO") : orderFeedback ? tr("Agregado al carrito") : <>{tr("Agregar al carrito")} · {displayPrice(selectedPrice)}</>}</span></button>
-            {orderFeedback && <p className="order-feedback">{tr(selected.name)} · {selectedServingOption ? tr(selectedServingOption.label) : "1"}<small>Pedido de demostración. La vinculación con la mesa se activará más adelante.</small></p>}
+            {(() => {
+              const modalKey = `${selected.id}:${selectedServingOption?.label ?? "unidad"}`;
+              const modalItem = orderItems.find(i => i.key === modalKey);
+              if (orderStatus === "sent") {
+                return <button className="order-button locked" disabled><Icon name="receipt" size={19}/><span>{tr("PEDIDO LANZADO")}</span></button>;
+              }
+              if (modalItem && modalItem.quantity > 0) {
+                return <div className="modal-quantity-control"><button onClick={() => changeOrderQuantity(modalKey, -1)} aria-label="Quitar uno">−</button><span>{modalItem.quantity} en el pedido</span><button onClick={() => changeOrderQuantity(modalKey, 1)} aria-label="Agregar uno">+</button></div>;
+              }
+              return <button className="order-button" onClick={addSelectedToOrder}><Icon name="plus" size={19}/><span>{tr("Agregar al carrito")} · {displayPrice(selectedPrice)}</span></button>;
+            })()}
             <section className="cross-sell" aria-labelledby="cross-sell-title">
               <p>{tr("PARA COMPLETAR TU ELECCIÓN")}</p>
               <h3 id="cross-sell-title">{tr("Se puede acompañar con")}</h3>
