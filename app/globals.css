@@ -687,16 +687,16 @@ textarea, select { font: inherit; }
 .admin-brand { display: flex; align-items: center; gap: 13px; }
 .admin-brand img { width: 65px; height: 52px; border-radius: 12px; object-fit: cover; }
 .admin-brand > span { display: flex; flex-direction: column; gap: 3px; }
-.admin-brand small { color: var(--yellow); font-size: 8px; font-weight: 800; letter-spacing: .16em; }
-.admin-brand strong { font: 800 17px/1.1 "Manrope"; }
+.admin-brand small { color: var(--yellow); font-size: 10px; font-weight: 800; letter-spacing: .16em; }
+.admin-brand strong { font: 800 18px/1.1 "Manrope"; }
 .admin-top-actions { display: flex; align-items: center; gap: 11px; }
-.admin-local-badge { padding: 9px 12px; border-radius: 999px; background: rgba(255,255,255,.07); color: rgba(255,255,255,.56); font-size: 9px; }
+.admin-local-badge { padding: 9px 12px; border-radius: 999px; background: rgba(255,255,255,.07); color: rgba(255,255,255,.56); font-size: 11px; }
 .admin-local-badge::first-letter { color: #6bd089; }
-.admin-user-badge { min-height: 38px; padding: 5px 10px 5px 5px; border-radius: 999px; background: rgba(255,255,255,.07); display: flex; align-items: center; gap: 7px; color: var(--ink); font-size: 9px; font-weight: 800; }
+.admin-user-badge { min-height: 38px; padding: 5px 10px 5px 5px; border-radius: 999px; background: rgba(255,255,255,.07); display: flex; align-items: center; gap: 7px; color: var(--ink); font-size: 11px; font-weight: 800; }
 .admin-user-badge i { width: 28px; height: 28px; border-radius: 50%; background: var(--yellow); display: grid; place-items: center; font-style: normal; }
-.admin-user-badge b { color: rgba(255,255,255,.72); font-size: 9px; }
-.admin-logout { min-height: 38px; padding: 8px 11px; border: 1px solid rgba(255,255,255,.16); border-radius: 999px; background: transparent; color: rgba(255,255,255,.65); font-size: 9px; cursor: pointer; }
-.admin-top-actions a { min-height: 41px; padding: 10px 15px; border: 1px solid rgba(58,154,217,.45); border-radius: 999px; color: var(--yellow); display: inline-flex; align-items: center; gap: 12px; font-size: 11px; font-weight: 800; }
+.admin-user-badge b { color: rgba(255,255,255,.72); font-size: 11px; }
+.admin-logout { min-height: 38px; padding: 8px 11px; border: 1px solid rgba(255,255,255,.16); border-radius: 999px; background: transparent; color: rgba(255,255,255,.65); font-size: 11px; cursor: pointer; }
+.admin-top-actions a { min-height: 41px; padding: 10px 15px; border: 1px solid rgba(58,154,217,.45); border-radius: 999px; color: var(--yellow); display: inline-flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 800; }
 
 .admin-login-shell { min-height: 100svh; padding: 24px; background: radial-gradient(circle at 75% 15%, rgba(248,206,54,.16), transparent 32%), #0b0b09; display: grid; place-items: center; }
 .admin-login-card { width: min(470px, 100%); padding: 28px; border: 1px solid rgba(248,206,54,.22); border-radius: 26px; background: #f5f0e6; box-shadow: 0 35px 100px rgba(0,0,0,.48); }
@@ -725,29 +725,29 @@ textarea, select { font: inherit; }
 
 .admin-layout { width: min(1540px, 100%); margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 24px; align-items: start; }
 .admin-sidebar { position: sticky; top: 24px; min-height: calc(100vh - 126px); padding: 18px; border-radius: 22px; background: #171713; color: white; display: flex; flex-direction: column; gap: 8px; }
-.admin-nav-label { margin: 4px 7px 9px; color: rgba(255,255,255,.35); font-size: 8px; font-weight: 800; letter-spacing: .16em; }
+.admin-nav-label { margin: 4px 7px 9px; color: rgba(255,255,255,.35); font-size: 10px; font-weight: 800; letter-spacing: .16em; }
 .admin-sidebar > button { width: 100%; min-height: 67px; padding: 11px; border: 1px solid transparent; border-radius: 14px; background: transparent; color: rgba(255,255,255,.64); display: grid; grid-template-columns: 31px 1fr; align-items: center; gap: 10px; text-align: left; cursor: pointer; }
-.admin-sidebar > button > span { width: 30px; height: 30px; border-radius: 9px; background: rgba(255,255,255,.07); display: grid; place-items: center; color: var(--yellow); font-size: 8px; font-weight: 800; }
+.admin-sidebar > button > span { width: 30px; height: 30px; border-radius: 9px; background: rgba(255,255,255,.07); display: grid; place-items: center; color: var(--yellow); font-size: 10px; font-weight: 800; }
 .admin-sidebar > button div { display: flex; flex-direction: column; gap: 3px; }
-.admin-sidebar > button strong { font: 800 12px "Manrope"; }
-.admin-sidebar > button small { color: rgba(255,255,255,.35); font-size: 8px; }
+.admin-sidebar > button strong { font: 800 13px "Manrope"; }
+.admin-sidebar > button small { color: rgba(255,255,255,.35); font-size: 10px; }
 .admin-sidebar > button.active { border-color: rgba(248,206,54,.28); background: rgba(248,206,54,.09); color: white; }
 .admin-sidebar > button.active > span { background: var(--yellow); color: var(--ink); }
 .admin-sidebar-note { margin-top: auto; padding: 15px; border-radius: 14px; background: rgba(255,255,255,.055); }
-.admin-sidebar-note strong { color: var(--yellow); font-size: 10px; }
-.admin-sidebar-note p { margin: 7px 0 0; color: rgba(255,255,255,.43); font-size: 9px; line-height: 1.5; }
+.admin-sidebar-note strong { color: var(--yellow); font-size: 11px; }
+.admin-sidebar-note p { margin: 7px 0 0; color: rgba(255,255,255,.43); font-size: 10px; line-height: 1.5; }
 
 .admin-content { min-width: 0; }
 .admin-heading { min-height: 105px; padding: 8px 4px 22px; display: flex; align-items: flex-end; justify-content: space-between; gap: 25px; }
-.admin-heading p { margin: 0 0 6px; color: #9b7318; font-size: 8px; font-weight: 800; letter-spacing: .16em; }
+.admin-heading p { margin: 0 0 6px; color: #9b7318; font-size: 10px; font-weight: 800; letter-spacing: .16em; }
 .admin-heading h1 { margin: 0; font: 800 clamp(28px, 3.4vw, 44px)/1.05 "Manrope"; letter-spacing: -.045em; }
-.admin-heading span { display: block; margin-top: 8px; color: var(--muted); font-size: 11px; }
+.admin-heading span { display: block; margin-top: 8px; color: var(--muted); font-size: 13px; }
 .admin-primary-action, .admin-save { min-height: 46px; padding: 11px 17px; border: 0; border-radius: 12px; background: var(--yellow); color: var(--ink); font-weight: 800; cursor: pointer; }
 .admin-stats { display: grid; grid-template-columns: repeat(3, minmax(120px, 1fr)) minmax(230px, 1.6fr); gap: 10px; margin-bottom: 18px; }
 .admin-stats article { min-height: 92px; padding: 15px 17px; border-radius: 16px; background: #fbf9f4; box-shadow: 0 8px 24px rgba(28,25,17,.045); display: flex; flex-direction: column; justify-content: center; }
-.admin-stats small { color: #91897c; font-size: 7px; font-weight: 800; letter-spacing: .12em; }
+.admin-stats small { color: #91897c; font-size: 9px; font-weight: 800; letter-spacing: .12em; }
 .admin-stats strong { margin-top: 3px; font: 800 25px/1 "Manrope"; }
-.admin-stats article > span { color: var(--muted); font-size: 9px; }
+.admin-stats article > span { color: var(--muted); font-size: 11px; }
 .admin-stats .admin-notice { background: #e8deb8; }
 .admin-notice p { margin: 7px 0 0; color: #5e5026; font-size: 10px; line-height: 1.4; }
 
@@ -758,7 +758,7 @@ textarea, select { font: inherit; }
 .admin-list-tools > input { width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid #cec5b7; border-radius: 11px; outline: 0; background: white; }
 .admin-list-tools > input:focus { border-color: #a47c1d; box-shadow: 0 0 0 3px rgba(164,124,29,.1); }
 .admin-list-tools > div { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 9px; }
-.admin-list-tools button { min-height: 34px; border: 1px solid #d2cabd; border-radius: 9px; background: transparent; color: #716a5f; font-size: 9px; cursor: pointer; }
+.admin-list-tools button { min-height: 34px; border: 1px solid #d2cabd; border-radius: 9px; background: transparent; color: #716a5f; font-size: 11px; cursor: pointer; }
 .admin-list-tools button.active { border-color: var(--ink); background: var(--ink); color: var(--yellow); }
 .admin-products-scroll { max-height: 720px; overflow-y: auto; padding: 7px; }
 .admin-product-row { width: 100%; min-height: 72px; padding: 8px; border: 1px solid transparent; border-radius: 13px; background: transparent; display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; align-items: center; gap: 10px; text-align: left; cursor: pointer; }
@@ -768,7 +768,7 @@ textarea, select { font: inherit; }
 .admin-image-placeholder { background: var(--ink); color: var(--yellow); display: grid; place-items: center; font: 800 16px "Manrope"; }
 .admin-product-row > span { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .admin-product-row > span strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 11px "Manrope"; }
-.admin-product-row > span small { color: var(--muted); font-size: 8px; }
+.admin-product-row > span small { color: var(--muted); font-size: 10px; }
 .admin-product-row > b { color: #8f6811; font-size: 10px; }
 .admin-empty { padding: 30px 15px; color: var(--muted); text-align: center; font-size: 10px; }
 
@@ -776,16 +776,16 @@ textarea, select { font: inherit; }
 .admin-editor-title { padding: 22px 24px; background: #20201b; color: white; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .admin-editor-title p { margin: 0 0 4px; color: var(--yellow); font-size: 7px; font-weight: 800; letter-spacing: .15em; }
 .admin-editor-title h2 { margin: 0; font: 800 23px/1.15 "Manrope"; }
-.admin-editor-title > span { padding: 7px 10px; border-radius: 999px; background: rgba(58,154,217,.12); color: var(--yellow); font-size: 9px; font-weight: 800; }
+.admin-editor-title > span { padding: 7px 10px; border-radius: 999px; background: rgba(58,154,217,.12); color: var(--yellow); font-size: 11px; font-weight: 800; }
 .admin-photo-editor { padding: 22px 24px; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 170px 1fr; gap: 20px; align-items: center; }
 .admin-photo-editor > div { height: 145px; border-radius: 16px; overflow: hidden; background: #27241d; display: grid; place-items: center; color: rgba(255,255,255,.42); font-size: 10px; }
 .admin-photo-editor img { width: 100%; height: 100%; object-fit: cover; }
 .admin-photo-editor > section { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 9px; }
-.admin-photo-editor label:not(.admin-upload) { width: 100%; display: flex; flex-direction: column; gap: 6px; color: #6d665b; font-size: 9px; font-weight: 700; }
+.admin-photo-editor label:not(.admin-upload) { width: 100%; display: flex; flex-direction: column; gap: 6px; color: #6d665b; font-size: 11px; font-weight: 700; }
 .admin-photo-editor input:not([type="file"]) { width: 100%; min-height: 40px; padding: 9px 11px; border: 1px solid #ccc3b4; border-radius: 10px; background: white; outline: 0; }
-.admin-upload { min-height: 38px; padding: 9px 12px; border-radius: 10px; background: var(--ink); color: var(--yellow); display: inline-flex; align-items: center; font-size: 9px; font-weight: 800; cursor: pointer; }
+.admin-upload { min-height: 38px; padding: 9px 12px; border-radius: 10px; background: var(--ink); color: var(--yellow); display: inline-flex; align-items: center; font-size: 11px; font-weight: 800; cursor: pointer; }
 .admin-upload input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-.admin-photo-editor small { color: #8b8479; font-size: 8px; }
+.admin-photo-editor small { color: #8b8479; font-size: 10px; }
 
 .admin-form-section { padding: 24px; border-bottom: 1px solid var(--line); }
 .admin-section-title { display: flex; align-items: flex-start; gap: 11px; margin-bottom: 18px; }

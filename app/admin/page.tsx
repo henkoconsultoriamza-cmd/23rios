@@ -1013,23 +1013,15 @@ export default function AdminPage() {
             </aside>
           </div> : <div className="admin-adjustments-grid">
             <article className="admin-adjustment-card admin-business-settings">
-              <div className="admin-adjustment-heading"><span>01</span><div><small>IDENTIDAD DEL RESTAURANTE</small><h2>Marca y presentación</h2><p>Cambiá la identidad completa antes de cada demostración sin modificar el código.</p></div></div>
+              <div className="admin-adjustment-heading"><span>01</span><div><h2>Información básica</h2></div></div>
               <div className="admin-adjustment-form">
-                <label className="wide">Nombre comercial<input value={appSettings.businessName} onChange={(event) => updateAppSetting("businessName", event.target.value)}/></label>
-                <label className="wide">Descripción corta de marca<input value={appSettings.brandTagline} onChange={(event) => updateAppSetting("brandTagline", event.target.value)}/></label>
-                <label>Color principal<input type="color" value={appSettings.accentColor} onChange={(event) => updateAppSetting("accentColor", event.target.value)}/></label>
-                <label>Logo<input type="file" accept="image/*" onChange={(event) => handleBrandImage(event, "logoUrl")}/></label>
-                <label className="wide">Imagen principal<input type="file" accept="image/*" onChange={(event) => handleBrandImage(event, "heroImageUrl")}/></label>
-                <label className="wide">Texto superior de portada<input value={appSettings.heroEyebrow} onChange={(event) => updateAppSetting("heroEyebrow", event.target.value)}/></label>
-                <label>Título principal<input value={appSettings.heroTitle} onChange={(event) => updateAppSetting("heroTitle", event.target.value)}/></label>
-                <label>Frase destacada<input value={appSettings.heroHighlight} onChange={(event) => updateAppSetting("heroHighlight", event.target.value)}/></label>
-                <label className="wide">Descripción de portada<textarea value={appSettings.heroDescription} onChange={(event) => updateAppSetting("heroDescription", event.target.value)}/></label>
                 <label>Correo de contacto<input type="email" value={appSettings.contactEmail} onChange={(event) => updateAppSetting("contactEmail", event.target.value)} placeholder="administracion@restaurante.com"/></label>
                 <label>Teléfono / WhatsApp<input value={appSettings.phone} onChange={(event) => updateAppSetting("phone", event.target.value)} placeholder="+54 9…"/></label>
+                <label className="wide">Horarios<input value={appSettings.hours ?? ""} onChange={(event) => updateAppSetting("hours" as keyof AppSettings, event.target.value)} placeholder="Ej. Lun a Vie 12–24 hs · Sáb y Dom 11–01 hs"/></label>
                 <label>Moneda<select value={appSettings.currency} onChange={(event) => updateAppSetting("currency", event.target.value as AppSettings["currency"])}><option value="ARS">Peso argentino · ARS</option><option value="USD">Dólar · USD</option><option value="BRL">Real · BRL</option></select></label>
                 <label>Idioma inicial<select value={appSettings.defaultLanguage} onChange={(event) => updateAppSetting("defaultLanguage", event.target.value)}><option value="es">Español</option><option value="pt">Português</option><option value="en">English</option><option value="fr">Français</option><option value="it">Italiano</option><option value="de">Deutsch</option></select></label>
               </div>
-              <div className="admin-adjustment-actions"><button onClick={saveAppSettings}>Aplicar identidad al menú</button></div>
+              <div className="admin-adjustment-actions"><button onClick={saveAppSettings}>Guardar información</button></div>
             </article>
 
             <article className="admin-adjustment-card">
@@ -1037,7 +1029,6 @@ export default function AdminPage() {
               <div className="admin-toggle-list">
                 <label><span><strong>Pedidos lanzados</strong><small>Avisar cuando el cliente cierre y envíe el carrito.</small></span><input type="checkbox" checked={appSettings.orderNotifications} onChange={(event) => updateAppSetting("orderNotifications", event.target.checked)}/><i/></label>
                 <label><span><strong>Llamados y solicitudes</strong><small>Avisar al llamar al mozo o pedir la cuenta.</small></span><input type="checkbox" checked={appSettings.serviceNotifications} onChange={(event) => updateAppSetting("serviceNotifications", event.target.checked)}/><i/></label>
-                <label><span><strong>Resumen semanal</strong><small>Preparar un informe con productos y ventas destacadas.</small></span><input type="checkbox" checked={appSettings.weeklySummary} onChange={(event) => updateAppSetting("weeklySummary", event.target.checked)}/><i/></label>
               </div>
               <div className="admin-adjustment-actions"><button onClick={saveAppSettings}>Guardar preferencias</button></div>
             </article>

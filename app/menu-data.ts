@@ -58,6 +58,7 @@ export type AppSettings = {
   weeklySummary: boolean;
   orderToken: string;
   eventModeActive: boolean;
+  hours?: string;
 };
 
 export const MENU_PRODUCTS_STORAGE_KEY = "restaurant-template-products-v1";
