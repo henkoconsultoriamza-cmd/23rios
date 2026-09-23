@@ -833,7 +833,8 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="admin-editor-actions">{!isNew && <button className="admin-delete" onClick={deleteProduct}>Eliminar producto</button>}<button className="admin-save" onClick={saveProduct}>Guardar cambios</button></div>
+              {isNew && <div className="admin-editor-actions"><button className="admin-save" onClick={saveProduct}>Crear producto</button></div>}
+              {!isNew && <div className="admin-editor-actions"><button className="admin-delete" onClick={deleteProduct}>Eliminar producto</button></div>}
             </section>
           </div> : tab === "banners" ? <div className="admin-banners-layout">
             {banners.length === 0 && <div className="admin-empty-notice"><p>No hay novedades creadas todavía. Creá la primera y se mostrará en el menú del cliente.</p></div>}
