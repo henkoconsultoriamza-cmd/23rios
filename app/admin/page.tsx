@@ -1024,14 +1024,6 @@ export default function AdminPage() {
               <div className="admin-adjustment-actions"><button onClick={saveAppSettings}>Guardar información</button></div>
             </article>
 
-            <article className="admin-adjustment-card">
-              <div className="admin-adjustment-heading"><span>02</span><div><small>OPERACIÓN</small><h2>Avisos y notificaciones</h2><p>Prepará qué eventos deberán avisarse al equipo cuando conectemos el sistema del local.</p></div></div>
-              <div className="admin-toggle-list">
-                <label><span><strong>Pedidos lanzados</strong><small>Avisar cuando el cliente cierre y envíe el carrito.</small></span><input type="checkbox" checked={appSettings.orderNotifications} onChange={(event) => updateAppSetting("orderNotifications", event.target.checked)}/><i/></label>
-                <label><span><strong>Llamados y solicitudes</strong><small>Avisar al llamar al mozo o pedir la cuenta.</small></span><input type="checkbox" checked={appSettings.serviceNotifications} onChange={(event) => updateAppSetting("serviceNotifications", event.target.checked)}/><i/></label>
-              </div>
-              <div className="admin-adjustment-actions"><button onClick={saveAppSettings}>Guardar preferencias</button></div>
-            </article>
 
             <article className="admin-adjustment-card">
               <div className="admin-adjustment-heading"><span>03</span><div><small>CONTROL DE ACCESO</small><h2>Token de QR</h2><p>Si configurás un token, solo podrán lanzar pedidos los clientes que hayan escaneado el QR de una mesa. Dejalo vacío para deshabilitar la restricción.</p></div></div>
