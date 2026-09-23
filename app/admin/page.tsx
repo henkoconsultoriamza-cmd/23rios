@@ -685,12 +685,11 @@ export default function AdminPage() {
         <aside className="admin-sidebar">
           <div className="admin-nav-label">ADMINISTRACIÓN</div>
           <button className={tab === "products" ? "active" : ""} onClick={() => setTab("products")}><span>01</span><div><strong>Productos</strong><small>Fotos, textos y precios</small></div></button>
-          <button className={tab === "filters" ? "active" : ""} onClick={() => setTab("filters")}><span>02</span><div><strong>Filtros del menú</strong><small>Tipos y preferencias</small></div></button>
-          <button className={tab === "portal" ? "active" : ""} onClick={() => setTab("portal")}><span>03</span><div><strong>Portal</strong><small>Portada y accesos</small></div></button>
-          <button className={tab === "adjustments" ? "active" : ""} onClick={() => setTab("adjustments")}><span>04</span><div><strong>Ajustes</strong><small>Negocio y seguridad</small></div></button>
-          <button className={tab === "banners" ? "active" : ""} onClick={() => setTab("banners")}><span>05</span><div><strong>Novedades</strong><small>Banners y eventos</small></div></button>
-          <button className={tab === "evento" ? "active" : ""} onClick={() => setTab("evento")}><span>06</span><div><strong>Menú Evento</strong><small>Carta reducida para eventos</small></div></button>
-          <button className={tab === "analytics" ? "active" : ""} onClick={() => { setTab("analytics"); setAnalyticsEvents(getStoredEvents()); }}><span>07</span><div><strong>Analíticas</strong><small>Métricas del menú</small></div></button>
+          <button className={tab === "portal" ? "active" : ""} onClick={() => setTab("portal")}><span>02</span><div><strong>Portal</strong><small>Portada y accesos</small></div></button>
+          <button className={tab === "adjustments" ? "active" : ""} onClick={() => setTab("adjustments")}><span>03</span><div><strong>Ajustes</strong><small>Negocio y seguridad</small></div></button>
+          <button className={tab === "banners" ? "active" : ""} onClick={() => setTab("banners")}><span>04</span><div><strong>Novedades</strong><small>Banners y eventos</small></div></button>
+          <button className={tab === "evento" ? "active" : ""} onClick={() => setTab("evento")}><span>05</span><div><strong>Menú Evento</strong><small>Carta reducida para eventos</small></div></button>
+          <button className={tab === "analytics" ? "active" : ""} onClick={() => { setTab("analytics"); setAnalyticsEvents(getStoredEvents()); }}><span>06</span><div><strong>Analíticas</strong><small>Métricas del menú</small></div></button>
           <div className="admin-sidebar-note"><strong>Sesión protegida</strong><p>Este acceso funciona en el dispositivo de demostración. En producción se validará desde el servidor y la base de datos.</p></div>
         </aside>
 
@@ -941,12 +940,6 @@ export default function AdminPage() {
                 <span>{products.filter((p) => p.eventoMenu).length} productos marcados para evento</span>
               </div>
             </article>
-          </div> : tab === "filters" ? <div className="admin-settings-grid">
-            {settingsSections.map((section) => <article className="admin-settings-card" key={section.key}>
-              <div><small>CONFIGURACIÓN</small><h2>{section.title}</h2><p>{section.description}</p></div>
-              <div className="admin-option-list">{settings[section.key].map((item) => <span key={item}>{item}<button onClick={() => removeOption(section.key, item)} aria-label={`Eliminar ${item}`}>×</button></span>)}</div>
-              <form onSubmit={(event) => { event.preventDefault(); addOption(section.key); }}><input value={newOptions[section.key] ?? ""} onChange={(event) => setNewOptions((current) => ({ ...current, [section.key]: event.target.value }))} placeholder={`Agregar en ${section.title.toLocaleLowerCase("es")}`}/><button type="submit">Agregar</button></form>
-            </article>)}
           </div> : tab === "portal" ? <div className="admin-portal-layout">
             <div className="admin-portal-editor">
               <article className="admin-portal-section">
