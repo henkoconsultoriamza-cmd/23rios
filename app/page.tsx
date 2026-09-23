@@ -358,7 +358,7 @@ export default function Home() {
   function addSelectedToOrder() {
     if (!selected || orderStatus === "sent") return;
     trackEvent("cart_add", { productId: selected.id });
-    const key = `${selected.id}:${selectedServingOption?.label ?? "unidad"}`;
+    const key = selectedServingOption ? `${selected.id}:${selectedServingOption.label}` : selected.id;
     setOrderItems((current) => {
       const existing = current.find((item) => item.key === key);
       if (existing) return current.map((item) => item.key === key ? { ...item, quantity: item.quantity + 1 } : item);
@@ -805,17 +805,23 @@ export default function Home() {
               <div className="allergen-summary"><strong>{tr("Alérgenos")}</strong><div>{selected.allergens.length ? selected.allergens.map((allergen) => <span className="allergen-item" key={allergen}><i aria-hidden="true">{allergenIcons[allergen] ?? "•"}</i>{tr(allergen)}</span>) : <span className="allergen-item allergen-free"><i aria-hidden="true">✓</i>Sin alérgenos declarados</span>}</div></div>
             </section>
             <div className="validation-note"><strong>{tr("Información provisional")}</strong><span>{language === "es" ? selected.note : tr("Información pendiente de validación con la carta oficial.")} {tr("Los precios y valores nutricionales mostrados son demostrativos.")}</span></div>
-            {selected.category === "Cocina" && <button className="customize-modal-btn" onClick={() => { const key = selected.id; const existing = orderItems.find(i => i.key === key); if (!existing) { setOrderItems(prev => [...prev, { key, productId: selected.id, name: selected.name, image: selected.image, unitPrice: selected.price, quantity: 1 }]); setOrderStatus("draft"); } setCustomizeItemKey(key); }}>{tr("Le quiero sacar...")}</button>}
             {(() => {
-              const modalKey = `${selected.id}:${selectedServingOption?.label ?? "unidad"}`;
+              const modalKey = selectedServingOption ? `${selected.id}:${selectedServingOption.label}` : selected.id;
               const modalItem = orderItems.find(i => i.key === modalKey);
+              const openCustomize = () => { if (!modalItem) { setOrderItems(prev => [...prev, { key: modalKey, productId: selected.id, name: selected.name, image: selected.image, unitPrice: selectedPrice, quantity: 1 }]); setOrderStatus("draft"); } setCustomizeItemKey(modalKey); };
               if (orderStatus === "sent") {
                 return <button className="order-button locked" disabled><Icon name="receipt" size={19}/><span>{tr("PEDIDO LANZADO")}</span></button>;
               }
               if (modalItem && modalItem.quantity > 0) {
-                return <div className="modal-quantity-control"><button onClick={() => changeOrderQuantity(modalKey, -1)} aria-label="Quitar uno">−</button><span>{modalItem.quantity} en el pedido</span><button onClick={() => changeOrderQuantity(modalKey, 1)} aria-label="Agregar uno">+</button></div>;
+                return <>
+                  {selected.category === "Cocina" && <button className="customize-modal-btn" onClick={openCustomize}>{tr("Le quiero sacar...")}</button>}
+                  <div className="modal-quantity-control"><button onClick={() => changeOrderQuantity(modalKey, -1)} aria-label="Quitar uno">−</button><span>{modalItem.quantity} en el pedido</span><button onClick={() => changeOrderQuantity(modalKey, 1)} aria-label="Agregar uno">+</button></div>
+                </>;
               }
-              return <button className="order-button" onClick={addSelectedToOrder}><Icon name="plus" size={19}/><span>{tr("Agregar al carrito")} · {displayPrice(selectedPrice)}</span></button>;
+              return <>
+                {selected.category === "Cocina" && <button className="customize-modal-btn" onClick={openCustomize}>{tr("Le quiero sacar...")}</button>}
+                <button className="order-button" onClick={addSelectedToOrder}><Icon name="plus" size={19}/><span>{tr("Agregar al carrito")} · {displayPrice(selectedPrice)}</span></button>
+              </>;
             })()}
             <section className="cross-sell" aria-labelledby="cross-sell-title">
               <p>{tr("PARA COMPLETAR TU ELECCIÓN")}</p>
