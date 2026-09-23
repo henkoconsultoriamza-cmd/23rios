@@ -699,12 +699,12 @@ export default function AdminPage() {
             {tab === "products" ? <button className="admin-primary-action" onClick={() => startNew()}>＋ Nuevo producto</button> : tab === "portal" ? <button className="admin-primary-action" onClick={addPortalAction}>＋ Nuevo acceso</button> : tab === "banners" ? <button className="admin-primary-action" onClick={addBanner}>＋ Nueva novedad</button> : tab === "analytics" ? <button className="admin-primary-action" onClick={refreshAnalytics}>↺ Actualizar</button> : null}
           </div>
 
-          <div className="admin-stats">
+          {(tab === "products" || tab === "evento") && <div className="admin-stats">
             <article><small>TOTAL PUBLICADOS</small><strong>{products.length}</strong><span>productos</span></article>
             <article><small>COMIDAS</small><strong>{foodCount}</strong><span>platos</span></article>
             <article><small>BEBIDAS</small><strong>{drinkCount}</strong><span>opciones</span></article>
             <article className="admin-notice"><small>ESTADO</small><p>{notice}</p></article>
-          </div>
+          </div>}
 
           {tab === "products" ? <div className="admin-product-workspace">
             <section className="admin-product-list">
