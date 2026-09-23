@@ -17,6 +17,7 @@ type OrderItem = {
   volume?: string;
   unitPrice: number;
   quantity: number;
+  removedIngredients?: string[];
 };
 type LaunchedOrder = {
   id: string;
@@ -145,6 +146,7 @@ export default function Home() {
   const [guestNameDraft, setGuestNameDraft] = useState("");
   const [guestCountDraft, setGuestCountDraft] = useState("");
   const [billRequested, setBillRequested] = useState(false);
+  const [customizeItemKey, setCustomizeItemKey] = useState<string | null>(null);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [eventsOpen, setEventsOpen] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -618,6 +620,7 @@ export default function Home() {
                         {product.image ? <img className={product.id === "filet-numa" ? "filet-numa-image" : undefined} src={product.image} alt={`${tr(product.name)} · ${brandName}`} /> : <span className="photo-pending"><Icon name="expand" size={20}/><strong>{tr("Foto real pendiente")}</strong></span>}
                         <span className="product-tag">{product.tag}</span>
                         <span className="expand-label"><Icon name="expand" size={14}/> {tr("Ver detalle")}</span>
+                        {(product.removableIngredients?.length ?? 0) > 0 && <button className="product-customize-btn" onClick={(e) => { e.stopPropagation(); const key = product.id; const existing = orderItems.find(i => i.key === key); if (existing) { setCustomizeItemKey(key); } else { setOrderItems(prev => [...prev, { key, productId: product.id, name: product.name, image: product.image, unitPrice: product.price, quantity: 1 }]); setOrderStatus("draft"); setCustomizeItemKey(key); } }} aria-label="Personalizar">✎ {tr("Editar")}</button>}
                       </button>
                       <div className="product-info">
                         <p className="product-category">{tr(product.group)}{product.beerStyle ? ` · ${tr(product.beerStyle)}` : ""}</p>
@@ -676,11 +679,14 @@ export default function Home() {
           <div className="order-items">
             {orderItems.map((item) => <article key={item.key}>
               {item.image ? <img src={item.image} alt=""/> : <span className="order-item-placeholder"/>}
-              <div className="order-item-copy"><strong>{tr(item.name)}</strong>{item.serving && <small>{tr(item.serving)} · {item.volume}</small>}<b>{displayPrice(item.unitPrice)}</b></div>
-              <div className="quantity-control" aria-label={`Cantidad de ${item.name}`}>
-                <button onClick={() => changeOrderQuantity(item.key, -1)} disabled={orderStatus === "sent"} aria-label={`Quitar una unidad de ${item.name}`}>−</button>
-                <span>{item.quantity}</span>
-                <button onClick={() => changeOrderQuantity(item.key, 1)} disabled={orderStatus === "sent"} aria-label={`Agregar una unidad de ${item.name}`}>+</button>
+              <div className="order-item-copy"><strong>{tr(item.name)}</strong>{item.serving && <small>{tr(item.serving)} · {item.volume}</small>}{item.removedIngredients?.length ? <small className="removed-ingredients">Sin: {item.removedIngredients.join(", ")}</small> : null}<b>{displayPrice(item.unitPrice)}</b></div>
+              <div className="order-item-actions">
+                {(() => { const prod = catalogProducts.find(p => p.id === item.productId); return prod?.removableIngredients?.length ? <button className="customize-inline-btn" onClick={() => setCustomizeItemKey(item.key)} disabled={orderStatus === "sent"}>✎</button> : null; })()}
+                <div className="quantity-control" aria-label={`Cantidad de ${item.name}`}>
+                  <button onClick={() => changeOrderQuantity(item.key, -1)} disabled={orderStatus === "sent"} aria-label={`Quitar una unidad de ${item.name}`}>−</button>
+                  <span>{item.quantity}</span>
+                  <button onClick={() => changeOrderQuantity(item.key, 1)} disabled={orderStatus === "sent"} aria-label={`Agregar una unidad de ${item.name}`}>+</button>
+                </div>
               </div>
             </article>)}
           </div>
@@ -693,6 +699,29 @@ export default function Home() {
           <p className="order-panel-note">Antes de lanzar el pedido te pediremos confirmar el número de mesa.</p>
         </section>
       </div>}
+
+      {customizeItemKey && (() => {
+        const item = orderItems.find(i => i.key === customizeItemKey);
+        const prod = item ? catalogProducts.find(p => p.id === item.productId) : null;
+        const ingredients = prod?.removableIngredients ?? [];
+        const removed = item?.removedIngredients ?? [];
+        const toggle = (ing: string) => setOrderItems(prev => prev.map(i => i.key === customizeItemKey ? { ...i, removedIngredients: removed.includes(ing) ? removed.filter(r => r !== ing) : [...removed, ing] } : i));
+        return <div className="overlay" onMouseDown={() => setCustomizeItemKey(null)}>
+          <section className="customize-dialog" role="dialog" aria-modal="true" onMouseDown={e => e.stopPropagation()}>
+            <button className="modal-close light" onClick={() => setCustomizeItemKey(null)} aria-label="Cerrar"><Icon name="close"/></button>
+            <p className="eyebrow">PERSONALIZAR PEDIDO</p>
+            <h2>{tr(item?.name ?? "")}</h2>
+            <p className="customize-hint">Tocá lo que querés sacar del plato.</p>
+            <div className="customize-ingredient-list">
+              {ingredients.map(ing => <button key={ing} className={removed.includes(ing) ? "ingredient-chip removed" : "ingredient-chip"} onClick={() => toggle(ing)}>
+                {removed.includes(ing) ? <span>✕</span> : <span>✓</span>}{ing}
+              </button>)}
+            </div>
+            {removed.length > 0 && <p className="customize-summary">Sin: {removed.join(", ")}</p>}
+            <button className="customize-confirm" onClick={() => setCustomizeItemKey(null)}>Listo</button>
+          </section>
+        </div>;
+      })()}
 
       {tablePromptOpen && <div className="overlay" onMouseDown={() => setTablePromptOpen(false)}>
         <section className="table-dialog" role="dialog" aria-modal="true" aria-labelledby="table-dialog-title" onMouseDown={(event) => event.stopPropagation()}>

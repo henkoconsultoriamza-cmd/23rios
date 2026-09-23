@@ -29,6 +29,11 @@ export type Product = {
   };
   servings?: { label: string; volume: string; price: number }[];
   eventoMenu?: boolean;
+  outOfStock?: boolean;
+  promoType?: "precio" | "2x1" | "porcentaje" | null;
+  promoPrice?: number;
+  promoPercent?: number;
+  removableIngredients?: string[];
 };
 
 export type MenuSettings = {

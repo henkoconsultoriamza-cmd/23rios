@@ -781,6 +781,33 @@ export default function AdminPage() {
                 <div className="admin-related-grid">{products.filter((product) => product.id !== selectedId).map((product) => <label key={product.id}><input type="checkbox" checked={draft.relatedIds.includes(product.id)} onChange={() => toggleDraftList("relatedIds", product.id)}/>{product.image ? <img src={product.image} alt=""/> : <span>CN</span>}<strong>{product.name}</strong></label>)}</div>
               </div>
 
+              {draft.category === "Cocina" && <div className="admin-form-section">
+                <div className="admin-section-title"><span>{isCraftBeer ? "06" : "05"}</span><div><h3>Ingredientes editables</h3><p>El cliente puede pedir que se saquen estos ingredientes al momento de pedir.</p></div></div>
+                <div className="admin-ingredients-editor">
+                  <div className="admin-option-list">{(draft.removableIngredients ?? []).map((item) => <span key={item}>{item}<button type="button" onClick={() => updateDraft("removableIngredients", (draft.removableIngredients ?? []).filter((i) => i !== item))} aria-label={`Eliminar ${item}`}>×</button></span>)}</div>
+                  <form className="admin-add-ingredient" onSubmit={(e) => { e.preventDefault(); const input = (e.currentTarget.elements.namedItem("ingredient") as HTMLInputElement); const val = input.value.trim(); if (!val || (draft.removableIngredients ?? []).includes(val)) return; updateDraft("removableIngredients", [...(draft.removableIngredients ?? []), val]); input.value = ""; }}><input name="ingredient" placeholder="Ej. Mayonesa, Aceitunas, Cebolla…"/><button type="submit">Agregar</button></form>
+                </div>
+              </div>}
+
+              <div className="admin-form-section">
+                <div className="admin-section-title"><span>{isCraftBeer ? "07" : "06"}</span><div><h3>Disponibilidad y promoción</h3><p>Controlá el stock y aplicá descuentos visibles en el menú.</p></div></div>
+                <div className="admin-promo-stock">
+                  <label className="admin-stock-toggle"><input type="checkbox" checked={!!draft.outOfStock} onChange={(e) => updateDraft("outOfStock", e.target.checked)}/><span><strong>Sin stock</strong><small>El producto se muestra como no disponible</small></span><i/></label>
+                  <fieldset className="admin-promo-type">
+                    <legend>Promoción</legend>
+                    <div className="admin-promo-options">
+                      <label className={!draft.promoType ? "selected" : ""}><input type="radio" name="promoType" checked={!draft.promoType} onChange={() => updateDraft("promoType", null)}/><span>Sin promo</span></label>
+                      <label className={draft.promoType === "precio" ? "selected" : ""}><input type="radio" name="promoType" checked={draft.promoType === "precio"} onChange={() => updateDraft("promoType", "precio")}/><span>Precio especial</span></label>
+                      <label className={draft.promoType === "2x1" ? "selected" : ""}><input type="radio" name="promoType" checked={draft.promoType === "2x1"} onChange={() => updateDraft("promoType", "2x1")}/><span>2×1</span></label>
+                      <label className={draft.promoType === "porcentaje" ? "selected" : ""}><input type="radio" name="promoType" checked={draft.promoType === "porcentaje"} onChange={() => updateDraft("promoType", "porcentaje")}/><span>% Off</span></label>
+                    </div>
+                    {draft.promoType === "precio" && <div className="admin-promo-detail"><label>Precio promocional<input type="number" min="0" step="100" value={draft.promoPrice ?? ""} onChange={(e) => updateDraft("promoPrice", Number(e.target.value))} placeholder="0"/></label><small>Se muestra tachando el precio original.</small></div>}
+                    {draft.promoType === "porcentaje" && <div className="admin-promo-detail"><label>Porcentaje de descuento<input type="number" min="1" max="99" value={draft.promoPercent ?? ""} onChange={(e) => updateDraft("promoPercent", Number(e.target.value))} placeholder="20"/></label><small>Ej: 20 → muestra "20% off"</small></div>}
+                    {draft.promoType === "2x1" && <div className="admin-promo-detail"><small>Se mostrará la etiqueta "2×1" sobre el producto.</small></div>}
+                  </fieldset>
+                </div>
+              </div>
+
               <div className="admin-editor-actions">{!isNew && <button className="admin-delete" onClick={deleteProduct}>Eliminar producto</button>}<button className="admin-save" onClick={saveProduct}>Guardar cambios</button></div>
             </section>
           </div> : tab === "banners" ? <div className="admin-banners-layout">

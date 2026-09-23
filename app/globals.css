@@ -260,7 +260,7 @@ img { display: block; max-width: 100%; }
 .product-footer > span { color: #8a7a6a; display: flex; flex-direction: column; gap: 2px; }
 .product-footer > span small { font-size: 8px; text-transform: uppercase; letter-spacing: .09em; }
 .product-footer > span strong { color: var(--ink); font: 800 16px/1 "Manrope"; }
-.product-footer button { border: 0; background: transparent; color: var(--yellow); padding: 5px 0; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.product-footer button { border: 0; background: transparent; color: var(--yellow); padding: 5px 0; font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 8px; cursor: pointer; }
 
 .events-banner { min-height: 286px; background: transparent; color: var(--ink); position: relative; margin: 0 clamp(22px, 6vw, 96px) 80px; padding: 18px clamp(25px, 4vw, 48px) 18px 18px; border-radius: 20px; display: grid; grid-template-columns: 205px minmax(0, 1fr) auto; align-items: center; gap: clamp(25px, 4vw, 52px); position: relative; overflow: hidden; }
 .events-banner::after { content: "EVENTOS"; position: absolute; right: 17%; bottom: -38px; font: 800 108px/1 "Manrope"; letter-spacing: -.07em; color: rgba(26,15,8,.04); }
@@ -817,6 +817,54 @@ textarea, select { font: inherit; }
 .admin-related-grid label:has(input:checked) { border-color: #a77d19; background: #f4e6af; }
 .admin-related-grid img, .admin-related-grid label > span { width: 42px; height: 40px; border-radius: 8px; object-fit: cover; background: var(--ink); color: var(--yellow); display: grid; place-items: center; font-size: 9px; }
 .admin-related-grid strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; }
+
+/* Ingredientes editables — admin */
+.admin-ingredients-editor { display: flex; flex-direction: column; gap: 12px; }
+.admin-add-ingredient { display: flex; gap: 8px; }
+.admin-add-ingredient input { flex: 1; min-height: 42px; padding: 10px 13px; border: 1px solid #cec5b7; border-radius: 11px; outline: 0; font-size: 13px; }
+.admin-add-ingredient button { min-height: 42px; padding: 0 16px; border: 0; border-radius: 11px; background: var(--ink); color: var(--yellow); font: 800 12px "Manrope"; cursor: pointer; }
+
+/* Botón editar en tarjeta de producto */
+.product-customize-btn { position: absolute !important; bottom: 10px; left: 10px; z-index: 4; background: rgba(0,0,0,.72); color: white; border: 0; border-radius: 999px; padding: 6px 12px; font: 700 11px/1 "Manrope"; cursor: pointer; backdrop-filter: blur(4px); }
+
+/* Botón editar en carrito */
+.order-item-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.customize-inline-btn { width: 34px; height: 34px; border: 1px solid rgba(58,154,217,.4); border-radius: 10px; background: rgba(58,154,217,.08); color: #3a9ad9; font-size: 15px; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; }
+.customize-inline-btn:disabled { opacity: .35; cursor: default; }
+.removed-ingredients { color: #e05a3a !important; font-size: 9px !important; }
+
+/* Modal de personalización */
+.customize-dialog { background: white; border-radius: 26px; padding: 32px 28px 28px; width: min(420px, 94vw); display: flex; flex-direction: column; gap: 12px; }
+.customize-hint { margin: 0; color: var(--muted); font-size: 13px; }
+.customize-ingredient-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.ingredient-chip { min-height: 42px; padding: 9px 16px; border: 2px solid var(--line); border-radius: 999px; background: white; font: 700 13px/1 "Manrope"; color: #5a5248; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: .15s; }
+.ingredient-chip span { font-size: 11px; width: 16px; height: 16px; border-radius: 50%; background: var(--line); display: grid; place-items: center; transition: .15s; }
+.ingredient-chip.removed { border-color: #e05a3a; color: #e05a3a; text-decoration: line-through; }
+.ingredient-chip.removed span { background: #e05a3a; color: white; }
+.customize-summary { margin: 0; padding: 10px 14px; border-radius: 12px; background: #fdf0ec; color: #b03d23; font: 700 12px/1.4 "Manrope"; }
+.customize-confirm { min-height: 50px; border: 0; border-radius: 14px; background: #3a9ad9; color: white; font: 800 15px "Manrope"; cursor: pointer; margin-top: 4px; }
+
+.admin-promo-stock { display: flex; flex-direction: column; gap: 18px; }
+.admin-stock-toggle { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 13px; background: #f5f0e8; cursor: pointer; }
+.admin-stock-toggle input { position: absolute; opacity: 0; }
+.admin-stock-toggle > span { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.admin-stock-toggle strong { font: 800 13px "Manrope"; }
+.admin-stock-toggle small { font-size: 10px; color: var(--muted); }
+.admin-stock-toggle i { position: relative; width: 42px; height: 24px; border-radius: 999px; background: #c9c2b7; transition: .2s; flex-shrink: 0; }
+.admin-stock-toggle i::after { content: ""; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: white; box-shadow: 0 2px 5px rgba(0,0,0,.18); transition: .2s; }
+.admin-stock-toggle input:checked + span + i, .admin-stock-toggle input:checked ~ i { background: #e05a3a; }
+.admin-stock-toggle input:checked + span + i::after, .admin-stock-toggle input:checked ~ i::after { transform: translateX(18px); }
+.admin-promo-type { border: 1px solid var(--line); border-radius: 13px; padding: 14px; }
+.admin-promo-type legend { padding: 0 6px; font: 800 11px "Manrope"; color: var(--muted); }
+.admin-promo-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
+.admin-promo-options label { display: flex; flex-direction: column; align-items: center; gap: 0; cursor: pointer; }
+.admin-promo-options label input { display: none; }
+.admin-promo-options label span { width: 100%; min-height: 38px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--line); border-radius: 10px; font: 700 11px "Manrope"; color: #6b6357; transition: .15s; }
+.admin-promo-options label.selected span { border-color: #3a9ad9; background: #3a9ad9; color: white; }
+.admin-promo-detail { margin-top: 14px; display: flex; flex-direction: column; gap: 7px; }
+.admin-promo-detail label { display: flex; flex-direction: column; gap: 5px; font: 700 11px "Manrope"; color: #696257; }
+.admin-promo-detail label input { min-height: 42px; padding: 10px 13px; border: 1px solid #cec5b7; border-radius: 11px; outline: 0; font-size: 14px; }
+.admin-promo-detail small { font-size: 10px; color: var(--muted); }
 .admin-editor-actions { padding: 18px 24px 24px; display: flex; justify-content: flex-end; gap: 9px; }
 .admin-delete { min-height: 46px; padding: 11px 16px; border: 1px solid #b66b60; border-radius: 12px; background: transparent; color: #91382c; font-weight: 800; cursor: pointer; }
 .admin-save { min-width: 180px; }
