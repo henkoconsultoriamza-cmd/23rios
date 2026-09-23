@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, CSSProperties, FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, CSSProperties, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   ADMIN_APP_SETTINGS_KEY,
   AppSettings,
@@ -325,6 +325,31 @@ export default function AdminPage() {
     setIsNew(false);
     setNotice("Producto guardado. Ya está disponible en el menú general.");
   }
+
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (isNew || !draft.name.trim() || !draft.group.trim() || !hydrated) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      const normalized: Product = {
+        ...draft,
+        name: draft.name.trim(),
+        description: draft.description.trim(),
+        price: Math.max(0, Number(draft.price) || 0),
+        image: draft.image?.trim() || "",
+      };
+      const next = products.map((p) => p.id === selectedId ? normalized : p);
+      try {
+        window.localStorage.setItem(MENU_PRODUCTS_STORAGE_KEY, JSON.stringify(next));
+        setProducts(next);
+        setNotice("Guardado automáticamente ✓");
+      } catch { /* silencioso */ }
+    }, 1200);
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+  }, [draft]);
 
   function deleteProduct() {
     if (isNew || !selectedId) return;

@@ -621,7 +621,7 @@ export default function Home() {
                         <span className="product-tag">{product.tag}</span>
                         <span className="expand-label"><Icon name="expand" size={14}/> {tr("Ver detalle")}</span>
                       </button>
-                      {(product.removableIngredients?.length ?? 0) > 0 && <button className="product-customize-btn" onClick={(e) => { e.stopPropagation(); const key = product.id; const existing = orderItems.find(i => i.key === key); if (existing) { setCustomizeItemKey(key); } else { setOrderItems(prev => [...prev, { key, productId: product.id, name: product.name, image: product.image, unitPrice: product.price, quantity: 1 }]); setOrderStatus("draft"); setCustomizeItemKey(key); } }} aria-label="Personalizar">✎ {tr("Editar")}</button>}
+                      {product.category === "Cocina" && <button className="product-customize-btn" onClick={(e) => { e.stopPropagation(); const key = product.id; const existing = orderItems.find(i => i.key === key); if (existing) { setCustomizeItemKey(key); } else { setOrderItems(prev => [...prev, { key, productId: product.id, name: product.name, image: product.image, unitPrice: product.price, quantity: 1 }]); setOrderStatus("draft"); setCustomizeItemKey(key); } }} aria-label="Personalizar">✎ {tr("Editar")}</button>}
                       <div className="product-info">
                         <p className="product-category">{tr(product.group)}{product.beerStyle ? ` · ${tr(product.beerStyle)}` : ""}</p>
                         <div className="product-title"><button onClick={() => setSelected(product)}><h3>{tr(product.name)}</h3></button><button className={favorites.includes(product.id) ? "favorite active" : "favorite"} onClick={() => toggleFavorite(product.id)} aria-label={`Guardar ${tr(product.name)}`}><Icon name="heart" size={18}/></button></div>
@@ -711,12 +711,10 @@ export default function Home() {
             <button className="modal-close light" onClick={() => setCustomizeItemKey(null)} aria-label="Cerrar"><Icon name="close"/></button>
             <p className="eyebrow">PERSONALIZAR PEDIDO</p>
             <h2>{tr(item?.name ?? "")}</h2>
-            <p className="customize-hint">Tocá lo que querés sacar del plato.</p>
-            <div className="customize-ingredient-list">
-              {ingredients.map(ing => <button key={ing} className={removed.includes(ing) ? "ingredient-chip removed" : "ingredient-chip"} onClick={() => toggle(ing)}>
-                {removed.includes(ing) ? <span>✕</span> : <span>✓</span>}{ing}
-              </button>)}
-            </div>
+            {ingredients.length > 0
+              ? <><p className="customize-hint">Tocá lo que querés sacar del plato.</p><div className="customize-ingredient-list">{ingredients.map(ing => <button key={ing} className={removed.includes(ing) ? "ingredient-chip removed" : "ingredient-chip"} onClick={() => toggle(ing)}>{removed.includes(ing) ? <span>✕</span> : <span>✓</span>}{ing}</button>)}</div></>
+              : <p className="customize-hint">Este producto todavía no tiene ingredientes editables configurados.</p>
+            }
             {removed.length > 0 && <p className="customize-summary">Sin: {removed.join(", ")}</p>}
             <button className="customize-confirm" onClick={() => setCustomizeItemKey(null)}>Listo</button>
           </section>
