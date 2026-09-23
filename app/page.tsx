@@ -24,6 +24,8 @@ type LaunchedOrder = {
   items: OrderItem[];
   total: number;
   tableNumber: string;
+  guestName?: string;
+  guestCount?: number;
   status: "En preparación" | "Cuenta solicitada" | "Cerrado";
 };
 
@@ -140,6 +142,8 @@ export default function Home() {
   const [tableNumber, setTableNumber] = useState("");
   const [tableDraft, setTableDraft] = useState("");
   const [tablePromptOpen, setTablePromptOpen] = useState(false);
+  const [guestNameDraft, setGuestNameDraft] = useState("");
+  const [guestCountDraft, setGuestCountDraft] = useState("");
   const [billRequested, setBillRequested] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [eventsOpen, setEventsOpen] = useState(false);
@@ -383,6 +387,8 @@ export default function Home() {
   function launchOrder() {
     if (!orderItems.length || orderStatus !== "draft") return;
     setTableDraft(tableNumber);
+    setGuestNameDraft("");
+    setGuestCountDraft("");
     setTablePromptOpen(true);
   }
 
@@ -392,7 +398,16 @@ export default function Home() {
     const confirmedTable = tableDraft.trim();
     if (!/^\d{1,3}$/.test(confirmedTable)) return;
     const id = `R${Date.now().toString().slice(-6)}`;
-    const record: LaunchedOrder = { id, launchedAt: new Date().toISOString(), items: orderItems, total: orderTotal, tableNumber: confirmedTable, status: "En preparación" };
+    const record: LaunchedOrder = {
+      id,
+      launchedAt: new Date().toISOString(),
+      items: orderItems,
+      total: orderTotal,
+      tableNumber: confirmedTable,
+      guestName: guestNameDraft.trim() || undefined,
+      guestCount: guestCountDraft ? Number(guestCountDraft) : undefined,
+      status: "En preparación",
+    };
     setLaunchedOrders((current) => [record, ...current].slice(0, 30));
     setTableNumber(confirmedTable);
     setBillRequested(false);
@@ -689,7 +704,9 @@ export default function Home() {
           <form onSubmit={confirmLaunchOrder}>
             <label>Mesa número<input type="text" inputMode="numeric" pattern="[0-9]{1,3}" maxLength={3} value={tableDraft} onChange={(event) => setTableDraft(event.target.value.replace(/\D/g, ""))} readOnly={launchedOrders.length > 0} autoFocus aria-label="Número de mesa"/></label>
             {launchedOrders.length > 0 && <small>La mesa queda fijada durante esta cuenta. Se libera después del cobro.</small>}
-            <button type="submit" disabled={!/^\d{1,3}$/.test(tableDraft) || !isOnPremise}>Confirmar mesa y lanzar pedido</button>
+            <label>Nombre y apellido<input type="text" value={guestNameDraft} onChange={(event) => setGuestNameDraft(event.target.value)} placeholder="Ej. María González" aria-label="Nombre y apellido"/></label>
+            <label>Personas en la mesa<input type="text" inputMode="numeric" maxLength={2} value={guestCountDraft} onChange={(event) => setGuestCountDraft(event.target.value.replace(/\D/g, ""))} placeholder="Ej. 4" aria-label="Cantidad de personas"/></label>
+            <button type="submit" disabled={!/^\d{1,3}$/.test(tableDraft) || !isOnPremise}>Confirmar y lanzar pedido</button>
           </form>
         </section>
       </div>}
@@ -702,7 +719,7 @@ export default function Home() {
           </header>
           {launchedOrders.length ? <><div className={billRequested ? "history-bill-summary requested" : "history-bill-summary"}><div><small>CUENTA DE LA MESA</small><strong>Mesa {tableNumber || launchedOrders[0]?.tableNumber}</strong><span>{launchedOrders.length} {launchedOrders.length === 1 ? "pedido lanzado" : "pedidos lanzados"}</span></div><b>{displayPrice(launchedTotal)}</b></div><div className="launched-orders">
             {launchedOrders.map((order) => <article key={order.id}>
-              <header><div><strong>Pedido #{order.id} · Mesa {order.tableNumber || tableNumber}</strong><time dateTime={order.launchedAt}>{formatOrderDate(order.launchedAt, language)}</time></div><span className={order.status === "Cerrado" ? "closed" : order.status === "Cuenta solicitada" ? "requested" : ""}>{tr(order.status)}</span></header>
+              <header><div><strong>Pedido #{order.id} · Mesa {order.tableNumber || tableNumber}</strong>{(order.guestName || order.guestCount) && <small>{order.guestName}{order.guestName && order.guestCount ? " · " : ""}{order.guestCount ? `${order.guestCount} personas` : ""}</small>}<time dateTime={order.launchedAt}>{formatOrderDate(order.launchedAt, language)}</time></div><span className={order.status === "Cerrado" ? "closed" : order.status === "Cuenta solicitada" ? "requested" : ""}>{tr(order.status)}</span></header>
               <div className="launched-order-items">{order.items.map((item) => <p key={item.key}><span><b>{item.quantity}×</b> {tr(item.name)}{item.serving ? ` · ${tr(item.serving)} (${item.volume})` : ""}</span><strong>{displayPrice(item.unitPrice * item.quantity)}</strong></p>)}</div>
               <div className="launched-order-total"><span>{order.items.reduce((total, item) => total + item.quantity, 0)} {tr("productos")}</span><strong>{displayPrice(order.total)}</strong></div>
             </article>)}
