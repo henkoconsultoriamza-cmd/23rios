@@ -2,7 +2,7 @@
 
 import { CSSProperties, Dispatch, Fragment, FormEvent, SetStateAction, useEffect, useMemo, useRef, useState } from "react";
 import { Language, languageOptions, translate } from "./translations";
-import { ADMIN_APP_SETTINGS_KEY, AppSettings, DEFAULT_APP_SETTINGS, DEFAULT_MENU_SETTINGS, DEFAULT_PRODUCTS, MENU_PRODUCTS_STORAGE_KEY, MENU_SETTINGS_STORAGE_KEY, MenuSettings, Product, mergeDefaultProductImages } from "./menu-data";
+import { ADMIN_APP_SETTINGS_KEY, AppSettings, DEFAULT_APP_SETTINGS, DEFAULT_MENU_SETTINGS, DEFAULT_PRODUCTS, MENU_PRODUCTS_STORAGE_KEY, MENU_SETTINGS_STORAGE_KEY, MenuSettings, Product, mergeDefaultProductImages, Promo, PROMOS_STORAGE_KEY, isPromoActive } from "./menu-data";
 import { trackEvent } from "./analytics";
 import { Banner, BANNERS_STORAGE_KEY, DEFAULT_BANNERS } from "./banner-data";
 
@@ -151,6 +151,7 @@ export default function Home() {
   const [eventsOpen, setEventsOpen] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [banners, setBanners] = useState<Banner[]>(DEFAULT_BANNERS);
+  const [promos, setPromos] = useState<Promo[]>([]);
   const [urlToken] = useState<string>(() => {
     if (typeof window === "undefined") return "";
     return new URLSearchParams(window.location.search).get("t") ?? "";
@@ -235,6 +236,13 @@ export default function Home() {
         }
       } catch { window.localStorage.removeItem(BANNERS_STORAGE_KEY); }
     }
+    const savedPromos = window.localStorage.getItem(PROMOS_STORAGE_KEY);
+    if (savedPromos) {
+      try {
+        const parsed = JSON.parse(savedPromos) as Promo[];
+        if (Array.isArray(parsed)) setPromos(parsed);
+      } catch { window.localStorage.removeItem(PROMOS_STORAGE_KEY); }
+    }
     setOrderHydrated(true);
     trackEvent("session_start");
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).then((registration) => registration.update()).catch(() => undefined);
@@ -289,6 +297,9 @@ export default function Home() {
       if (event.key === BANNERS_STORAGE_KEY && event.newValue) {
         try { setBanners(JSON.parse(event.newValue) as Banner[]); } catch { /* Ignore malformed external data. */ }
       }
+      if (event.key === PROMOS_STORAGE_KEY && event.newValue) {
+        try { setPromos(JSON.parse(event.newValue) as Promo[]); } catch { /* Ignore malformed external data. */ }
+      }
     }
     window.addEventListener("storage", syncAdminChanges);
     return () => window.removeEventListener("storage", syncAdminChanges);
@@ -298,6 +309,22 @@ export default function Home() {
   const logoUrl = appSettings.logoUrl.trim() || DEFAULT_APP_SETTINGS.logoUrl;
   const heroImageUrl = appSettings.heroImageUrl.trim() || DEFAULT_APP_SETTINGS.heroImageUrl;
   const displayPrice = (value: number) => formatPrice(value, appSettings.currency);
+
+  const activePromoMap = useMemo(() => {
+    const map = new Map<string, Promo>();
+    for (const promo of promos) {
+      if (isPromoActive(promo)) map.set(promo.productId, promo);
+    }
+    return map;
+  }, [promos]);
+
+  function promoPrice(product: Product): number {
+    const promo = activePromoMap.get(product.id);
+    if (!promo) return product.price;
+    if (promo.type === "precio" && promo.promoPrice != null) return promo.promoPrice;
+    if (promo.type === "porcentaje" && promo.promoPercent != null) return Math.round(product.price * (1 - promo.promoPercent / 100));
+    return product.price;
+  }
 
   const activePool = appSettings.eventModeActive
     ? catalogProducts.filter((p) => p.eventoMenu)
@@ -325,7 +352,8 @@ export default function Home() {
     : [];
 
   const selectedServingOption = selected?.servings?.find((serving) => serving.label === selectedServing);
-  const selectedPrice = selectedServingOption?.price ?? selected?.price ?? 0;
+  const selectedBasePrice = selectedServingOption?.price ?? selected?.price ?? 0;
+  const selectedPrice = selected && !selectedServingOption ? promoPrice(selected) : selectedBasePrice;
   const orderCount = orderItems.reduce((total, item) => total + item.quantity, 0);
   const orderTotal = orderItems.reduce((total, item) => total + (item.unitPrice * item.quantity), 0);
   const launchedTotal = launchedOrders.reduce((total, order) => total + order.total, 0);
@@ -626,7 +654,7 @@ export default function Home() {
                         <p className="product-category">{tr(product.group)}{product.beerStyle ? ` · ${tr(product.beerStyle)}` : ""}</p>
                         <div className="product-title"><button onClick={() => setSelected(product)}><h3>{tr(product.name)}</h3></button><button className={favorites.includes(product.id) ? "favorite active" : "favorite"} onClick={() => toggleFavorite(product.id)} aria-label={`Guardar ${tr(product.name)}`}><Icon name="heart" size={18}/></button></div>
                         <p>{tr(product.description)}</p>
-                        <div className="product-footer"><span><small>{tr(product.servings ? "Desde" : "Precio demo")}</small><strong>{displayPrice(product.servings ? Math.min(...product.servings.map((serving) => serving.price)) : product.price)}</strong></span><button className="add-to-cart-btn" onClick={(e) => { e.stopPropagation(); if (product.servings) { setSelected(product); } else { setOrderItems(prev => { const key = product.id; const existing = prev.find(i => i.key === key); return existing ? prev.map(i => i.key === key ? {...i, quantity: i.quantity + 1} : i) : [...prev, { key, productId: product.id, name: product.name, image: product.image, unitPrice: product.price, quantity: 1 }]; }); } }}>{product.servings ? tr("Ver detalle") : tr("Añadir al carrito")} <Icon name={product.servings ? "arrow" : "plus"} size={15}/></button></div>
+                        <div className="product-footer">{(() => { const activePromo = activePromoMap.get(product.id); const cardPrice = product.servings ? Math.min(...product.servings.map(s => s.price)) : promoPrice(product); const originalPrice = product.servings ? null : product.price; const hasDiscount = !product.servings && activePromo && cardPrice !== originalPrice; return <span>{hasDiscount && <s className="price-original">{displayPrice(originalPrice!)}</s>}{activePromo?.type === "2x1" && <span className="promo-badge">2×1</span>}<small>{tr(product.servings ? "Desde" : "Precio demo")}</small><strong>{displayPrice(cardPrice)}</strong></span>; })()}<button className="add-to-cart-btn" onClick={(e) => { e.stopPropagation(); if (product.servings) { setSelected(product); } else { const cardUnitPrice = promoPrice(product); setOrderItems(prev => { const key = product.id; const existing = prev.find(i => i.key === key); return existing ? prev.map(i => i.key === key ? {...i, quantity: i.quantity + 1, unitPrice: cardUnitPrice} : i) : [...prev, { key, productId: product.id, name: product.name, image: product.image, unitPrice: cardUnitPrice, quantity: 1 }]; }); } }}>{product.servings ? tr("Ver detalle") : tr("Añadir al carrito")} <Icon name={product.servings ? "arrow" : "plus"} size={15}/></button></div>
                       </div>
                     </article>
                   ))}
@@ -791,7 +819,7 @@ export default function Home() {
                   <b>{displayPrice(serving.price)}</b>
                 </button>)}
               </div>
-            </section> : <div className="single-price"><span>{tr("Precios de muestra")}</span><strong>{displayPrice(selected.price)}</strong></div>}
+            </section> : <div className="single-price">{(() => { const promo = activePromoMap.get(selected.id); const effPrice = promoPrice(selected); return <><span>{tr("Precios de muestra")}</span>{promo && effPrice !== selected.price && <s className="price-original">{displayPrice(selected.price)}</s>}{promo?.type === "2x1" && <span className="promo-badge">2×1</span>}<strong>{displayPrice(effPrice)}</strong></>; })()}</div>}
 
             <section className="nutrition-card" aria-labelledby="nutrition-title">
               <div className="detail-section-heading"><div><p>{tr("INFORMACIÓN NUTRICIONAL")}</p><h3 id="nutrition-title">{tr("Valores nutricionales")}</h3></div><small>{tr(selected.nutrition.basis)}</small></div>

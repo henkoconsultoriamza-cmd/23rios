@@ -30,11 +30,36 @@ export type Product = {
   servings?: { label: string; volume: string; price: number }[];
   eventoMenu?: boolean;
   outOfStock?: boolean;
-  promoType?: "precio" | "2x1" | "porcentaje" | null;
-  promoPrice?: number;
-  promoPercent?: number;
   removableIngredients?: string[];
 };
+
+export type Promo = {
+  id: string;
+  productId: string;
+  type: "precio" | "2x1" | "porcentaje";
+  promoPrice?: number;
+  promoPercent?: number;
+  days: number[];       // 0=Dom 1=Lun … 6=Sab; vacío = todos los días
+  timeStart?: string;   // "18:00"
+  timeEnd?: string;     // "23:00"
+  active: boolean;
+};
+
+export function isPromoActive(promo: Promo): boolean {
+  if (!promo.active) return false;
+  const now = new Date();
+  const day = now.getDay();
+  if (promo.days.length > 0 && !promo.days.includes(day)) return false;
+  if (promo.timeStart && promo.timeEnd) {
+    const cur = now.getHours() * 60 + now.getMinutes();
+    const [sh, sm] = promo.timeStart.split(":").map(Number);
+    const [eh, em] = promo.timeEnd.split(":").map(Number);
+    const start = sh * 60 + sm;
+    const end = eh * 60 + em;
+    if (end > start ? (cur < start || cur >= end) : (cur < start && cur >= end)) return false;
+  }
+  return true;
+}
 
 export type MenuSettings = {
   foodGroups: string[];
@@ -69,6 +94,7 @@ export type AppSettings = {
 export const MENU_PRODUCTS_STORAGE_KEY = "restaurant-template-products-v1";
 export const MENU_SETTINGS_STORAGE_KEY = "restaurant-template-menu-settings-v1";
 export const ADMIN_APP_SETTINGS_KEY = "restaurant-template-app-settings-v1";
+export const PROMOS_STORAGE_KEY = "restaurant-template-promos-v1";
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   businessName: "23 Ríos",

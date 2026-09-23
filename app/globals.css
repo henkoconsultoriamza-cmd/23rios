@@ -926,6 +926,16 @@ textarea, select { font: inherit; }
 .admin-session-info small { color: rgba(255,255,255,.42); font-size: 8px; line-height: 1.4; }
 .admin-session-logout { width: 100%; min-height: 44px; margin-top: 12px; border: 1px solid rgba(58,154,217,.36); border-radius: 11px; background: transparent; color: var(--yellow); font-weight: 800; cursor: pointer; }
 
+.price-original { color: var(--muted); font-size: 11px; text-decoration: line-through; margin-right: 4px; }
+.promo-badge { display: inline-block; background: #e05a3a; color: white; font: 800 10px/1 "Manrope"; padding: 3px 7px; border-radius: 999px; margin-right: 5px; vertical-align: middle; }
+.admin-section-block { margin-bottom: 32px; }
+.admin-section-block-header { margin-bottom: 14px; }
+.admin-section-block-header h3 { font-size: 15px; font-weight: 800; margin: 0 0 3px; }
+.admin-section-block-header p { font-size: 11px; color: var(--muted); margin: 0; }
+.admin-days-selector { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; margin-bottom: 4px; }
+.admin-days-selector button { min-width: 44px; padding: 6px 10px; border: 1px solid #bcb3a5; border-radius: 8px; background: white; font: 700 11px "Manrope"; cursor: pointer; }
+.admin-days-selector button.active { background: #3a9ad9; color: white; border-color: #3a9ad9; }
+.admin-secondary-action { min-height: 38px; padding: 0 18px; border: 1px solid #bcb3a5; border-radius: 10px; background: white; font: 700 12px "Manrope"; cursor: pointer; margin-left: 8px; }
 .event-mode-banner { display: flex; align-items: center; gap: 12px; background: #3a9ad9; color: white; border-radius: 14px; padding: 12px 18px; margin-top: 20px; }
 .event-mode-banner span { font-size: 22px; flex-shrink: 0; }
 .event-mode-banner strong { display: block; font: 800 13px/1 "Manrope"; }

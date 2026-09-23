@@ -12,6 +12,9 @@ import {
   MenuSettings,
   Product,
   mergeDefaultProductImages,
+  Promo,
+  PROMOS_STORAGE_KEY,
+  isPromoActive,
 } from "../menu-data";
 import {
   cloneDefaultPortalSettings,
@@ -99,6 +102,8 @@ export default function AdminPage() {
   const [hydrated, setHydrated] = useState(false);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [bannerDraft, setBannerDraft] = useState<Banner | null>(null);
+  const [promos, setPromos] = useState<Promo[]>([]);
+  const [promoDraft, setPromoDraft] = useState<Promo | null>(null);
   const [analyticsEvents, setAnalyticsEvents] = useState<AnalyticsEvent[]>([]);
   const [dateRange, setDateRange] = useState<DateRange>("7d");
 
@@ -150,6 +155,13 @@ export default function AdminPage() {
         const parsed = JSON.parse(storedBanners) as Banner[];
         if (Array.isArray(parsed)) setBanners(parsed);
       } catch { window.localStorage.removeItem(BANNERS_STORAGE_KEY); }
+    }
+    const storedPromos = window.localStorage.getItem(PROMOS_STORAGE_KEY);
+    if (storedPromos) {
+      try {
+        const parsed = JSON.parse(storedPromos) as Promo[];
+        if (Array.isArray(parsed)) setPromos(parsed);
+      } catch { window.localStorage.removeItem(PROMOS_STORAGE_KEY); }
     }
     setAnalyticsEvents(getStoredEvents());
     if (loadedProducts[0]) {
@@ -512,6 +524,40 @@ export default function AdminPage() {
     persistBanners(next);
   }
 
+  function persistPromos(next: Promo[]) {
+    try {
+      window.localStorage.setItem(PROMOS_STORAGE_KEY, JSON.stringify(next));
+      setPromos(next);
+    } catch { setNotice("No se pudieron guardar las promociones."); }
+  }
+
+  function addPromo() {
+    const promo: Promo = { id: `promo-${Date.now()}`, productId: products[0]?.id ?? "", type: "2x1", days: [], active: true };
+    persistPromos([...promos, promo]);
+    setPromoDraft(promo);
+  }
+
+  function savePromoDraft() {
+    if (!promoDraft) return;
+    persistPromos(promos.map((p) => p.id === promoDraft.id ? promoDraft : p));
+    setNotice("Promoción guardada.");
+  }
+
+  function deletePromo(id: string) {
+    if (!window.confirm("¿Eliminar esta promoción?")) return;
+    persistPromos(promos.filter((p) => p.id !== id));
+    if (promoDraft?.id === id) setPromoDraft(null);
+    setNotice("Promoción eliminada.");
+  }
+
+  function togglePromoActive(id: string) {
+    persistPromos(promos.map((p) => p.id === id ? { ...p, active: !p.active } : p));
+  }
+
+  function updatePromoDraft<K extends keyof Promo>(key: K, value: Promo[K]) {
+    setPromoDraft((prev) => prev ? { ...prev, [key]: value } : prev);
+  }
+
   function refreshAnalytics() {
     setAnalyticsEvents(getStoredEvents());
     setNotice("Datos de analíticas actualizados.");
@@ -721,7 +767,7 @@ export default function AdminPage() {
         <section className="admin-content">
           <div className="admin-heading">
             <div><p>{appSettings.businessName.toLocaleUpperCase("es")} · EXPERIENCIA DIGITAL</p><h1>{tab === "products" ? "Productos del menú" : tab === "filters" ? "Filtros y clasificaciones" : tab === "portal" ? "Portal del restaurante" : tab === "banners" ? "Novedades y banners" : tab === "analytics" ? "Analíticas del menú" : tab === "evento" ? "Menú Evento" : "Ajustes del sistema"}</h1><span>{tab === "products" ? "Editá lo que el cliente ve al abrir cada producto." : tab === "filters" ? "Definí las opciones que aparecen en los filtros y formularios." : tab === "portal" ? "Configurá la portada, los accesos y su orden sin modificar el menú." : tab === "banners" ? "Creá y publicá banners visibles en la carta. El cliente los ve al abrir el menú." : tab === "analytics" ? "Seguimiento de interacciones, conversiones y comportamiento de los clientes." : tab === "evento" ? "Activá la carta reducida para eventos especiales. Solo se muestran los productos marcados." : "Administrá la identidad, los datos del negocio y las credenciales."}</span></div>
-            {tab === "products" ? <button className="admin-primary-action" onClick={() => startNew()}>＋ Nuevo producto</button> : tab === "portal" ? <button className="admin-primary-action" onClick={addPortalAction}>＋ Nuevo acceso</button> : tab === "banners" ? <button className="admin-primary-action" onClick={addBanner}>＋ Nueva novedad</button> : tab === "analytics" ? <button className="admin-primary-action" onClick={refreshAnalytics}>↺ Actualizar</button> : null}
+            {tab === "products" ? <button className="admin-primary-action" onClick={() => startNew()}>＋ Nuevo producto</button> : tab === "portal" ? <button className="admin-primary-action" onClick={addPortalAction}>＋ Nuevo acceso</button> : tab === "banners" ? <><button className="admin-primary-action" onClick={addPromo}>＋ Nueva promoción</button><button className="admin-secondary-action" onClick={addBanner}>＋ Nueva novedad</button></> : tab === "analytics" ? <button className="admin-primary-action" onClick={refreshAnalytics}>↺ Actualizar</button> : null}
           </div>
 
           {(tab === "products" || tab === "evento") && <div className="admin-stats">
@@ -815,21 +861,9 @@ export default function AdminPage() {
               </div>}
 
               <div className="admin-form-section">
-                <div className="admin-section-title"><span>{isCraftBeer ? "07" : "06"}</span><div><h3>Disponibilidad y promoción</h3><p>Controlá el stock y aplicá descuentos visibles en el menú.</p></div></div>
+                <div className="admin-section-title"><span>{isCraftBeer ? "07" : "06"}</span><div><h3>Disponibilidad</h3><p>Controlá si el producto está disponible para pedir.</p></div></div>
                 <div className="admin-promo-stock">
                   <label className="admin-stock-toggle"><input type="checkbox" checked={!!draft.outOfStock} onChange={(e) => updateDraft("outOfStock", e.target.checked)}/><span><strong>Sin stock</strong><small>El producto se muestra como no disponible</small></span><i/></label>
-                  <fieldset className="admin-promo-type">
-                    <legend>Promoción</legend>
-                    <div className="admin-promo-options">
-                      <label className={!draft.promoType ? "selected" : ""}><input type="radio" name="promoType" checked={!draft.promoType} onChange={() => updateDraft("promoType", null)}/><span>Sin promo</span></label>
-                      <label className={draft.promoType === "precio" ? "selected" : ""}><input type="radio" name="promoType" checked={draft.promoType === "precio"} onChange={() => updateDraft("promoType", "precio")}/><span>Precio especial</span></label>
-                      <label className={draft.promoType === "2x1" ? "selected" : ""}><input type="radio" name="promoType" checked={draft.promoType === "2x1"} onChange={() => updateDraft("promoType", "2x1")}/><span>2×1</span></label>
-                      <label className={draft.promoType === "porcentaje" ? "selected" : ""}><input type="radio" name="promoType" checked={draft.promoType === "porcentaje"} onChange={() => updateDraft("promoType", "porcentaje")}/><span>% Off</span></label>
-                    </div>
-                    {draft.promoType === "precio" && <div className="admin-promo-detail"><label>Precio promocional<input type="number" min="0" step="100" value={draft.promoPrice ?? ""} onChange={(e) => updateDraft("promoPrice", Number(e.target.value))} placeholder="0"/></label><small>Se muestra tachando el precio original.</small></div>}
-                    {draft.promoType === "porcentaje" && <div className="admin-promo-detail"><label>Porcentaje de descuento<input type="number" min="1" max="99" value={draft.promoPercent ?? ""} onChange={(e) => updateDraft("promoPercent", Number(e.target.value))} placeholder="20"/></label><small>Ej: 20 → muestra "20% off"</small></div>}
-                    {draft.promoType === "2x1" && <div className="admin-promo-detail"><small>Se mostrará la etiqueta "2×1" sobre el producto.</small></div>}
-                  </fieldset>
                 </div>
               </div>
 
@@ -837,27 +871,79 @@ export default function AdminPage() {
               {!isNew && <div className="admin-editor-actions"><button className="admin-delete" onClick={deleteProduct}>Eliminar producto</button></div>}
             </section>
           </div> : tab === "banners" ? <div className="admin-banners-layout">
-            {banners.length === 0 && <div className="admin-empty-notice"><p>No hay novedades creadas todavía. Creá la primera y se mostrará en el menú del cliente.</p></div>}
-            <div className="admin-banners-list">
-              {banners.map((banner) => <article key={banner.id} className={`admin-banner-card${bannerDraft?.id === banner.id ? " is-editing" : ""}${!banner.visible ? " is-hidden" : ""}`}>
-                <header className="admin-banner-header">
-                  <div><strong>{banner.title || "Sin título"}</strong><small>{banner.visible ? "● Visible en el menú" : "○ Oculta"}</small></div>
-                  <div className="admin-banner-actions">
-                    <button onClick={() => toggleBannerVisible(banner.id)}>{banner.visible ? "Ocultar" : "Publicar"}</button>
-                    <button onClick={() => setBannerDraft(bannerDraft?.id === banner.id ? null : structuredClone(banner))}>Editar</button>
-                    <button className="admin-delete-inline" onClick={() => deleteBanner(banner.id)}>×</button>
-                  </div>
-                </header>
-                {bannerDraft?.id === banner.id && <div className="admin-form-grid admin-banner-form">
-                  <label className="wide">Título<input value={bannerDraft.title} onChange={(e) => updateBannerDraft("title", e.target.value)} placeholder="Ej. Evento especial esta semana"/></label>
-                  <label className="wide">Subtítulo<input value={bannerDraft.subtitle} onChange={(e) => updateBannerDraft("subtitle", e.target.value)} placeholder="Descripción breve (opcional)"/></label>
-                  <label className="wide">URL de imagen<input value={bannerDraft.imageUrl} onChange={(e) => updateBannerDraft("imageUrl", e.target.value)} placeholder="/images/... o https://..."/></label>
-                  <label>Texto del botón<input value={bannerDraft.ctaLabel} onChange={(e) => updateBannerDraft("ctaLabel", e.target.value)}/></label>
-                  <label>Destino del botón<input value={bannerDraft.ctaHref} onChange={(e) => updateBannerDraft("ctaHref", e.target.value)} placeholder="#carta, /portal o https://..."/></label>
-                  <div className="admin-editor-actions wide"><button className="admin-save" onClick={saveBannerDraft}>Guardar novedad</button></div>
-                </div>}
-              </article>)}
+
+            <div className="admin-section-block">
+              <div className="admin-section-block-header"><h3>Promociones programadas</h3><p>Se activan y desactivan solas según el horario. El precio original se restaura automáticamente.</p></div>
+              {promos.length === 0 && <div className="admin-empty-notice"><p>Sin promociones todavía. Usá "＋ Nueva promoción" para crear la primera.</p></div>}
+              <div className="admin-banners-list">
+                {promos.map((promo) => {
+                  const prod = products.find(p => p.id === promo.productId);
+                  const DAY_LABELS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+                  const scheduleLabel = promo.days.length === 0 ? "Todos los días" : promo.days.map(d => DAY_LABELS[d]).join(", ");
+                  const timeLabel = promo.timeStart && promo.timeEnd ? ` · ${promo.timeStart}–${promo.timeEnd}` : "";
+                  const typeLabel = promo.type === "2x1" ? "2×1" : promo.type === "precio" ? `Precio especial $${promo.promoPrice ?? "—"}` : `${promo.promoPercent ?? "—"}% off`;
+                  const currentlyOn = isPromoActive(promo);
+                  return <article key={promo.id} className={`admin-banner-card${promoDraft?.id === promo.id ? " is-editing" : ""}${!promo.active ? " is-hidden" : ""}`}>
+                    <header className="admin-banner-header">
+                      <div>
+                        <strong>{prod?.name ?? "Producto eliminado"} · {typeLabel}</strong>
+                        <small>{promo.active ? (currentlyOn ? "● Activa ahora" : "○ Programada") : "○ Desactivada"} · {scheduleLabel}{timeLabel}</small>
+                      </div>
+                      <div className="admin-banner-actions">
+                        <button onClick={() => togglePromoActive(promo.id)}>{promo.active ? "Desactivar" : "Activar"}</button>
+                        <button onClick={() => setPromoDraft(promoDraft?.id === promo.id ? null : structuredClone(promo))}>Editar</button>
+                        <button className="admin-delete-inline" onClick={() => deletePromo(promo.id)}>×</button>
+                      </div>
+                    </header>
+                    {promoDraft?.id === promo.id && <div className="admin-form-grid admin-banner-form">
+                      <label className="wide">Producto<select value={promoDraft.productId} onChange={(e) => updatePromoDraft("productId", e.target.value)}>{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
+                      <label className="wide">Tipo de promoción
+                        <select value={promoDraft.type} onChange={(e) => updatePromoDraft("type", e.target.value as Promo["type"])}>
+                          <option value="2x1">2×1</option>
+                          <option value="precio">Precio especial</option>
+                          <option value="porcentaje">% Off</option>
+                        </select>
+                      </label>
+                      {promoDraft.type === "precio" && <label>Precio promocional<input type="number" min="0" step="100" value={promoDraft.promoPrice ?? ""} onChange={(e) => updatePromoDraft("promoPrice", Number(e.target.value))} placeholder="0"/></label>}
+                      {promoDraft.type === "porcentaje" && <label>% de descuento<input type="number" min="1" max="99" value={promoDraft.promoPercent ?? ""} onChange={(e) => updatePromoDraft("promoPercent", Number(e.target.value))} placeholder="20"/></label>}
+                      <label className="wide">Días activos
+                        <div className="admin-days-selector">{(["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"] as const).map((label, i) => <button type="button" key={i} className={promoDraft.days.includes(i) ? "active" : ""} onClick={() => updatePromoDraft("days", promoDraft.days.includes(i) ? promoDraft.days.filter(d => d !== i) : [...promoDraft.days, i].sort())}>{label}</button>)}</div>
+                        <small>Sin selección = todos los días</small>
+                      </label>
+                      <label>Hora de inicio<input type="time" value={promoDraft.timeStart ?? ""} onChange={(e) => updatePromoDraft("timeStart", e.target.value || undefined)}/></label>
+                      <label>Hora de fin<input type="time" value={promoDraft.timeEnd ?? ""} onChange={(e) => updatePromoDraft("timeEnd", e.target.value || undefined)}/></label>
+                      <div className="admin-editor-actions wide"><button className="admin-save" onClick={savePromoDraft}>Guardar promoción</button></div>
+                    </div>}
+                  </article>;
+                })}
+              </div>
             </div>
+
+            <div className="admin-section-block">
+              <div className="admin-section-block-header"><h3>Banners de novedades</h3><p>Se muestran en la parte superior del menú del cliente.</p></div>
+              {banners.length === 0 && <div className="admin-empty-notice"><p>No hay novedades creadas todavía.</p></div>}
+              <div className="admin-banners-list">
+                {banners.map((banner) => <article key={banner.id} className={`admin-banner-card${bannerDraft?.id === banner.id ? " is-editing" : ""}${!banner.visible ? " is-hidden" : ""}`}>
+                  <header className="admin-banner-header">
+                    <div><strong>{banner.title || "Sin título"}</strong><small>{banner.visible ? "● Visible en el menú" : "○ Oculta"}</small></div>
+                    <div className="admin-banner-actions">
+                      <button onClick={() => toggleBannerVisible(banner.id)}>{banner.visible ? "Ocultar" : "Publicar"}</button>
+                      <button onClick={() => setBannerDraft(bannerDraft?.id === banner.id ? null : structuredClone(banner))}>Editar</button>
+                      <button className="admin-delete-inline" onClick={() => deleteBanner(banner.id)}>×</button>
+                    </div>
+                  </header>
+                  {bannerDraft?.id === banner.id && <div className="admin-form-grid admin-banner-form">
+                    <label className="wide">Título<input value={bannerDraft.title} onChange={(e) => updateBannerDraft("title", e.target.value)} placeholder="Ej. Evento especial esta semana"/></label>
+                    <label className="wide">Subtítulo<input value={bannerDraft.subtitle} onChange={(e) => updateBannerDraft("subtitle", e.target.value)} placeholder="Descripción breve (opcional)"/></label>
+                    <label className="wide">URL de imagen<input value={bannerDraft.imageUrl} onChange={(e) => updateBannerDraft("imageUrl", e.target.value)} placeholder="/images/... o https://..."/></label>
+                    <label>Texto del botón<input value={bannerDraft.ctaLabel} onChange={(e) => updateBannerDraft("ctaLabel", e.target.value)}/></label>
+                    <label>Destino del botón<input value={bannerDraft.ctaHref} onChange={(e) => updateBannerDraft("ctaHref", e.target.value)} placeholder="#carta, /portal o https://..."/></label>
+                    <div className="admin-editor-actions wide"><button className="admin-save" onClick={saveBannerDraft}>Guardar novedad</button></div>
+                  </div>}
+                </article>)}
+              </div>
+            </div>
+
           </div> : tab === "analytics" ? <div className="admin-analytics">
             <div className="analytics-filter-bar">
               <div className="analytics-date-buttons">
