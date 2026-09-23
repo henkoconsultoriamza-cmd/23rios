@@ -230,7 +230,7 @@ img { display: block; max-width: 100%; }
 .product-group-header::before { content: ""; display: block; width: 4px; height: 22px; background: var(--red); border-radius: 2px; flex-shrink: 0; }
 .product-group-header h3 { margin: 0; font: 400 28px/1 "Lilita One", sans-serif; letter-spacing: .01em; color: var(--ink); }
 .product-group-header:first-child { padding-top: 0; }
-.product-card { min-width: 0; background: #fff; border: 1px solid rgba(26,17,8,.09); border-radius: 18px; overflow: hidden; box-shadow: 0 8px 28px rgba(26,17,8,.08); border-top: 3px solid var(--beer-card-color, rgba(26,17,8,.08)); }
+.product-card { min-width: 0; background: #fff; border: 1px solid rgba(26,17,8,.09); border-radius: 18px; overflow: hidden; box-shadow: 0 8px 28px rgba(26,17,8,.08); border-top: 3px solid var(--beer-card-color, rgba(26,17,8,.08)); position: relative; }
 .product-card[data-style="golden"]       { --beer-card-color: var(--beer-golden); }
 .product-card[data-style="scottish"]     { --beer-card-color: var(--beer-scottish); }
 .product-card[data-style="ipa"]          { --beer-card-color: var(--beer-ipa); }
@@ -825,7 +825,7 @@ textarea, select { font: inherit; }
 .admin-add-ingredient button { min-height: 42px; padding: 0 16px; border: 0; border-radius: 11px; background: var(--ink); color: var(--yellow); font: 800 12px "Manrope"; cursor: pointer; }
 
 /* Botón editar en tarjeta de producto */
-.product-customize-btn { position: absolute !important; bottom: 10px; left: 10px; z-index: 4; background: rgba(0,0,0,.72); color: white; border: 0; border-radius: 999px; padding: 6px 12px; font: 700 11px/1 "Manrope"; cursor: pointer; backdrop-filter: blur(4px); }
+.product-customize-btn { position: absolute; top: 10px; left: 10px; z-index: 4; background: rgba(0,0,0,.72); color: white; border: 0; border-radius: 999px; padding: 7px 13px; font: 700 11px/1 "Manrope"; cursor: pointer; backdrop-filter: blur(4px); }
 
 /* Botón editar en carrito */
 .order-item-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
