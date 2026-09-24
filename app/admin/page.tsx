@@ -767,7 +767,7 @@ export default function AdminPage() {
           <button className={tab === "products" ? "active" : ""} onClick={() => setTab("products")}><span>01</span><div><strong>Productos</strong><small>Fotos, textos y precios</small></div></button>
           <button className={tab === "portal" ? "active" : ""} onClick={() => setTab("portal")}><span>02</span><div><strong>Portal</strong><small>Portada y accesos</small></div></button>
           <button className={tab === "adjustments" ? "active" : ""} onClick={() => setTab("adjustments")}><span>03</span><div><strong>Ajustes</strong><small>Negocio y seguridad</small></div></button>
-          <button className={tab === "banners" ? "active" : ""} onClick={() => setTab("banners")}><span>04</span><div><strong>Novedades</strong><small>Banners y eventos</small></div></button>
+          <button className={tab === "banners" ? "active" : ""} onClick={() => setTab("banners")}><span>04</span><div><strong>Novedades</strong><small>Promociones y banners</small></div></button>
           <button className={tab === "evento" ? "active" : ""} onClick={() => setTab("evento")}><span>05</span><div><strong>Menú Evento</strong><small>Carta reducida para eventos</small></div></button>
           <button className={tab === "analytics" ? "active" : ""} onClick={() => { setTab("analytics"); setAnalyticsEvents(getStoredEvents()); }}><span>06</span><div><strong>Analíticas</strong><small>Métricas del menú</small></div></button>
           <div className="admin-sidebar-note"><strong>Sesión protegida</strong><p>Este acceso funciona en el dispositivo de demostración. En producción se validará desde el servidor y la base de datos.</p></div>
