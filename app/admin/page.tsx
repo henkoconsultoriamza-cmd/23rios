@@ -897,7 +897,7 @@ export default function AdminPage() {
                     <header className="admin-banner-header">
                       <div>
                         <strong>{targetLabel} · {typeLabel}</strong>
-                        <small>{promo.active ? (currentlyOn ? "● Activa ahora" : "○ Programada") : "○ Desactivada"} · {scheduleLabel}{timeLabel}</small>
+                        <small><span className={promo.active ? (currentlyOn ? "promo-status-on" : "promo-status-scheduled") : "promo-status-off"}>{promo.active ? (currentlyOn ? "● Activa ahora" : "○ Programada") : "○ Desactivada"}</span> · {scheduleLabel}{timeLabel}</small>
                       </div>
                       <div className="admin-banner-actions">
                         <button onClick={() => togglePromoActive(promo.id)}>{promo.active ? "Desactivar" : "Activar"}</button>

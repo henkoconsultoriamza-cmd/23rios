@@ -925,6 +925,9 @@ textarea, select { font: inherit; }
 .admin-session-info strong { color: var(--yellow); font: 800 17px "Manrope"; }
 .admin-session-info small { color: rgba(255,255,255,.42); font-size: 8px; line-height: 1.4; }
 .admin-session-logout { width: 100%; min-height: 44px; margin-top: 12px; border: 1px solid rgba(58,154,217,.36); border-radius: 11px; background: transparent; color: var(--yellow); font-weight: 800; cursor: pointer; }
+.promo-status-on { color: #1a9e5c; font-weight: 700; }
+.promo-status-scheduled { color: #b07d00; font-weight: 700; }
+.promo-status-off { color: #d93a3a; font-weight: 700; }
 
 .price-original { color: var(--muted); font-size: 11px; text-decoration: line-through; margin-right: 4px; }
 .promo-badge { display: inline-block; background: #e05a3a; color: white; font: 800 10px/1 "Manrope"; padding: 3px 7px; border-radius: 999px; margin-right: 5px; vertical-align: middle; }
