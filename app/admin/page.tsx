@@ -340,6 +340,8 @@ export default function AdminPage() {
 
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstRender = useRef(true);
+  const promoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bannerSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
@@ -362,6 +364,26 @@ export default function AdminPage() {
     }, 1200);
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
   }, [draft]);
+
+  useEffect(() => {
+    if (!promoDraft) return;
+    if (promoSaveTimer.current) clearTimeout(promoSaveTimer.current);
+    promoSaveTimer.current = setTimeout(() => {
+      const next = promos.map((p) => p.id === promoDraft.id ? promoDraft : p);
+      try { window.localStorage.setItem(PROMOS_STORAGE_KEY, JSON.stringify(next)); setPromos(next); setNotice("Promoción guardada automáticamente ✓"); } catch { /* silencioso */ }
+    }, 1000);
+    return () => { if (promoSaveTimer.current) clearTimeout(promoSaveTimer.current); };
+  }, [promoDraft]);
+
+  useEffect(() => {
+    if (!bannerDraft) return;
+    if (bannerSaveTimer.current) clearTimeout(bannerSaveTimer.current);
+    bannerSaveTimer.current = setTimeout(() => {
+      const next = banners.map((b) => b.id === bannerDraft.id ? bannerDraft : b);
+      try { window.localStorage.setItem(BANNERS_STORAGE_KEY, JSON.stringify(next)); setBanners(next); setNotice("Novedad guardada automáticamente ✓"); } catch { /* silencioso */ }
+    }, 1000);
+    return () => { if (bannerSaveTimer.current) clearTimeout(bannerSaveTimer.current); };
+  }, [bannerDraft]);
 
   function deleteProduct() {
     if (isNew || !selectedId) return;
@@ -504,13 +526,6 @@ export default function AdminPage() {
     setBannerDraft((current) => current ? { ...current, [key]: value } : null);
   }
 
-  function saveBannerDraft() {
-    if (!bannerDraft) return;
-    const next = banners.map((b) => b.id === bannerDraft.id ? bannerDraft : b);
-    persistBanners(next);
-    setNotice("Novedad guardada y publicada en el menú.");
-  }
-
   function deleteBanner(id: string) {
     if (!window.confirm("¿Eliminar esta novedad?")) return;
     const next = banners.filter((b) => b.id !== id);
@@ -535,12 +550,6 @@ export default function AdminPage() {
     const promo: Promo = { id: `promo-${Date.now()}`, productId: products[0]?.id ?? "", type: "2x1", days: [], active: true };
     persistPromos([...promos, promo]);
     setPromoDraft(promo);
-  }
-
-  function savePromoDraft() {
-    if (!promoDraft) return;
-    persistPromos(promos.map((p) => p.id === promoDraft.id ? promoDraft : p));
-    setNotice("Promoción guardada.");
   }
 
   function deletePromo(id: string) {
@@ -912,7 +921,6 @@ export default function AdminPage() {
                       </label>
                       <label>Hora de inicio<input type="time" value={promoDraft.timeStart ?? ""} onChange={(e) => updatePromoDraft("timeStart", e.target.value || undefined)}/></label>
                       <label>Hora de fin<input type="time" value={promoDraft.timeEnd ?? ""} onChange={(e) => updatePromoDraft("timeEnd", e.target.value || undefined)}/></label>
-                      <div className="admin-editor-actions wide"><button className="admin-save" onClick={savePromoDraft}>Guardar promoción</button></div>
                     </div>}
                   </article>;
                 })}
@@ -938,7 +946,6 @@ export default function AdminPage() {
                     <label className="wide">URL de imagen<input value={bannerDraft.imageUrl} onChange={(e) => updateBannerDraft("imageUrl", e.target.value)} placeholder="/images/... o https://..."/></label>
                     <label>Texto del botón<input value={bannerDraft.ctaLabel} onChange={(e) => updateBannerDraft("ctaLabel", e.target.value)}/></label>
                     <label>Destino del botón<input value={bannerDraft.ctaHref} onChange={(e) => updateBannerDraft("ctaHref", e.target.value)} placeholder="#carta, /portal o https://..."/></label>
-                    <div className="admin-editor-actions wide"><button className="admin-save" onClick={saveBannerDraft}>Guardar novedad</button></div>
                   </div>}
                 </article>)}
               </div>
