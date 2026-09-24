@@ -35,7 +35,8 @@ export type Product = {
 
 export type Promo = {
   id: string;
-  productId: string;
+  targetType: "producto" | "grupo" | "categoria";
+  targetValue: string;  // product.id | product.group | product.category
   type: "precio" | "2x1" | "porcentaje";
   promoPrice?: number;
   promoPercent?: number;
@@ -44,6 +45,13 @@ export type Promo = {
   timeEnd?: string;     // "23:00"
   active: boolean;
 };
+
+export function promoMatchesProduct(promo: Promo, product: Product): boolean {
+  if (promo.targetType === "producto") return product.id === promo.targetValue;
+  if (promo.targetType === "grupo") return product.group === promo.targetValue;
+  if (promo.targetType === "categoria") return product.category === promo.targetValue;
+  return false;
+}
 
 export function isPromoActive(promo: Promo): boolean {
   if (!promo.active) return false;
