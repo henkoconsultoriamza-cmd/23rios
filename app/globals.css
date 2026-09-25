@@ -938,7 +938,7 @@ textarea, select { font: inherit; }
 .admin-days-selector { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; margin-bottom: 4px; }
 .admin-days-selector button { min-width: 44px; padding: 6px 10px; border: 1px solid #bcb3a5; border-radius: 8px; background: white; font: 700 11px "Manrope"; cursor: pointer; }
 .admin-days-selector button.active { background: #3a9ad9; color: white; border-color: #3a9ad9; }
-.admin-secondary-action { min-height: 38px; padding: 0 18px; border: 1px solid #bcb3a5; border-radius: 10px; background: white; font: 700 12px "Manrope"; cursor: pointer; margin-left: 8px; }
+.admin-secondary-action { min-height: 46px; padding: 0 20px; border: 1px solid #bcb3a5; border-radius: 12px; background: white; font: 700 13px "Manrope"; cursor: pointer; margin-left: 8px; }
 .event-mode-banner { display: flex; align-items: center; gap: 12px; background: #3a9ad9; color: white; border-radius: 14px; padding: 12px 18px; margin-top: 20px; }
 .event-mode-banner span { font-size: 22px; flex-shrink: 0; }
 .event-mode-banner strong { display: block; font: 800 13px/1 "Manrope"; }
