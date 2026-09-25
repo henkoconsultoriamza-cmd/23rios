@@ -19,6 +19,7 @@ type OrderItem = {
   unitPrice: number;
   quantity: number;
   removedIngredients?: string[];
+  customNote?: string;
 };
 type LaunchedOrder = {
   id: string;
@@ -739,9 +740,9 @@ export default function Home() {
           <div className="order-items">
             {orderItems.map((item) => <article key={item.key}>
               {item.image ? <img src={item.image} alt=""/> : <span className="order-item-placeholder"/>}
-              <div className="order-item-copy"><strong>{tr(item.name)}</strong>{item.serving && <small>{tr(item.serving)} · {item.volume}</small>}{item.removedIngredients?.length ? <small className="removed-ingredients">Sin: {item.removedIngredients.join(", ")}</small> : null}<b>{displayPrice(item.unitPrice)}</b></div>
+              <div className="order-item-copy"><strong>{tr(item.name)}</strong>{item.serving && <small>{tr(item.serving)} · {item.volume}</small>}{item.removedIngredients?.length ? <small className="removed-ingredients">Sin: {item.removedIngredients.join(", ")}</small> : null}{item.customNote ? <small className="removed-ingredients">📝 {item.customNote}</small> : null}<b>{displayPrice(item.unitPrice)}</b></div>
               <div className="order-item-actions">
-                {(() => { const prod = catalogProducts.find(p => p.id === item.productId); return prod?.removableIngredients?.length ? <button className="customize-inline-btn" onClick={() => setCustomizeItemKey(item.key)} disabled={orderStatus === "sent"}>✎</button> : null; })()}
+                {(() => { const prod = catalogProducts.find(p => p.id === item.productId); const hasCocina = prod?.category === "Cocina"; return hasCocina ? <button className="customize-inline-btn" onClick={() => setCustomizeItemKey(item.key)} disabled={orderStatus === "sent"}>✎</button> : null; })()}
                 <div className="quantity-control" aria-label={`Cantidad de ${item.name}`}>
                   <button onClick={() => changeOrderQuantity(item.key, -1)} disabled={orderStatus === "sent"} aria-label={`Quitar una unidad de ${item.name}`}>−</button>
                   <span>{item.quantity}</span>
@@ -765,16 +766,20 @@ export default function Home() {
         const prod = item ? catalogProducts.find(p => p.id === item.productId) : null;
         const ingredients = prod?.removableIngredients ?? [];
         const removed = item?.removedIngredients ?? [];
+        const customNote = item?.customNote ?? "";
         const toggle = (ing: string) => setOrderItems(prev => prev.map(i => i.key === customizeItemKey ? { ...i, removedIngredients: removed.includes(ing) ? removed.filter(r => r !== ing) : [...removed, ing] } : i));
+        const setNote = (note: string) => setOrderItems(prev => prev.map(i => i.key === customizeItemKey ? { ...i, customNote: note } : i));
         return <div className="overlay" onMouseDown={() => setCustomizeItemKey(null)}>
           <section className="customize-dialog" role="dialog" aria-modal="true" onMouseDown={e => e.stopPropagation()}>
             <button className="modal-close light" onClick={() => setCustomizeItemKey(null)} aria-label="Cerrar"><Icon name="close"/></button>
             <p className="eyebrow">PERSONALIZAR PEDIDO</p>
-            <h2>{tr(item?.name ?? "")}</h2>
-            {ingredients.length > 0
-              ? <><p className="customize-hint">Tocá lo que querés sacar del plato.</p><div className="customize-ingredient-list">{ingredients.map(ing => <button key={ing} className={removed.includes(ing) ? "ingredient-chip removed" : "ingredient-chip"} onClick={() => toggle(ing)}>{removed.includes(ing) ? <span>✕</span> : <span>✓</span>}{ing}</button>)}</div></>
-              : <p className="customize-hint">Este producto todavía no tiene ingredientes editables configurados.</p>
-            }
+            <h2>{tr(item?.name ?? "")}{item?.serving ? <small> · {item.serving}</small> : ""}</h2>
+            {ingredients.length > 0 && <>
+              <p className="customize-hint">Tocá lo que querés sacar del plato.</p>
+              <div className="customize-ingredient-list">{ingredients.map(ing => <button key={ing} className={removed.includes(ing) ? "ingredient-chip removed" : "ingredient-chip"} onClick={() => toggle(ing)}>{removed.includes(ing) ? <span>✕</span> : <span>✓</span>}{ing}</button>)}</div>
+            </>}
+            <p className="customize-hint" style={{marginTop: ingredients.length ? 16 : 0}}>¿Algo más que querés aclarar al cocinero?</p>
+            <textarea className="customize-note" rows={3} value={customNote} onChange={e => setNote(e.target.value)} placeholder="Ej: sin sal, punto bien cocido, alergia a los mariscos…"/>
             {removed.length > 0 && <p className="customize-summary">Sin: {removed.join(", ")}</p>}
             <button className="customize-confirm" onClick={() => setCustomizeItemKey(null)}>Listo</button>
           </section>
