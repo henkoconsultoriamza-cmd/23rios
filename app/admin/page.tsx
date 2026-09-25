@@ -353,6 +353,8 @@ export default function AdminPage() {
   const promoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bannerSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const eventSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const settingsSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFirstSettingsRender = useRef(true);
 
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
@@ -405,6 +407,15 @@ export default function AdminPage() {
     }, 1000);
     return () => { if (eventSaveTimer.current) clearTimeout(eventSaveTimer.current); };
   }, [eventDraft]);
+
+  useEffect(() => {
+    if (isFirstSettingsRender.current) { isFirstSettingsRender.current = false; return; }
+    if (settingsSaveTimer.current) clearTimeout(settingsSaveTimer.current);
+    settingsSaveTimer.current = setTimeout(() => {
+      try { window.localStorage.setItem(ADMIN_APP_SETTINGS_KEY, JSON.stringify(appSettings)); setNotice("Ajustes guardados automáticamente ✓"); } catch { /* silencioso */ }
+    }, 1000);
+    return () => { if (settingsSaveTimer.current) clearTimeout(settingsSaveTimer.current); };
+  }, [appSettings]);
 
   function deleteProduct() {
     if (isNew || !selectedId) return;
@@ -673,14 +684,6 @@ export default function AdminPage() {
     reader.readAsDataURL(file);
   }
 
-  function saveAppSettings() {
-    try {
-      window.localStorage.setItem(ADMIN_APP_SETTINGS_KEY, JSON.stringify(appSettings));
-      setNotice("Los ajustes generales quedaron guardados.");
-    } catch {
-      setNotice("No se pudieron guardar los ajustes generales.");
-    }
-  }
 
   function updatePortalSetting<K extends keyof PortalSettings>(key: K, value: PortalSettings[K]) {
     setPortalSettings((current) => ({ ...current, [key]: value }));
@@ -976,7 +979,7 @@ export default function AdminPage() {
                       </label>
                       <label>Hora de inicio<input type="time" value={promoDraft.timeStart ?? ""} onChange={(e) => updatePromoDraft("timeStart", e.target.value || undefined)}/></label>
                       <label>Hora de fin<input type="time" value={promoDraft.timeEnd ?? ""} onChange={(e) => updatePromoDraft("timeEnd", e.target.value || undefined)}/></label>
-                      <div className="wide"><button className="admin-save" style={{width:"100%"}} onClick={() => setPromoDraft(null)}>Listo ✓</button></div>
+                      <div className="wide"><button className="admin-save" onClick={() => setPromoDraft(null)}>Listo ✓</button></div>
                     </div>}
                   </article>;
                 })}
@@ -1004,10 +1007,14 @@ export default function AdminPage() {
                     <label className="wide">Subtítulo / descripción<input value={eventDraft.subtitle ?? ""} onChange={(e) => updateEventDraft("subtitle", e.target.value || undefined)} placeholder="Descripción breve (opcional)"/></label>
                     <label>Fecha<input type="date" value={eventDraft.date ?? ""} onChange={(e) => updateEventDraft("date", e.target.value || undefined)}/></label>
                     <label>Hora<input type="time" value={eventDraft.time ?? ""} onChange={(e) => updateEventDraft("time", e.target.value || undefined)}/></label>
-                    <label className="wide">URL de imagen del banner<input value={eventDraft.imageUrl ?? ""} onChange={(e) => updateEventDraft("imageUrl", e.target.value || undefined)} placeholder="/images/... o https://..."/></label>
+                    <div className="wide admin-event-image-field">
+                      {eventDraft.imageUrl && <img src={eventDraft.imageUrl} alt="Preview" className="admin-event-image-preview"/>}
+                      <label className="admin-upload" style={{marginBottom:6}}>Subir imagen desde el dispositivo<input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; if (file.size > 1_500_000) { setNotice("La imagen debe pesar menos de 1,5 MB."); e.target.value = ""; return; } const reader = new FileReader(); reader.onload = () => { if (typeof reader.result === "string") updateEventDraft("imageUrl", reader.result); }; reader.readAsDataURL(file); }}/></label>
+                      <label>O pegá una URL<input value={typeof eventDraft.imageUrl === "string" && eventDraft.imageUrl.startsWith("data:") ? "" : (eventDraft.imageUrl ?? "")} onChange={(e) => updateEventDraft("imageUrl", e.target.value || undefined)} placeholder="https://..."/></label>
+                    </div>
                     <label>Texto del botón<input value={eventDraft.ctaLabel ?? ""} onChange={(e) => updateEventDraft("ctaLabel", e.target.value || undefined)} placeholder="Ej. Reservar lugar"/></label>
                     <label>Destino del botón<input value={eventDraft.ctaHref ?? ""} onChange={(e) => updateEventDraft("ctaHref", e.target.value || undefined)} placeholder="#carta, /portal o https://..."/></label>
-                    <div className="wide"><button className="admin-save" style={{width:"100%"}} onClick={() => setEventDraft(null)}>Listo ✓</button></div>
+                    <div className="wide" style={{textAlign:"right"}}><button className="admin-save" onClick={() => setEventDraft(null)}>Listo ✓</button></div>
                   </div>}
                 </article>)}
               </div>
@@ -1144,7 +1151,6 @@ export default function AdminPage() {
               <div className="admin-toggle-list">
                 <label><span><strong>Menú evento activo</strong><small>{appSettings.eventModeActive ? "Los clientes ven la carta reducida de evento." : "Los clientes ven el menú completo."}</small></span><input type="checkbox" checked={appSettings.eventModeActive} onChange={(e) => updateAppSetting("eventModeActive", e.target.checked)}/><i/></label>
               </div>
-              <div className="admin-adjustment-actions"><button onClick={saveAppSettings}>Guardar y aplicar</button></div>
             </article>
 
             <article className="admin-adjustment-card">
@@ -1246,7 +1252,6 @@ export default function AdminPage() {
                 <label>Moneda<select value={appSettings.currency} onChange={(event) => updateAppSetting("currency", event.target.value as AppSettings["currency"])}><option value="ARS">Peso argentino · ARS</option><option value="USD">Dólar · USD</option><option value="BRL">Real · BRL</option></select></label>
                 <label>Idioma inicial<select value={appSettings.defaultLanguage} onChange={(event) => updateAppSetting("defaultLanguage", event.target.value)}><option value="es">Español</option><option value="pt">Português</option><option value="en">English</option><option value="fr">Français</option><option value="it">Italiano</option><option value="de">Deutsch</option></select></label>
               </div>
-              <div className="admin-adjustment-actions"><button onClick={saveAppSettings}>Guardar información</button></div>
             </article>
 
 
@@ -1256,7 +1261,6 @@ export default function AdminPage() {
                 <label className="wide">Token secreto del QR<input value={appSettings.orderToken} onChange={(event) => updateAppSetting("orderToken", event.target.value)} placeholder="Ej. r10s2026 — letras y números, sin espacios"/></label>
                 {appSettings.orderToken && <div className="admin-token-preview"><small>URL de ejemplo para imprimir en el QR:</small><code>{typeof window !== "undefined" ? window.location.origin : "https://menu.23rios.com"}/?t={appSettings.orderToken}</code></div>}
               </div>
-              <div className="admin-adjustment-actions"><button onClick={saveAppSettings}>Guardar token</button></div>
             </article>
 
             <article className="admin-adjustment-card admin-security-card">
