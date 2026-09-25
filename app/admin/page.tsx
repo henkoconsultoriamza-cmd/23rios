@@ -24,6 +24,7 @@ import {
 } from "../portal-data";
 import { AnalyticsEvent, ANALYTICS_STORAGE_KEY, clearStoredEvents, getStoredEvents } from "../analytics";
 import { Banner, BANNERS_STORAGE_KEY } from "../banner-data";
+import { EventItem, EVENTS_STORAGE_KEY } from "../event-data";
 
 type SettingsKey = keyof MenuSettings;
 type AdminTab = "products" | "filters" | "portal" | "adjustments" | "analytics" | "banners" | "evento";
@@ -104,6 +105,8 @@ export default function AdminPage() {
   const [bannerDraft, setBannerDraft] = useState<Banner | null>(null);
   const [promos, setPromos] = useState<Promo[]>([]);
   const [promoDraft, setPromoDraft] = useState<Promo | null>(null);
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [eventDraft, setEventDraft] = useState<EventItem | null>(null);
   const [analyticsEvents, setAnalyticsEvents] = useState<AnalyticsEvent[]>([]);
   const [dateRange, setDateRange] = useState<DateRange>("7d");
 
@@ -162,6 +165,13 @@ export default function AdminPage() {
         const parsed = JSON.parse(storedPromos) as Promo[];
         if (Array.isArray(parsed)) setPromos(parsed);
       } catch { window.localStorage.removeItem(PROMOS_STORAGE_KEY); }
+    }
+    const storedEvents = window.localStorage.getItem(EVENTS_STORAGE_KEY);
+    if (storedEvents) {
+      try {
+        const parsed = JSON.parse(storedEvents) as EventItem[];
+        if (Array.isArray(parsed)) setEvents(parsed);
+      } catch { window.localStorage.removeItem(EVENTS_STORAGE_KEY); }
     }
     setAnalyticsEvents(getStoredEvents());
     if (loadedProducts[0]) {
@@ -342,6 +352,7 @@ export default function AdminPage() {
   const isFirstRender = useRef(true);
   const promoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bannerSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const eventSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
@@ -384,6 +395,16 @@ export default function AdminPage() {
     }, 1000);
     return () => { if (bannerSaveTimer.current) clearTimeout(bannerSaveTimer.current); };
   }, [bannerDraft]);
+
+  useEffect(() => {
+    if (!eventDraft) return;
+    if (eventSaveTimer.current) clearTimeout(eventSaveTimer.current);
+    eventSaveTimer.current = setTimeout(() => {
+      const next = events.map((e) => e.id === eventDraft.id ? eventDraft : e);
+      try { window.localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(next)); setEvents(next); setNotice("Evento guardado automáticamente ✓"); } catch { /* silencioso */ }
+    }, 1000);
+    return () => { if (eventSaveTimer.current) clearTimeout(eventSaveTimer.current); };
+  }, [eventDraft]);
 
   function deleteProduct() {
     if (isNew || !selectedId) return;
@@ -565,6 +586,30 @@ export default function AdminPage() {
 
   function updatePromoDraft<K extends keyof Promo>(key: K, value: Promo[K]) {
     setPromoDraft((prev) => prev ? { ...prev, [key]: value } : prev);
+  }
+
+  function persistEvents(next: EventItem[]) {
+    try { window.localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(next)); setEvents(next); } catch { setNotice("No se pudieron guardar los eventos."); }
+  }
+
+  function addEvent() {
+    const ev: EventItem = { id: `event-${Date.now()}`, title: "Nuevo evento", active: true };
+    persistEvents([...events, ev]);
+    setEventDraft(ev);
+  }
+
+  function deleteEvent(id: string) {
+    if (!window.confirm("¿Eliminar este evento?")) return;
+    persistEvents(events.filter((e) => e.id !== id));
+    if (eventDraft?.id === id) setEventDraft(null);
+  }
+
+  function toggleEventActive(id: string) {
+    persistEvents(events.map((e) => e.id === id ? { ...e, active: !e.active } : e));
+  }
+
+  function updateEventDraft<K extends keyof EventItem>(key: K, value: EventItem[K]) {
+    setEventDraft((prev) => prev ? { ...prev, [key]: value } : prev);
   }
 
   function refreshAnalytics() {
@@ -776,7 +821,7 @@ export default function AdminPage() {
         <section className="admin-content">
           <div className="admin-heading">
             <div><p>{appSettings.businessName.toLocaleUpperCase("es")} · EXPERIENCIA DIGITAL</p><h1>{tab === "products" ? "Productos del menú" : tab === "filters" ? "Filtros y clasificaciones" : tab === "portal" ? "Portal del restaurante" : tab === "banners" ? "Novedades y banners" : tab === "analytics" ? "Analíticas del menú" : tab === "evento" ? "Menú Evento" : "Ajustes del sistema"}</h1><span>{tab === "products" ? "Editá lo que el cliente ve al abrir cada producto." : tab === "filters" ? "Definí las opciones que aparecen en los filtros y formularios." : tab === "portal" ? "Configurá la portada, los accesos y su orden sin modificar el menú." : tab === "banners" ? "Creá y publicá banners visibles en la carta. El cliente los ve al abrir el menú." : tab === "analytics" ? "Seguimiento de interacciones, conversiones y comportamiento de los clientes." : tab === "evento" ? "Activá la carta reducida para eventos especiales. Solo se muestran los productos marcados." : "Administrá la identidad, los datos del negocio y las credenciales."}</span></div>
-            {tab === "products" ? <button className="admin-primary-action" onClick={() => startNew()}>＋ Nuevo producto</button> : tab === "portal" ? <button className="admin-primary-action" onClick={addPortalAction}>＋ Nuevo acceso</button> : tab === "banners" ? <><button className="admin-primary-action" onClick={addPromo}>＋ Nueva promoción</button><button className="admin-secondary-action" onClick={addBanner}>＋ Nueva novedad</button></> : tab === "analytics" ? <button className="admin-primary-action" onClick={refreshAnalytics}>↺ Actualizar</button> : null}
+            {tab === "products" ? <button className="admin-primary-action" onClick={() => startNew()}>＋ Nuevo producto</button> : tab === "portal" ? <button className="admin-primary-action" onClick={addPortalAction}>＋ Nuevo acceso</button> : tab === "banners" ? <><button className="admin-primary-action" onClick={addPromo}>＋ Nueva promoción</button><button className="admin-secondary-action" onClick={addEvent}>＋ Nuevo evento</button><button className="admin-secondary-action" onClick={addBanner}>＋ Nuevo banner</button></> : tab === "analytics" ? <button className="admin-primary-action" onClick={refreshAnalytics}>↺ Actualizar</button> : null}
           </div>
 
           {(tab === "products" || tab === "evento") && <div className="admin-stats">
@@ -935,6 +980,36 @@ export default function AdminPage() {
                     </div>}
                   </article>;
                 })}
+              </div>
+            </div>
+
+            <div className="admin-section-block">
+              <div className="admin-section-block-header"><h3>Eventos</h3><p>Cada evento activo muestra su banner al pie del menú del cliente.</p></div>
+              {events.length === 0 && <div className="admin-empty-notice"><p>Sin eventos todavía. Usá "＋ Nuevo evento" para crear el primero.</p></div>}
+              <div className="admin-banners-list">
+                {events.map((ev) => <article key={ev.id} className={`admin-banner-card${eventDraft?.id === ev.id ? " is-editing" : ""}${!ev.active ? " is-hidden" : ""}`}>
+                  <header className="admin-banner-header">
+                    <div>
+                      <strong>{ev.title || "Sin título"}</strong>
+                      <small>{ev.active ? "● Visible en el menú" : "○ Oculto"}{ev.date ? ` · ${ev.date}` : ""}{ev.time ? ` ${ev.time}` : ""}</small>
+                    </div>
+                    <div className="admin-banner-actions">
+                      <button onClick={() => toggleEventActive(ev.id)}>{ev.active ? "Ocultar" : "Publicar"}</button>
+                      <button onClick={() => setEventDraft(eventDraft?.id === ev.id ? null : structuredClone(ev))}>Editar</button>
+                      <button className="admin-delete-inline" onClick={() => deleteEvent(ev.id)}>×</button>
+                    </div>
+                  </header>
+                  {eventDraft?.id === ev.id && <div className="admin-form-grid admin-banner-form">
+                    <label className="wide">Título del evento<input value={eventDraft.title} onChange={(e) => updateEventDraft("title", e.target.value)} placeholder="Ej. Noche de Jazz en 23 Ríos"/></label>
+                    <label className="wide">Subtítulo / descripción<input value={eventDraft.subtitle ?? ""} onChange={(e) => updateEventDraft("subtitle", e.target.value || undefined)} placeholder="Descripción breve (opcional)"/></label>
+                    <label>Fecha<input type="date" value={eventDraft.date ?? ""} onChange={(e) => updateEventDraft("date", e.target.value || undefined)}/></label>
+                    <label>Hora<input type="time" value={eventDraft.time ?? ""} onChange={(e) => updateEventDraft("time", e.target.value || undefined)}/></label>
+                    <label className="wide">URL de imagen del banner<input value={eventDraft.imageUrl ?? ""} onChange={(e) => updateEventDraft("imageUrl", e.target.value || undefined)} placeholder="/images/... o https://..."/></label>
+                    <label>Texto del botón<input value={eventDraft.ctaLabel ?? ""} onChange={(e) => updateEventDraft("ctaLabel", e.target.value || undefined)} placeholder="Ej. Reservar lugar"/></label>
+                    <label>Destino del botón<input value={eventDraft.ctaHref ?? ""} onChange={(e) => updateEventDraft("ctaHref", e.target.value || undefined)} placeholder="#carta, /portal o https://..."/></label>
+                    <div className="wide"><button className="admin-save" style={{width:"100%"}} onClick={() => setEventDraft(null)}>Listo ✓</button></div>
+                  </div>}
+                </article>)}
               </div>
             </div>
 

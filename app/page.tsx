@@ -5,6 +5,7 @@ import { Language, languageOptions, translate } from "./translations";
 import { ADMIN_APP_SETTINGS_KEY, AppSettings, DEFAULT_APP_SETTINGS, DEFAULT_MENU_SETTINGS, DEFAULT_PRODUCTS, MENU_PRODUCTS_STORAGE_KEY, MENU_SETTINGS_STORAGE_KEY, MenuSettings, Product, mergeDefaultProductImages, Promo, PROMOS_STORAGE_KEY, isPromoActive, promoMatchesProduct } from "./menu-data";
 import { trackEvent } from "./analytics";
 import { Banner, BANNERS_STORAGE_KEY, DEFAULT_BANNERS } from "./banner-data";
+import { EventItem, EVENTS_STORAGE_KEY } from "./event-data";
 
 type Message = { id: number; role: "assistant" | "user"; text: string };
 type OrderStatus = "idle" | "draft" | "sent";
@@ -152,6 +153,7 @@ export default function Home() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [banners, setBanners] = useState<Banner[]>(DEFAULT_BANNERS);
   const [promos, setPromos] = useState<Promo[]>([]);
+  const [events, setEvents] = useState<EventItem[]>([]);
   const [urlToken] = useState<string>(() => {
     if (typeof window === "undefined") return "";
     return new URLSearchParams(window.location.search).get("t") ?? "";
@@ -243,6 +245,13 @@ export default function Home() {
         if (Array.isArray(parsed)) setPromos(parsed);
       } catch { window.localStorage.removeItem(PROMOS_STORAGE_KEY); }
     }
+    const savedEvents = window.localStorage.getItem(EVENTS_STORAGE_KEY);
+    if (savedEvents) {
+      try {
+        const parsed = JSON.parse(savedEvents) as EventItem[];
+        if (Array.isArray(parsed)) setEvents(parsed);
+      } catch { window.localStorage.removeItem(EVENTS_STORAGE_KEY); }
+    }
     setOrderHydrated(true);
     trackEvent("session_start");
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).then((registration) => registration.update()).catch(() => undefined);
@@ -299,6 +308,9 @@ export default function Home() {
       }
       if (event.key === PROMOS_STORAGE_KEY && event.newValue) {
         try { setPromos(JSON.parse(event.newValue) as Promo[]); } catch { /* Ignore malformed external data. */ }
+      }
+      if (event.key === EVENTS_STORAGE_KEY && event.newValue) {
+        try { setEvents(JSON.parse(event.newValue) as EventItem[]); } catch { /* Ignore malformed external data. */ }
       }
     }
     window.addEventListener("storage", syncAdminChanges);
@@ -663,24 +675,25 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="events-banner">
-        <div className="events-banner-poster"><img src={events[0].image} alt={`Cena especial en ${brandName}`}/><span>{events[0].date}</span></div>
-        <div className="events-banner-copy"><p className="eyebrow">EXPERIENCIAS EN {brandName.toLocaleUpperCase("es")}</p><h2>La mesa también es un encuentro.</h2><p>Cenas especiales, degustaciones y propuestas de temporada para descubrir la cocina de otra manera.</p><div><span>EVENTO DESTACADO</span><strong>{events[0].title} · {events[0].time}</strong></div></div>
-        <button onClick={() => { setEventsOpen(true); trackEvent("events_open"); }}>{tr("Ver eventos")} <Icon name="arrow" size={18}/></button>
-      </section>
+      {events.filter(e => e.active).length > 0 && <section className="events-banner">
+        <div className="events-banner-poster">{events.filter(e => e.active)[0].imageUrl && <img src={events.filter(e => e.active)[0].imageUrl} alt={`Evento en ${brandName}`}/>}<span>{events.filter(e => e.active)[0].date}</span></div>
+        <div className="events-banner-copy"><p className="eyebrow">EXPERIENCIAS EN {brandName.toLocaleUpperCase("es")}</p><h2>{events.filter(e => e.active)[0].title}</h2>{events.filter(e => e.active)[0].subtitle && <p>{events.filter(e => e.active)[0].subtitle}</p>}{events.filter(e => e.active)[0].time && <div><span>EVENTO DESTACADO</span><strong>{events.filter(e => e.active)[0].title} · {events.filter(e => e.active)[0].time}</strong></div>}</div>
+        <button onClick={() => setEventsOpen(true)}>{tr("Ver eventos")} <Icon name="arrow" size={18}/></button>
+      </section>}
 
       <footer><img src={logoUrl} alt={brandName}/><p>{brandName} · {appSettings.brandTagline} · La mesa se confirma al lanzar el pedido.</p></footer>
 
       {eventsOpen && <div className="overlay" onMouseDown={() => setEventsOpen(false)}>
-        <section className="events-panel" role="dialog" aria-modal="true" aria-labelledby="events-title" onMouseDown={(event) => event.stopPropagation()}>
+        <section className="events-panel" role="dialog" aria-modal="true" aria-labelledby="events-title" onMouseDown={(e) => e.stopPropagation()}>
           <header className="events-panel-header"><div><p>AGENDA · {brandName.toLocaleUpperCase("es")}</p><h2 id="events-title">{tr("Agenda de eventos")}</h2><span>Conocé las próximas experiencias del restaurante.</span></div><button onClick={() => setEventsOpen(false)} aria-label="Cerrar agenda"><Icon name="close"/></button></header>
           <div className="events-list">
-            {events.map((event) => <article key={event.id}>
-              <div className="event-poster"><img src={event.image} alt={`Flyer de ${event.title}`}/></div>
+            {events.filter(e => e.active).map((ev) => <article key={ev.id}>
+              {ev.imageUrl && <div className="event-poster"><img src={ev.imageUrl} alt={ev.title}/></div>}
               <div className="event-information">
-                <div className="event-date-line"><span><b>{event.date}</b>{event.time}</span><small>{event.place}</small></div>
-                <p>EVENTO DESTACADO</p><h3>{event.title}</h3><strong className="event-admission">{tr(event.admission)}</strong><p className="event-description">{event.description}</p>
-                <div className="event-highlights">{event.highlights.map((highlight) => <span key={highlight}>• {highlight}</span>)}</div>
+                <div className="event-date-line"><span><b>{ev.date}</b>{ev.date && ev.time ? " · " : ""}{ev.time}</span></div>
+                <h3>{ev.title}</h3>
+                {ev.subtitle && <p className="event-description">{ev.subtitle}</p>}
+                {ev.ctaLabel && ev.ctaHref && <a className="event-cta" href={ev.ctaHref} target="_blank" rel="noopener noreferrer">{ev.ctaLabel}</a>}
               </div>
             </article>)}
             <div className="events-coming-soon"><span>＋</span><div><strong>{tr("Más eventos próximamente")}</strong><p>{tr("La agenda está preparada para incorporar todas las fechas de cada mes.")}</p></div></div>

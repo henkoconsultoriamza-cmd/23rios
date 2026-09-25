@@ -1160,6 +1160,17 @@ textarea, select { font: inherit; }
   .analytics-bar-chart { gap: 3px; }
 }
 
+.events-section { display: flex; flex-direction: column; gap: 16px; padding: 0 16px 24px; }
+.event-banner-card { display: flex; gap: 16px; align-items: flex-start; background: #1a1612; border-radius: 18px; overflow: hidden; }
+.event-banner-image { flex-shrink: 0; width: 120px; }
+.event-banner-image img { width: 120px; height: 120px; object-fit: cover; display: block; }
+.event-banner-body { flex: 1; padding: 16px 16px 16px 0; }
+.event-banner-eyebrow { font: 700 9px/1 "Manrope"; letter-spacing: .12em; color: #c47c2a; margin: 0 0 6px; }
+.event-banner-title { font: 800 16px/1.2 "Manrope"; color: #fff; margin: 0 0 4px; }
+.event-banner-subtitle { font: 400 12px/1.4 "Manrope"; color: rgba(255,255,255,.65); margin: 0 0 6px; }
+.event-banner-meta { font: 600 11px/1 "Manrope"; color: rgba(255,255,255,.5); margin: 0 0 10px; }
+.event-banner-cta { display: inline-block; background: #c47c2a; color: #fff; font: 700 11px/1 "Manrope"; padding: 7px 14px; border-radius: 999px; text-decoration: none; }
+
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
 }
