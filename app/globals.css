@@ -1163,6 +1163,9 @@ textarea, select { font: inherit; }
   .analytics-bar-chart { gap: 3px; }
 }
 
+.cart-qty-badge { display: inline-flex; align-items: center; justify-content: center; background: var(--ink); color: white; font: 800 11px/1 "Manrope"; width: 20px; height: 20px; border-radius: 50%; margin-right: 5px; }
+.customize-hint-msg { font: 600 12px/1.4 "Manrope"; color: #c03a2a; background: #fdf0ee; border-radius: 10px; padding: 8px 12px; margin: 0; text-align: center; }
+
 .admin-event-image-field { display: flex; flex-direction: column; gap: 8px; }
 .admin-event-image-preview { width: 100%; max-height: 160px; object-fit: cover; border-radius: 10px; }
 
