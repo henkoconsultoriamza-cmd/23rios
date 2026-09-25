@@ -148,7 +148,6 @@ export default function Home() {
   const [guestCountDraft, setGuestCountDraft] = useState("");
   const [billRequested, setBillRequested] = useState(false);
   const [customizeItemKey, setCustomizeItemKey] = useState<string | null>(null);
-  const [customizeHint, setCustomizeHint] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [eventsOpen, setEventsOpen] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -659,7 +658,6 @@ export default function Home() {
                         {product.image ? <img className={product.id === "filet-numa" ? "filet-numa-image" : undefined} src={product.image} alt={`${tr(product.name)} · ${brandName}`} /> : <span className="photo-pending"><Icon name="expand" size={20}/><strong>{tr("Foto real pendiente")}</strong></span>}
                         <span className="product-tag">{product.tag}</span>
                         <span className="expand-label"><Icon name="expand" size={14}/> {tr("Ver detalle")}</span>
-                        {product.category === "Cocina" && <span className="product-customize-btn" onClick={(e) => { e.stopPropagation(); setSelected(product); }}>{tr("Le quiero sacar...")}</span>}
                       </button>
                       <div className="product-info">
                         <p className="product-category">{tr(product.group)}{product.beerStyle ? ` · ${tr(product.beerStyle)}` : ""}</p>
@@ -869,24 +867,15 @@ export default function Home() {
             <div className="validation-note"><strong>{tr("Información provisional")}</strong><span>{language === "es" ? selected.note : tr("Información pendiente de validación con la carta oficial.")} {tr("Los precios y valores nutricionales mostrados son demostrativos.")}</span></div>
             {(() => {
               const modalKey = selectedServingOption ? `${selected.id}:${selectedServingOption.label}` : selected.id;
-              const cartItemsForProduct = orderItems.filter(i => i.productId === selected.id);
               const modalItem = orderItems.find(i => i.key === modalKey);
-              const openCustomize = (key: string) => { setCustomizeHint(false); setCustomizeItemKey(key); };
-              const handleSacar = () => { if (cartItemsForProduct.length === 0) { setCustomizeHint(true); } else if (cartItemsForProduct.length === 1) { openCustomize(cartItemsForProduct[0].key); } else { setCustomizeHint(false); setCustomizeItemKey(cartItemsForProduct[0].key); } };
               if (orderStatus === "sent") {
                 return <button className="order-button locked" disabled><Icon name="receipt" size={19}/><span>{tr("PEDIDO LANZADO")}</span></button>;
               }
               if (modalItem && modalItem.quantity > 0) {
-                return <>
-                  {selected.category === "Cocina" && <button className="customize-modal-btn" onClick={handleSacar}>{tr("Le quiero sacar...")}</button>}
-                  {customizeHint && <p className="customize-hint-msg">Primero agregá el producto al carrito para poder personalizarlo.</p>}
-                  <div className="modal-quantity-control"><button onClick={() => changeOrderQuantity(modalKey, -1)} aria-label="Quitar uno">−</button><span>{modalItem.quantity} en el pedido</span><button onClick={() => changeOrderQuantity(modalKey, 1)} aria-label="Agregar uno">+</button></div>
-                </>;
+                return <div className="modal-quantity-control"><button onClick={() => changeOrderQuantity(modalKey, -1)} aria-label="Quitar uno">−</button><span>{modalItem.quantity} en el pedido</span><button onClick={() => changeOrderQuantity(modalKey, 1)} aria-label="Agregar uno">+</button></div>;
               }
               return <>
-                {selected.category === "Cocina" && <button className="customize-modal-btn" onClick={handleSacar}>{tr("Le quiero sacar...")}</button>}
-                {customizeHint && <p className="customize-hint-msg">Primero agregá el producto al carrito para poder personalizarlo.</p>}
-                <button className="order-button" onClick={() => { setCustomizeHint(false); addSelectedToOrder(); }}><Icon name="plus" size={19}/><span>{tr("Agregar al carrito")} · {displayPrice(selectedPrice)}</span></button>
+                <button className="order-button" onClick={addSelectedToOrder}><Icon name="plus" size={19}/><span>{tr("Agregar al carrito")} · {displayPrice(selectedPrice)}</span></button>
               </>;
             })()}
             <section className="cross-sell" aria-labelledby="cross-sell-title">
