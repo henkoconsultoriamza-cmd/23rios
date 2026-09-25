@@ -868,13 +868,24 @@ export default function Home() {
             {(() => {
               const modalKey = selectedServingOption ? `${selected.id}:${selectedServingOption.label}` : selected.id;
               const modalItem = orderItems.find(i => i.key === modalKey);
+              const openCustomize = () => {
+                if (!modalItem) {
+                  setOrderItems(prev => [...prev, { key: modalKey, productId: selected.id, name: selected.name, image: selected.image, unitPrice: selectedPrice, quantity: 1 }]);
+                  setOrderStatus("draft");
+                }
+                setCustomizeItemKey(modalKey);
+              };
               if (orderStatus === "sent") {
                 return <button className="order-button locked" disabled><Icon name="receipt" size={19}/><span>{tr("PEDIDO LANZADO")}</span></button>;
               }
               if (modalItem && modalItem.quantity > 0) {
-                return <div className="modal-quantity-control"><button onClick={() => changeOrderQuantity(modalKey, -1)} aria-label="Quitar uno">−</button><span>{modalItem.quantity} en el pedido</span><button onClick={() => changeOrderQuantity(modalKey, 1)} aria-label="Agregar uno">+</button></div>;
+                return <>
+                  {selected.category === "Cocina" && <button className="customize-modal-btn" onClick={openCustomize}>{tr("Le quiero sacar...")}</button>}
+                  <div className="modal-quantity-control"><button onClick={() => changeOrderQuantity(modalKey, -1)} aria-label="Quitar uno">−</button><span>{modalItem.quantity} en el pedido</span><button onClick={() => changeOrderQuantity(modalKey, 1)} aria-label="Agregar uno">+</button></div>
+                </>;
               }
               return <>
+                {selected.category === "Cocina" && <button className="customize-modal-btn" onClick={openCustomize}>{tr("Le quiero sacar...")}</button>}
                 <button className="order-button" onClick={addSelectedToOrder}><Icon name="plus" size={19}/><span>{tr("Agregar al carrito")} · {displayPrice(selectedPrice)}</span></button>
               </>;
             })()}
