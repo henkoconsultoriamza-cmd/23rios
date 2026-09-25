@@ -1168,6 +1168,9 @@ textarea, select { font: inherit; }
 
 .admin-event-image-field { display: flex; flex-direction: column; gap: 8px; }
 .admin-event-image-preview { width: 100%; max-height: 160px; object-fit: cover; border-radius: 10px; }
+.admin-upload-slim { display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 16px; border: 1.5px dashed #c8bfb0; border-radius: 10px; background: white; color: #6d665b; font: 700 12px "Manrope"; cursor: pointer; width: fit-content; }
+.admin-upload-slim:hover { border-color: #9b8e7e; color: var(--ink); }
+.admin-upload-slim input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 
 .events-section { display: flex; flex-direction: column; gap: 16px; padding: 0 16px 24px; }
 .event-banner-card { display: flex; gap: 16px; align-items: flex-start; background: #1a1612; border-radius: 18px; overflow: hidden; }
