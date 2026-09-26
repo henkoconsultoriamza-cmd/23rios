@@ -1045,8 +1045,8 @@ export default function AdminPage() {
                       <div className="admin-image-url-divider">o pegá una URL</div>
                       <input value={typeof bannerDraft.imageUrl === "string" && bannerDraft.imageUrl.startsWith("data:") ? "" : (bannerDraft.imageUrl ?? "")} onChange={(e) => updateBannerDraft("imageUrl", e.target.value)} placeholder="https://..."/>
                     </div>
-                    <label>Texto del botón<input value={bannerDraft.ctaLabel} onChange={(e) => updateBannerDraft("ctaLabel", e.target.value)}/></label>
-                    <label>Destino del botón<input value={bannerDraft.ctaHref} onChange={(e) => updateBannerDraft("ctaHref", e.target.value)} placeholder="#carta, /portal o https://..."/></label>
+                    <label className="wide">Texto del botón<input value={bannerDraft.ctaLabel} onChange={(e) => updateBannerDraft("ctaLabel", e.target.value)}/></label>
+                    <label className="wide">Destino del botón<input value={bannerDraft.ctaHref} onChange={(e) => updateBannerDraft("ctaHref", e.target.value)} placeholder="#carta, /portal o https://..."/></label>
                   </div>}
                 </article>)}
               </div>
