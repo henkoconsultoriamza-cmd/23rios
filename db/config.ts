@@ -109,14 +109,15 @@ export async function clearAnalyticsEvents(): Promise<void> {
   await supabase.from("analytics_events").delete().neq("id", "");
 }
 
-// ── Storage: subir imagen al bucket menu-images ──────────────────
+// ── Storage: subir imagen vía endpoint seguro del servidor ────────
 export async function uploadImage(file: File, folder: string): Promise<string> {
-  const ext = file.name.split(".").pop() ?? "jpg";
-  const path = `${folder}/${Date.now()}.${ext}`;
-  const { error } = await supabase.storage.from("menu-images").upload(path, file, { upsert: true, contentType: file.type });
-  if (error) throw new Error(error.message);
-  const { data } = supabase.storage.from("menu-images").getPublicUrl(path);
-  return data.publicUrl;
+  const form = new FormData();
+  form.append("file", file);
+  form.append("folder", folder);
+  const res = await fetch("/api/upload", { method: "POST", body: form });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error ?? "Error al subir la imagen.");
+  return json.url as string;
 }
 
 // ── Realtime: suscribirse a cambios en restaurant_config ─────────
