@@ -239,8 +239,9 @@ export default function AdminPage() {
     return products.filter((product) => (categoryFilter === "Todos" || product.category === categoryFilter) && (!term || `${product.name} ${product.group}`.toLocaleLowerCase("es").includes(term)));
   }, [categoryFilter, products, query]);
 
-  const foodCount = products.filter((product) => product.category === "Cocina").length;
-  const drinkCount = products.length - foodCount;
+  const publishedProducts = products.filter((product) => !product.outOfStock);
+  const foodCount = publishedProducts.filter((product) => product.category === "Cocina").length;
+  const drinkCount = publishedProducts.length - foodCount;
 
   const analyticsData = useMemo(() => {
     const now = new Date();
@@ -877,7 +878,7 @@ export default function AdminPage() {
           </div>
 
           {(tab === "products" || tab === "evento") && <div className="admin-stats">
-            <article><small>TOTAL PUBLICADOS</small><strong>{products.length}</strong><span>productos</span></article>
+            <article><small>TOTAL PUBLICADOS</small><strong>{publishedProducts.length}</strong><span>de {products.length}</span></article>
             <article><small>COMIDAS</small><strong>{foodCount}</strong><span>platos</span></article>
             <article><small>BEBIDAS</small><strong>{drinkCount}</strong><span>opciones</span></article>
             <article className="admin-notice"><small>ESTADO</small><p>{notice}</p></article>
