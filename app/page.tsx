@@ -118,6 +118,47 @@ function BannerCard({ banner }: { banner: Banner }) {
   );
 }
 
+function EventsBannerSlider({ events, brandName, onOpen, tr }: { events: EventItem[]; brandName: string; onOpen: () => void; tr: (k: string) => string }) {
+  const [current, setCurrent] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (events.length <= 1) return;
+    const timer = setInterval(() => setCurrent(i => (i + 1) % events.length), 4000);
+    return () => clearInterval(timer);
+  }, [events.length]);
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) setCurrent(i => diff > 0 ? (i + 1) % events.length : (i - 1 + events.length) % events.length);
+    touchStartX.current = null;
+  }
+
+  const ev = events[current];
+  return (
+    <section className="events-banner" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+      <div className="events-banner-track" style={{ transform: `translateX(-${current * 100}%)` }}>
+        {events.map((e) => (
+          <div key={e.id} className="events-banner-poster">
+            {e.imageUrl && <img src={e.imageUrl} alt={`Evento en ${brandName}`}/>}
+          </div>
+        ))}
+      </div>
+      {events.length > 1 && (
+        <div className="events-banner-dots">
+          {events.map((_, i) => <button key={i} className={i === current ? "active" : ""} onClick={() => setCurrent(i)} aria-label={`Evento ${i + 1}`}/>)}
+        </div>
+      )}
+      <button className="events-banner-cta" onClick={onOpen}>{tr("Ver eventos")} <Icon name="arrow" size={18}/></button>
+    </section>
+  );
+}
+
 export default function Home() {
   const [catalogProducts, setCatalogProducts] = useState<Product[]>(DEFAULT_PRODUCTS);
   const [menuSettings, setMenuSettings] = useState<MenuSettings>(DEFAULT_MENU_SETTINGS);
@@ -641,10 +682,11 @@ export default function Home() {
         </div>
       </section>
 
-      {events.filter(e => e.active).length > 0 && <section className="events-banner">
-        <div className="events-banner-poster">{events.filter(e => e.active)[0].imageUrl && <img src={events.filter(e => e.active)[0].imageUrl} alt={`Evento en ${brandName}`}/>}</div>
-        <button onClick={() => setEventsOpen(true)}>{tr("Ver eventos")} <Icon name="arrow" size={18}/></button>
-      </section>}
+      {(() => {
+        const activeEvents = events.filter(e => e.active);
+        if (!activeEvents.length) return null;
+        return <EventsBannerSlider events={activeEvents} brandName={brandName} onOpen={() => setEventsOpen(true)} tr={tr} />;
+      })()}
 
       <footer><img src={logoUrl} alt={brandName}/><p>{brandName} · {appSettings.brandTagline} · La mesa se confirma al lanzar el pedido.</p></footer>
 
