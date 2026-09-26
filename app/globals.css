@@ -448,6 +448,9 @@ footer img { width: 80px; height: 58px; object-fit: contain; mix-blend-mode: scr
 .launched-order-total { padding-top: 12px; border-top: 2px solid var(--ink); display: flex; align-items: center; justify-content: space-between; gap: 15px; }
 .launched-order-total span { color: var(--muted); font-size: 9px; }
 .launched-order-total strong { font: 800 18px "Manrope"; }
+.launched-order-per-person { margin-top: 8px; padding: 8px 12px; background: #f0f7ff; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+.launched-order-per-person span { color: #3a7abf; font: 600 11px "Manrope"; }
+.launched-order-per-person strong { font: 800 15px "Manrope"; color: #3a7abf; }
 .history-empty { padding: 55px 28px 40px; text-align: center; }
 .history-empty > span { width: 58px; height: 58px; margin: 0 auto 17px; border-radius: 50%; background: #e5dccd; color: #8e6c18; display: grid; place-items: center; }
 .history-empty h3 { margin: 0 0 7px; font: 800 20px "Manrope"; }
