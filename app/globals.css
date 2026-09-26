@@ -380,7 +380,7 @@ footer img { width: 80px; height: 58px; object-fit: contain; mix-blend-mode: scr
 .single-price { margin: 24px 0; padding: 17px 0; background: transparent; color: var(--ink); border-top: 1px solid #b9ad99; border-bottom: 1px solid #b9ad99; display: flex; align-items: center; justify-content: space-between; gap: 15px; }
 .single-price span { color: #8a7964; font-size: 8px; font-weight: 800; letter-spacing: .12em; }
 .single-price strong { color: #2a9a6e; font: 800 23px "Manrope"; }
-.nutrition-card { margin: 28px 0; padding: 22px 0 0; border: 0; border-top: 1px solid #b9ad99; background: transparent; color: var(--ink); }
+.nutrition-card { margin: 28px 0; padding: 22px 0 0; border: 0; background: transparent; color: var(--ink); }
 .nutrition-card .detail-section-heading p { color: #2a9a6e; }
 .nutrition-card .detail-section-heading h3 { color: var(--ink); }
 .nutrition-card .detail-section-heading > small { color: #7a7367; }
