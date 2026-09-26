@@ -470,7 +470,7 @@ export default function AdminPage() {
   function deleteProduct() {
     if (isNew || !selectedId) return;
     const current = products.find((product) => product.id === selectedId);
-    if (!current || !window.confirm(`¿Eliminar “${current.name}” del menú?`)) return;
+    if (!current || !window.confirm(`¿Eliminar "${current.name}" del menú?`)) return;
     const next = products.filter((product) => product.id !== selectedId).map((product) => ({ ...product, relatedIds: product.relatedIds.filter((id) => id !== selectedId) }));
     if (!persistProducts(next)) return;
     const following = next[0];
@@ -563,13 +563,13 @@ export default function AdminPage() {
     const value = newOptions[key]?.trim();
     if (!value || settings[key].some((item) => item.toLocaleLowerCase("es") === value.toLocaleLowerCase("es"))) return;
     const next = { ...settings, [key]: [...settings[key], value] };
-    saveSettings(next, `Se agregó “${value}”. Ya puede asignarse a productos.`);
+    saveSettings(next, `Se agregó "${value}". Ya puede asignarse a productos.`);
     setNewOptions((current) => ({ ...current, [key]: "" }));
   }
 
   function removeOption(key: SettingsKey, value: string) {
     const next = { ...settings, [key]: settings[key].filter((item) => item !== value) };
-    saveSettings(next, `Se quitó “${value}” de las opciones disponibles.`);
+    saveSettings(next, `Se quitó "${value}" de las opciones disponibles.`);
   }
 
   function readCredentials(): AdminCredentials | null {
@@ -770,7 +770,7 @@ export default function AdminPage() {
   }
 
   function removePortalAction(action: PortalAction) {
-    if (!window.confirm(`¿Eliminar el acceso “${action.label}”?`)) return;
+    if (!window.confirm(`¿Eliminar el acceso "${action.label}"?`)) return;
     setPortalSettings((current) => ({ ...current, actions: current.actions.filter((item) => item.id !== action.id) }));
     setNotice("Acceso eliminado. Falta guardar el portal.");
   }
@@ -953,12 +953,12 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className=”admin-form-section”>
-                <div className=”admin-section-title”><span>{isCraftBeer ? “05” : “04”}</span><div><h3>Venta relacionada</h3><p>Elegí qué productos mostrar en “Se puede acompañar con”.</p></div></div>
+              <div className="admin-form-section">
+                <div className="admin-section-title"><span>{isCraftBeer ? "05" : "04"}</span><div><h3>Venta relacionada</h3><p>Elegí qué productos mostrar en "Se puede acompañar con".</p></div></div>
                 <RelatedPicker
                   all={products.filter((p) => p.id !== selectedId)}
                   selected={draft.relatedIds}
-                  onToggle={(id) => toggleDraftList(“relatedIds”, id)}
+                  onToggle={(id) => toggleDraftList("relatedIds", id)}
                 />
               </div>
 
