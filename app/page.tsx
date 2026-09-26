@@ -697,8 +697,8 @@ export default function Home() {
             {events.filter(e => e.active).map((ev) => <article key={ev.id}>
               {ev.imageUrl && <div className="event-poster"><img src={ev.imageUrl} alt={ev.title}/></div>}
               <div className="event-information">
-                <div className="event-date-line"><span><b>{ev.date}</b>{ev.date && ev.time ? " · " : ""}{ev.time}</span></div>
                 <h3>{ev.title}</h3>
+                {(ev.date || ev.time) && <p className="event-date-text">{ev.date}{ev.date && ev.time ? " · " : ""}{ev.time}</p>}
                 {ev.subtitle && <p className="event-description">{ev.subtitle}</p>}
                 {ev.ctaLabel && ev.ctaHref && <a className="event-cta" href={ev.ctaHref} target="_blank" rel="noopener noreferrer">{ev.ctaLabel}</a>}
               </div>
