@@ -364,9 +364,9 @@ footer img { width: 80px; height: 58px; object-fit: contain; mix-blend-mode: scr
 .beer-metrics small { color: #8a8278; font-size: 9px; line-height: 1.35; }
 .beer-metrics strong { color: #1a1612; font: 400 22px/1 "Bebas Neue", sans-serif; letter-spacing: .04em; flex-shrink: 0; }
 .detail-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 15px; margin-bottom: 12px; }
-.detail-section-heading p { margin: 0 0 3px; color: #2a9a6e; font-size: 8px; font-weight: 800; letter-spacing: .14em; }
-.detail-section-heading h3 { margin: 0; font: 800 17px/1.2 "Manrope"; letter-spacing: -.02em; }
-.detail-section-heading > small { color: #7a7367; font-size: 9px; text-align: right; }
+.detail-section-heading p { margin: 0 0 3px; color: #2a9a6e; font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+.detail-section-heading h3 { margin: 0; font: 800 19px/1.2 "Manrope"; letter-spacing: -.02em; }
+.detail-section-heading > small { color: #7a7367; font-size: 11px; text-align: right; }
 .serving-selector { margin: 24px 0; }
 .serving-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 18px; }
 .serving-options button { min-width: 0; min-height: 70px; padding: 10px 0 12px; border: 0; border-bottom: 1px solid #c9c0b1; background: transparent; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 8px; text-align: left; cursor: pointer; }
@@ -378,7 +378,7 @@ footer img { width: 80px; height: 58px; object-fit: contain; mix-blend-mode: scr
 .serving-options b { color: #2a9a6e; font: 800 13px/1 "Manrope"; }
 .serving-options button.active b { color: #2a9a6e; }
 .single-price { margin: 24px 0; padding: 17px 0; background: transparent; color: var(--ink); border-top: 1px solid #b9ad99; border-bottom: 1px solid #b9ad99; display: flex; align-items: center; justify-content: space-between; gap: 15px; }
-.single-price span { color: #8a7964; font-size: 8px; font-weight: 800; letter-spacing: .12em; }
+.single-price span { color: #8a7964; font-size: 11px; font-weight: 800; letter-spacing: .10em; }
 .single-price strong { color: #2a9a6e; font: 800 23px "Manrope"; }
 .nutrition-card { margin: 28px 0; padding: 22px 0 0; border: 0; background: transparent; color: var(--ink); }
 .nutrition-card .detail-section-heading p { color: #2a9a6e; }
@@ -386,12 +386,12 @@ footer img { width: 80px; height: 58px; object-fit: contain; mix-blend-mode: scr
 .nutrition-card .detail-section-heading > small { color: #7a7367; }
 .nutrition-card dl { margin: 0; }
 .nutrition-card dl > div { display: flex; justify-content: space-between; gap: 15px; padding: 7px 0; border-bottom: 1px solid var(--line); }
-.nutrition-card dt, .nutrition-card dd { margin: 0; font-size: 11px; }
+.nutrition-card dt, .nutrition-card dd { margin: 0; font-size: 13px; }
 .nutrition-card dd { color: var(--ink); font-weight: 800; }
 .allergen-summary { padding-top: 15px; text-align: left; }
-.allergen-summary > strong { display: block; margin-bottom: 9px; color: #2a9a6e; font: 800 12px "Manrope"; }
+.allergen-summary > strong { display: block; margin-bottom: 9px; color: #2a9a6e; font: 800 13px "Manrope"; }
 .allergen-summary > div { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 9px 15px; }
-.allergen-summary .allergen-item { padding: 0; border: 0; color: #6d685d; display: inline-flex; align-items: center; gap: 6px; font-size: 9px; }
+.allergen-summary .allergen-item { padding: 0; border: 0; color: #6d685d; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
 .allergen-item i { width: 23px; height: 23px; border-radius: 50%; background: #eee2bd; display: grid; place-items: center; font-size: 12px; font-style: normal; line-height: 1; }
 .allergen-item.allergen-free i { background: #dce9dd; color: #27633a; font-size: 11px; font-weight: 800; }
 .order-button { width: 100%; min-height: 52px; padding: 12px 16px; border: 0; border-radius: 12px; background: var(--yellow); color: var(--ink); display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 800; cursor: pointer; }

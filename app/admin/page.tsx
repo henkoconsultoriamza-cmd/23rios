@@ -1012,7 +1012,7 @@ export default function AdminPage() {
                     </div>
                     <label className="wide">Texto del botón<input value={eventDraft.ctaLabel ?? ""} onChange={(e) => updateEventDraft("ctaLabel", e.target.value || undefined)} placeholder="Ej. Reservar lugar"/></label>
                     <label className="wide">Destino del botón<input value={eventDraft.ctaHref ?? ""} onChange={(e) => updateEventDraft("ctaHref", e.target.value || undefined)} placeholder="#carta, /portal o https://..."/></label>
-                    <div className="wide" style={{textAlign:"right"}}><button className="admin-save" onClick={() => setEventDraft(null)}>Listo ✓</button></div>
+                    <div className="wide"><button className="admin-save" onClick={() => setEventDraft(null)}>Listo ✓</button></div>
                   </div>}
                 </article>)}
               </div>
@@ -1042,6 +1042,7 @@ export default function AdminPage() {
                     </div>
                     <label className="wide">Texto del botón<input value={bannerDraft.ctaLabel} onChange={(e) => updateBannerDraft("ctaLabel", e.target.value)}/></label>
                     <label className="wide">Destino del botón<input value={bannerDraft.ctaHref} onChange={(e) => updateBannerDraft("ctaHref", e.target.value)} placeholder="#carta, /portal o https://..."/></label>
+                    <div className="wide"><button className="admin-save" onClick={() => setBannerDraft(null)}>Listo ✓</button></div>
                   </div>}
                 </article>)}
               </div>
