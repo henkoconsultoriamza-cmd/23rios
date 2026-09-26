@@ -118,6 +118,42 @@ function BannerCard({ banner }: { banner: Banner }) {
   );
 }
 
+function NovedadesSlider({ banners }: { banners: Banner[] }) {
+  const [current, setCurrent] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const timer = setInterval(() => setCurrent(i => (i + 1) % banners.length), 5000);
+    return () => clearInterval(timer);
+  }, [banners.length]);
+
+  function handleTouchStart(e: React.TouchEvent) { touchStartX.current = e.touches[0].clientX; }
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) setCurrent(i => diff > 0 ? (i + 1) % banners.length : (i - 1 + banners.length) % banners.length);
+    touchStartX.current = null;
+  }
+
+  return (
+    <section className="novedades-slider" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+      <div className="novedades-slider-track" style={{ transform: `translateX(-${current * 100}%)` }}>
+        {banners.map((b) => <BannerCard key={b.id} banner={b} />)}
+      </div>
+      {banners.length > 1 && (
+        <>
+          <button className="novedades-slider-arrow novedades-slider-arrow-prev" onClick={() => setCurrent(i => (i - 1 + banners.length) % banners.length)} aria-label="Anterior">&#8249;</button>
+          <button className="novedades-slider-arrow novedades-slider-arrow-next" onClick={() => setCurrent(i => (i + 1) % banners.length)} aria-label="Siguiente">&#8250;</button>
+          <div className="novedades-slider-dots">
+            {banners.map((_, i) => <button key={i} className={i === current ? "active" : ""} onClick={() => setCurrent(i)} aria-label={`Banner ${i + 1}`}/>)}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
 function EventsBannerSlider({ events, brandName, onOpen, tr }: { events: EventItem[]; brandName: string; onOpen: () => void; tr: (k: string) => string }) {
   const [current, setCurrent] = useState(0);
   const touchStartX = useRef<number | null>(null);
@@ -608,11 +644,7 @@ export default function Home() {
       </section>
 
       {banners.filter((b) => b.visible).length > 0 && (
-        <section className="novedades-strip">
-          {banners.filter((b) => b.visible).map((banner) => (
-            <BannerCard key={banner.id} banner={banner} />
-          ))}
-        </section>
+        <NovedadesSlider banners={banners.filter((b) => b.visible)} />
       )}
 
 
