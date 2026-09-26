@@ -741,7 +741,10 @@ export default function Home() {
                 <h3>{ev.title}</h3>
                 {(ev.date || ev.time) && <p className="event-date-text">{ev.date}{ev.date && ev.time ? " · " : ""}{ev.time}</p>}
                 {ev.subtitle && <p className="event-description">{ev.subtitle}</p>}
-                {ev.ctaLabel && ev.ctaHref && <a className="event-cta" href={ev.ctaHref} target="_blank" rel="noopener noreferrer">{ev.ctaLabel}</a>}
+                {ev.ctaLabel && (ev.ctaHref
+                  ? <a className="event-cta" href={ev.ctaHref} target="_blank" rel="noopener noreferrer">{ev.ctaLabel}</a>
+                  : <span className="event-cta">{ev.ctaLabel}</span>
+                )}
               </div>
             </article>)}
             <div className="events-coming-soon"><span>＋</span><div><strong>{tr("Más eventos próximamente")}</strong><p>{tr("La agenda está preparada para incorporar todas las fechas de cada mes.")}</p></div></div>

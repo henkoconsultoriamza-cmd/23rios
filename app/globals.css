@@ -313,6 +313,8 @@ footer img { width: 80px; height: 58px; object-fit: contain; mix-blend-mode: scr
 .event-date-text { margin: 0 0 12px; color: #625a4d; font: 600 15px/1 "Manrope"; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
 .event-admission { color: #815e0e; font-size: 10px; text-transform: uppercase; }
 .event-description { max-width: 510px; margin: 14px 0 !important; color: var(--muted); font-size: 11px; line-height: 1.55; }
+.event-cta { display: inline-block; margin-top: 14px; background: var(--red, #c0392b); color: white; font: 800 13px/1 "Manrope", Arial, sans-serif; padding: 11px 20px; border-radius: 999px; text-decoration: none; white-space: nowrap; transition: filter .2s; }
+.event-cta:hover { filter: brightness(1.12); }
 .event-highlights { display: flex; flex-wrap: wrap; gap: 6px 11px; }
 .event-highlights span { color: #4f4a41; font-size: 9px; }
 .events-coming-soon { padding: 17px 20px; border: 1px dashed #bcb2a2; border-radius: 16px; display: flex; align-items: center; gap: 13px; }
