@@ -264,6 +264,7 @@ img { display: block; max-width: 100%; }
 .product-footer > span strong { color: var(--ink); font: 800 16px/1 "Manrope"; }
 .product-footer button { border: 0; background: transparent; color: var(--yellow); padding: 5px 0; font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 8px; cursor: pointer; }
 
+.events-section-heading { padding: 0 clamp(22px, 6vw, 96px) 24px; }
 .events-banner { background: #171713; color: var(--ink); margin: 0 clamp(22px, 6vw, 96px) 80px; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; position: relative; }
 .events-banner-track { display: flex; transition: transform .45s cubic-bezier(.4,0,.2,1); will-change: transform; }
 .events-banner-poster { flex: 0 0 100%; width: 100%; background: #171713; }
@@ -589,6 +590,7 @@ footer img { width: 80px; height: 58px; object-fit: contain; mix-blend-mode: scr
   .novedades-strip { margin: 0; gap: 0; }
   .novedad-card { height: auto; padding: 0; }
   .novedad-img { height: auto; }
+  .events-section-heading { padding: 0 20px 18px; }
   .events-banner { margin: 0 0 60px; border-radius: 0; }
   .events-banner-poster img { height: 56vw; min-height: 220px; }
   .events-banner-cta { min-height: 52px; font-size: 15px; }

@@ -685,7 +685,12 @@ export default function Home() {
       {(() => {
         const activeEvents = events.filter(e => e.active);
         if (!activeEvents.length) return null;
-        return <EventsBannerSlider events={activeEvents} brandName={brandName} onOpen={() => setEventsOpen(true)} tr={tr} />;
+        return <>
+          <div className="events-section-heading">
+            <p className="eyebrow dark">{tr("Eventos")}</p>
+          </div>
+          <EventsBannerSlider events={activeEvents} brandName={brandName} onOpen={() => setEventsOpen(true)} tr={tr} />
+        </>;
       })()}
 
       <footer><img src={logoUrl} alt={brandName}/><p>{brandName} · {appSettings.brandTagline} · La mesa se confirma al lanzar el pedido.</p></footer>
