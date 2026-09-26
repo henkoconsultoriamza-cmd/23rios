@@ -774,8 +774,7 @@ textarea, select { font: inherit; }
 .admin-editor-title p { margin: 0 0 4px; color: var(--yellow); font-size: 7px; font-weight: 800; letter-spacing: .15em; }
 .admin-editor-title h2 { margin: 0; font: 800 23px/1.15 "Manrope"; }
 .admin-editor-title > span { padding: 7px 10px; border-radius: 999px; background: rgba(58,154,217,.12); color: var(--yellow); font-size: 11px; font-weight: 800; }
-.admin-photo-editor { padding: 22px 24px; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 170px 1fr; gap: 20px; align-items: center; }
-.admin-photo-editor > div { height: 145px; border-radius: 16px; overflow: hidden; background: #27241d; display: grid; place-items: center; color: rgba(255,255,255,.42); font-size: 10px; }
+.admin-photo-editor { padding: 22px 24px; border-bottom: 1px solid var(--line); }
 .admin-photo-editor img { width: 100%; height: 100%; object-fit: cover; }
 .admin-photo-editor > section { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 9px; }
 .admin-photo-editor label:not(.admin-upload) { width: 100%; display: flex; flex-direction: column; gap: 6px; color: #6d665b; font-size: 11px; font-weight: 700; }
@@ -1079,8 +1078,7 @@ textarea, select { font: inherit; }
   .admin-product-row img, .admin-image-placeholder { width: 52px; height: 50px; }
   .admin-editor-title { padding: 19px 16px; }
   .admin-editor-title h2 { font-size: 20px; }
-  .admin-photo-editor { padding: 17px 16px; grid-template-columns: 105px 1fr; gap: 12px; }
-  .admin-photo-editor > div { height: 110px; }
+  .admin-photo-editor { padding: 17px 16px; }
   .admin-form-section { padding: 21px 16px; }
   .admin-form-grid, .admin-check-groups, .nutrition-admin-grid { grid-template-columns: 1fr; }
   .admin-form-grid label.wide { grid-column: auto; }
