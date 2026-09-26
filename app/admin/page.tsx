@@ -1039,7 +1039,12 @@ export default function AdminPage() {
                   {bannerDraft?.id === banner.id && <div className="admin-form-grid admin-banner-form">
                     <label className="wide">Título<input value={bannerDraft.title} onChange={(e) => updateBannerDraft("title", e.target.value)} placeholder="Ej. Evento especial esta semana"/></label>
                     <label className="wide">Subtítulo<input value={bannerDraft.subtitle} onChange={(e) => updateBannerDraft("subtitle", e.target.value)} placeholder="Descripción breve (opcional)"/></label>
-                    <label className="wide">URL de imagen<input value={bannerDraft.imageUrl} onChange={(e) => updateBannerDraft("imageUrl", e.target.value)} placeholder="/images/... o https://..."/></label>
+                    <div className="wide admin-event-image-field">
+                      {bannerDraft.imageUrl && <img src={bannerDraft.imageUrl} alt="Preview" className="admin-event-image-preview"/>}
+                      <label className="admin-upload-slim">Subir imagen desde el dispositivo (1200 × 480 px)<input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; if (file.size > 1_500_000) { setNotice("La imagen debe pesar menos de 1,5 MB."); e.target.value = ""; return; } const reader = new FileReader(); reader.onload = () => { if (typeof reader.result === "string") updateBannerDraft("imageUrl", reader.result); }; reader.readAsDataURL(file); }}/></label>
+                      <div className="admin-image-url-divider">o pegá una URL</div>
+                      <input value={typeof bannerDraft.imageUrl === "string" && bannerDraft.imageUrl.startsWith("data:") ? "" : (bannerDraft.imageUrl ?? "")} onChange={(e) => updateBannerDraft("imageUrl", e.target.value)} placeholder="https://..."/>
+                    </div>
                     <label>Texto del botón<input value={bannerDraft.ctaLabel} onChange={(e) => updateBannerDraft("ctaLabel", e.target.value)}/></label>
                     <label>Destino del botón<input value={bannerDraft.ctaHref} onChange={(e) => updateBannerDraft("ctaHref", e.target.value)} placeholder="#carta, /portal o https://..."/></label>
                   </div>}
