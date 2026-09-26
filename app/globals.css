@@ -1188,11 +1188,15 @@ textarea, select { font: inherit; }
 .cart-qty-badge { display: inline-flex; align-items: center; justify-content: center; background: var(--ink); color: white; font: 800 11px/1 "Manrope"; width: 20px; height: 20px; border-radius: 50%; margin-right: 5px; }
 .customize-hint-msg { font: 600 12px/1.4 "Manrope"; color: #c03a2a; background: #fdf0ee; border-radius: 10px; padding: 8px 12px; margin: 0; text-align: center; }
 
-.admin-event-image-field { display: flex; flex-direction: column; gap: 8px; }
-.admin-event-image-preview { width: 100%; max-height: 160px; object-fit: cover; border-radius: 10px; }
-.admin-upload-slim { display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 16px; border: 1.5px dashed #c8bfb0; border-radius: 10px; background: white; color: #6d665b; font: 700 12px "Manrope"; cursor: pointer; width: fit-content; }
-.admin-upload-slim:hover { border-color: #9b8e7e; color: var(--ink); }
+.admin-event-image-field { display: flex; flex-direction: column; gap: 10px; }
+.admin-event-image-preview { width: 100%; max-height: 180px; object-fit: cover; border-radius: 12px; border: 1px solid #e0d9cf; }
+.admin-upload-slim { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 20px 16px; border: 2px dashed #d0c8bc; border-radius: 14px; background: #faf8f5; color: #7a7268; font: 700 12px/1 "Manrope"; cursor: pointer; text-align: center; transition: border-color .15s, background .15s; box-sizing: border-box; }
+.admin-upload-slim::before { content: "↑"; font-size: 22px; font-weight: 300; color: #b0a898; line-height: 1; }
+.admin-upload-slim:hover { border-color: #a09080; background: #f5f0ea; color: var(--ink); }
+.admin-upload-slim:hover::before { color: var(--ink); }
 .admin-upload-slim input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.admin-image-url-divider { display: flex; align-items: center; gap: 10px; color: #a09888; font-size: 11px; font-weight: 700; }
+.admin-image-url-divider::before, .admin-image-url-divider::after { content: ""; flex: 1; height: 1px; background: #e5ddd4; }
 
 .events-section { display: flex; flex-direction: column; gap: 16px; padding: 0 16px 24px; }
 .event-banner-card { display: flex; gap: 16px; align-items: flex-start; background: #1a1612; border-radius: 18px; overflow: hidden; }
