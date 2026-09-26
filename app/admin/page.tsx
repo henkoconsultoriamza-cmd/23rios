@@ -1015,8 +1015,8 @@ export default function AdminPage() {
                       <div className="admin-image-url-divider">o pegá una URL</div>
                       <input value={typeof eventDraft.imageUrl === "string" && eventDraft.imageUrl.startsWith("data:") ? "" : (eventDraft.imageUrl ?? "")} onChange={(e) => updateEventDraft("imageUrl", e.target.value || undefined)} placeholder="https://..."/>
                     </div>
-                    <label>Texto del botón<input value={eventDraft.ctaLabel ?? ""} onChange={(e) => updateEventDraft("ctaLabel", e.target.value || undefined)} placeholder="Ej. Reservar lugar"/></label>
-                    <label>Destino del botón<input value={eventDraft.ctaHref ?? ""} onChange={(e) => updateEventDraft("ctaHref", e.target.value || undefined)} placeholder="#carta, /portal o https://..."/></label>
+                    <label className="wide">Texto del botón<input value={eventDraft.ctaLabel ?? ""} onChange={(e) => updateEventDraft("ctaLabel", e.target.value || undefined)} placeholder="Ej. Reservar lugar"/></label>
+                    <label className="wide">Destino del botón<input value={eventDraft.ctaHref ?? ""} onChange={(e) => updateEventDraft("ctaHref", e.target.value || undefined)} placeholder="#carta, /portal o https://..."/></label>
                     <div className="wide" style={{textAlign:"right"}}><button className="admin-save" onClick={() => setEventDraft(null)}>Listo ✓</button></div>
                   </div>}
                 </article>)}
