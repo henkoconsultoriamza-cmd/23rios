@@ -852,6 +852,7 @@ textarea, select { font: inherit; }
 .removed-ingredients { color: #e05a3a !important; font-size: 9px !important; }
 
 /* Modal de personalización */
+.customize-overlay { z-index: 100; }
 .customize-dialog { background: white; border-radius: 26px; padding: 32px 28px 28px; width: min(420px, 94vw); display: flex; flex-direction: column; gap: 12px; }
 .customize-hint { margin: 0; color: var(--muted); font-size: 13px; }
 .customize-ingredient-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }

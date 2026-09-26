@@ -767,7 +767,7 @@ export default function Home() {
         const ingredients = prod?.removableIngredients ?? [];
         const removed = item?.removedIngredients ?? [];
         const toggle = (ing: string) => setOrderItems(prev => prev.map(i => i.key === customizeItemKey ? { ...i, removedIngredients: removed.includes(ing) ? removed.filter(r => r !== ing) : [...removed, ing] } : i));
-        return <div className="overlay" onMouseDown={() => setCustomizeItemKey(null)}>
+        return <div className="overlay customize-overlay" onMouseDown={() => setCustomizeItemKey(null)}>
           <section className="customize-dialog" role="dialog" aria-modal="true" onMouseDown={e => e.stopPropagation()}>
             <button className="modal-close light" onClick={() => setCustomizeItemKey(null)} aria-label="Cerrar"><Icon name="close"/></button>
             <p className="eyebrow">PERSONALIZAR PEDIDO</p>
@@ -886,7 +886,6 @@ export default function Home() {
                 </>;
               }
               return <>
-                {selected.category === "Cocina" && <button className="customize-modal-btn" onClick={openCustomize}>{tr("Le quiero sacar...")}</button>}
                 <button className="order-button" onClick={addSelectedToOrder}><Icon name="plus" size={19}/><span>{tr("Agregar al carrito")} · {displayPrice(selectedPrice)}</span></button>
               </>;
             })()}
