@@ -808,7 +808,7 @@ export default function AdminPage() {
           <button className={tab === "adjustments" ? "active" : ""} onClick={() => setTab("adjustments")}><span>02</span><div><strong>Ajustes</strong><small>Negocio y seguridad</small></div></button>
           <button className={tab === "banners" ? "active" : ""} onClick={() => setTab("banners")}><span>03</span><div><strong>Novedades</strong><small>Promos, banners y eventos</small></div></button>
           <button className={tab === "evento" ? "active" : ""} onClick={() => setTab("evento")}><span>04</span><div><strong>Menú Evento</strong><small>Carta reducida para eventos</small></div></button>
-          <button className={tab === "analytics" ? "active" : ""} onClick={() => { setTab("analytics"); setAnalyticsEvents(getStoredEvents()); }}><span>05</span><div><strong>Analíticas</strong><small>Métricas del menú</small></div></button>
+          <button className={tab === "analytics" ? "active" : ""} onClick={() => { setTab("analytics"); getStoredEvents().then(setAnalyticsEvents); }}><span>05</span><div><strong>Analíticas</strong><small>Métricas del menú</small></div></button>
           <div className="admin-sidebar-note"><strong>Sesión protegida</strong><p>Este acceso funciona en el dispositivo de demostración. En producción se validará desde el servidor y la base de datos.</p></div>
         </aside>
 
