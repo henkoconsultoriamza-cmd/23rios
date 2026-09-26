@@ -234,7 +234,7 @@ export default function Home() {
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [eventsOpen, setEventsOpen] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [banners, setBanners] = useState<Banner[]>(DEFAULT_BANNERS);
+  const [banners, setBanners] = useState<Banner[]>([]);
   const [promos, setPromos] = useState<Promo[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [urlToken] = useState<string>(() => {
@@ -283,7 +283,7 @@ export default function Home() {
         if (savedLanguage && languageOptions.some((o) => o.code === savedLanguage)) setLanguage(savedLanguage);
         else if (languageOptions.some((o) => o.code === merged.defaultLanguage)) setLanguage(merged.defaultLanguage as Language);
       }
-      if (bans) setBanners(bans);
+      setBanners(bans ?? []);
       if (proms) setPromos(proms);
       if (evts) setEvents(evts);
       setOrderHydrated(true);
