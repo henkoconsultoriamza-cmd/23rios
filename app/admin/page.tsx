@@ -877,12 +877,19 @@ export default function AdminPage() {
             {tab === "products" ? <button className="admin-primary-action" onClick={() => startNew()}>＋ Nuevo producto</button> : tab === "banners" ? <div className="admin-heading-actions"><button className="admin-primary-action" onClick={addPromo}>＋ Nueva promoción</button><button className="admin-primary-action admin-action-outline" onClick={addEvent}>＋ Nuevo evento</button><button className="admin-primary-action admin-action-outline" onClick={addBanner}>＋ Nuevo banner</button></div> : tab === "analytics" ? <button className="admin-primary-action" onClick={refreshAnalytics}>↺ Actualizar</button> : null}
           </div>
 
-          {(tab === "products" || tab === "evento") && <div className="admin-stats">
-            <article><small>TOTAL PUBLICADOS</small><strong>{publishedProducts.length}</strong><span>de {products.length}</span></article>
-            <article><small>COMIDAS</small><strong>{foodCount}</strong><span>platos</span></article>
-            <article><small>BEBIDAS</small><strong>{drinkCount}</strong><span>opciones</span></article>
-            <article className="admin-notice"><small>ESTADO</small><p>{notice}</p></article>
-          </div>}
+          {(tab === "products" || tab === "evento") && (() => {
+            const statsPool = tab === "evento" ? products.filter(p => p.eventoMenu) : publishedProducts;
+            const statsFood = statsPool.filter(p => p.category === "Cocina").length;
+            const statsDrink = statsPool.length - statsFood;
+            const statsLabel = tab === "evento" ? "EN MENÚ EVENTO" : "TOTAL PUBLICADOS";
+            const statsSub = tab === "evento" ? `de ${products.length}` : `de ${products.length}`;
+            return <div className="admin-stats">
+              <article><small>{statsLabel}</small><strong>{statsPool.length}</strong><span>{statsSub}</span></article>
+              <article><small>COMIDAS</small><strong>{statsFood}</strong><span>platos</span></article>
+              <article><small>BEBIDAS</small><strong>{statsDrink}</strong><span>opciones</span></article>
+              <article className="admin-notice"><small>ESTADO</small><p>{notice}</p></article>
+            </div>;
+          })()}
 
           {tab === "products" ? <div className="admin-product-workspace">
             <section className="admin-product-list">
