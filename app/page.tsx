@@ -894,6 +894,14 @@ export default function Home() {
             </section> : <div className="single-price">{(() => { const promo = getPromoForProduct(selected); const effPrice = promoPrice(selected); return <><span>{tr("Precios de muestra")}</span>{promo && effPrice !== selected.price && <s className="price-original">{displayPrice(selected.price)}</s>}<strong>{displayPrice(effPrice)}</strong></>; })()}</div>}
 
             <section className="nutrition-card" aria-labelledby="nutrition-title">
+              <div className="detail-section-heading"><div><p>{tr("INFORMACIÓN NUTRICIONAL")}</p><h3 id="nutrition-title">{tr("Valores nutricionales")}</h3></div><small>{tr(selected.nutrition.basis)}</small></div>
+              <dl>
+                <div><dt>{tr("Calorías")}</dt><dd>{selected.nutrition.calories}</dd></div>
+                <div><dt>{tr("Grasas")}</dt><dd>{selected.nutrition.fats}</dd></div>
+                <div><dt>{tr("Proteínas")}</dt><dd>{selected.nutrition.proteins}</dd></div>
+                <div><dt>{tr("Carbohidratos")}</dt><dd>{selected.nutrition.carbs}</dd></div>
+                <div><dt>{tr("Azúcares")}</dt><dd>{selected.nutrition.sugars}</dd></div>
+              </dl>
               <div className="allergen-summary"><strong>{tr("Alérgenos")}</strong><div>{selected.allergens.length ? selected.allergens.map((allergen) => <span className="allergen-item" key={allergen}><i aria-hidden="true">{allergenIcons[allergen] ?? "•"}</i>{tr(allergen)}</span>) : <span className="allergen-item allergen-free"><i aria-hidden="true">✓</i>Sin alérgenos declarados</span>}</div></div>
             </section>
             {(() => {
