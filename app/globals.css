@@ -239,7 +239,7 @@ img { display: block; max-width: 100%; }
 .product-card[data-style="american-ipa"] { --beer-card-color: var(--beer-american-ipa); }
 .product-card[data-style="orange-wheat"] { --beer-card-color: var(--beer-orange-wheat); }
 .product-card[data-style="lager"]        { --beer-card-color: var(--beer-lager); }
-.product-visual { position: relative; display: block; padding: 0; border: 0; width: 100%; aspect-ratio: 1/1; overflow: hidden; background: #17140f; cursor: zoom-in; }
+.product-visual { position: relative; display: block; padding: 0; border: 0; width: 100%; aspect-ratio: 1/1; overflow: hidden; background: #17140f; cursor: zoom-in; isolation: isolate; }
 .product-visual img { width: 100%; height: 100%; object-fit: cover; transition: transform .55s cubic-bezier(.2,.7,.2,1); }
 .filet-numa-image { object-position: 88% center !important; }
 .product-visual:hover img { transform: scale(1.035); }
@@ -950,7 +950,7 @@ textarea, select { font: inherit; }
 
 .price-original { color: var(--muted); font-size: 11px; text-decoration: line-through; margin-right: 4px; }
 .promo-badge { display: inline-block; background: #e05a3a; color: white; font: 800 10px/1 "Manrope"; padding: 3px 7px; border-radius: 999px; margin-right: 5px; vertical-align: middle; }
-.promo-badge-image { position: absolute; bottom: 12px; left: 12px; background: #e05a3a; color: white; font: 800 28px/1 "Manrope"; padding: 12px 20px; border-radius: 999px; letter-spacing: .3px; box-shadow: 0 4px 14px rgba(0,0,0,.35); z-index: 4; pointer-events: none; }
+.promo-badge-image { position: absolute; bottom: 12px; left: 12px; background: #e05a3a; color: white; font: 800 28px/1 "Manrope"; padding: 12px 20px; border-radius: 999px; letter-spacing: .3px; box-shadow: 0 4px 14px rgba(0,0,0,.35); z-index: 4; pointer-events: none; transform: translateZ(0); -webkit-transform: translateZ(0); }
 .admin-section-block { margin-bottom: 32px; }
 .admin-section-block-header { margin-bottom: 14px; }
 .admin-section-block-header h3 { font-size: 15px; font-weight: 800; margin: 0 0 3px; }

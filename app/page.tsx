@@ -655,11 +655,11 @@ export default function Home() {
                   <div className="product-group-header"><h3>{tr(group)}</h3></div>
                   {groupProducts.map((product) => (
                     <article className="product-card" key={product.id} data-style={product.beerStyle?.toLowerCase().replace(/\s+/g, "-")}>
-                      {(() => { const p = getPromoForProduct(product); if (!p) return null; const label = p.type === "2x1" ? "2×1" : p.type === "porcentaje" ? `-${p.promoPercent}%` : "Oferta"; return <span className="promo-badge-image">{label}</span>; })()}
                       <button className="product-visual" onClick={() => setSelected(product)} aria-label={`${tr("Ver detalle")} ${tr(product.name)}`}>
                         {product.image ? <img className={product.id === "filet-numa" ? "filet-numa-image" : undefined} src={product.image} alt={`${tr(product.name)} · ${brandName}`} /> : <span className="photo-pending"><Icon name="expand" size={20}/><strong>{tr("Foto real pendiente")}</strong></span>}
                         <span className="product-tag">{product.tag}</span>
                         <span className="expand-label"><Icon name="expand" size={14}/> {tr("Ver detalle")}</span>
+                        {(() => { const p = getPromoForProduct(product); if (!p) return null; const label = p.type === "2x1" ? "2×1" : p.type === "porcentaje" ? `-${p.promoPercent}%` : "Oferta"; return <span className="promo-badge-image">{label}</span>; })()}
                       </button>
                       <div className="product-info">
                         <p className="product-category">{tr(product.group)}{product.beerStyle ? ` · ${tr(product.beerStyle)}` : ""}</p>
