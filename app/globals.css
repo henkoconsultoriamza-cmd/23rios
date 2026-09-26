@@ -1201,16 +1201,16 @@ textarea, select { font: inherit; }
 .admin-image-url-divider { display: flex; align-items: center; gap: 10px; color: #a09888; font-size: 11px; font-weight: 700; }
 .admin-image-url-divider::before, .admin-image-url-divider::after { content: ""; flex: 1; height: 1px; background: #e5ddd4; }
 
-.events-section { display: flex; flex-direction: column; gap: 16px; padding: 0 16px 24px; }
-.event-banner-card { display: flex; gap: 16px; align-items: flex-start; background: #1a1612; border-radius: 18px; overflow: hidden; }
-.event-banner-image { flex-shrink: 0; width: 120px; }
-.event-banner-image img { width: 120px; height: 120px; object-fit: cover; display: block; }
-.event-banner-body { flex: 1; padding: 16px 16px 16px 0; }
+.events-section { display: flex; flex-direction: column; gap: 16px; padding: 0 0 24px; }
+.event-banner-card { display: block; background: #1a1612; overflow: hidden; }
+.event-banner-image { width: 100%; }
+.event-banner-image img { width: 100%; height: clamp(200px, 40vw, 480px); object-fit: cover; display: block; }
+.event-banner-body { padding: 18px 20px 22px; }
 .event-banner-eyebrow { font: 700 9px/1 "Manrope"; letter-spacing: .12em; color: #c47c2a; margin: 0 0 6px; }
-.event-banner-title { font: 800 16px/1.2 "Manrope"; color: #fff; margin: 0 0 4px; }
-.event-banner-subtitle { font: 400 12px/1.4 "Manrope"; color: rgba(255,255,255,.65); margin: 0 0 6px; }
-.event-banner-meta { font: 600 11px/1 "Manrope"; color: rgba(255,255,255,.5); margin: 0 0 10px; }
-.event-banner-cta { display: inline-block; background: #c47c2a; color: #fff; font: 700 11px/1 "Manrope"; padding: 7px 14px; border-radius: 999px; text-decoration: none; }
+.event-banner-title { font: 800 clamp(18px, 3vw, 28px)/1.2 "Manrope"; color: #fff; margin: 0 0 6px; }
+.event-banner-subtitle { font: 400 13px/1.4 "Manrope"; color: rgba(255,255,255,.65); margin: 0 0 8px; }
+.event-banner-meta { font: 600 11px/1 "Manrope"; color: rgba(255,255,255,.5); margin: 0 0 14px; }
+.event-banner-cta { display: inline-block; background: #c47c2a; color: #fff; font: 700 12px/1 "Manrope"; padding: 9px 18px; border-radius: 999px; text-decoration: none; }
 
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
