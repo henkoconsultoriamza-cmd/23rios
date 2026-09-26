@@ -110,7 +110,7 @@ function BannerCard({ banner }: { banner: Banner }) {
       {banner.imageUrl && (
         <picture>
           {banner.imageUrlMobile && <source media="(max-width: 760px)" srcSet={banner.imageUrlMobile}/>}
-          <img src={banner.imageUrl} alt={banner.title} className="novedad-img"/>
+          <img src={banner.imageUrl} alt={banner.title} className="novedad-img" fetchPriority="high" loading="eager"/>
         </picture>
       )}
       <span className="novedad-cta-btn">La quiero →</span>
@@ -265,15 +265,17 @@ export default function Home() {
       } catch { window.localStorage.removeItem("restaurant-template-current-order-v2"); }
     }
 
-    // Cargar datos del menu desde Supabase
+    // Banners y eventos primero — aparecen arriba de todo
+    getBanners().then((bans) => setBanners(bans ?? []));
+    getEvents().then((evts) => { if (evts) setEvents(evts); });
+
+    // Resto de datos en paralelo
     Promise.all([
       getProducts(),
       getMenuSettings(),
       getAppSettings(),
-      getBanners(),
       getPromos(),
-      getEvents(),
-    ]).then(([products, menuSetts, appSetts, bans, proms, evts]) => {
+    ]).then(([products, menuSetts, appSetts, proms]) => {
       if (products) setCatalogProducts(products);
       if (menuSetts) setMenuSettings(menuSetts);
       if (appSetts) {
@@ -283,9 +285,7 @@ export default function Home() {
         if (savedLanguage && languageOptions.some((o) => o.code === savedLanguage)) setLanguage(savedLanguage);
         else if (languageOptions.some((o) => o.code === merged.defaultLanguage)) setLanguage(merged.defaultLanguage as Language);
       }
-      setBanners(bans ?? []);
       if (proms) setPromos(proms);
-      if (evts) setEvents(evts);
       setOrderHydrated(true);
     });
 
