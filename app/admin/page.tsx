@@ -2,29 +2,34 @@
 
 import { ChangeEvent, CSSProperties, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ADMIN_APP_SETTINGS_KEY,
   AppSettings,
   cloneDefaultProducts,
   cloneDefaultSettings,
   DEFAULT_APP_SETTINGS,
-  MENU_PRODUCTS_STORAGE_KEY,
-  MENU_SETTINGS_STORAGE_KEY,
   MenuSettings,
   Product,
   mergeDefaultProductImages,
   Promo,
-  PROMOS_STORAGE_KEY,
   isPromoActive,
 } from "../menu-data";
 import {
   cloneDefaultPortalSettings,
-  PORTAL_SETTINGS_STORAGE_KEY,
   PortalAction,
   PortalSettings,
 } from "../portal-data";
-import { AnalyticsEvent, ANALYTICS_STORAGE_KEY, clearStoredEvents, getStoredEvents } from "../analytics";
-import { Banner, BANNERS_STORAGE_KEY } from "../banner-data";
-import { EventItem, EVENTS_STORAGE_KEY } from "../event-data";
+import { AnalyticsEvent, getStoredEvents, clearStoredEvents } from "../analytics";
+import { Banner } from "../banner-data";
+import { EventItem } from "../event-data";
+import {
+  getProducts, saveProducts,
+  getMenuSettings, saveMenuSettings,
+  getAppSettings, saveAppSettings,
+  getBanners, saveBanners,
+  getPromos, savePromos,
+  getEvents, saveEvents,
+  getPortalSettings, savePortalSettings as savePortalToDb,
+  getAdminCredentials, saveAdminCredentials,
+} from "../../db/config";
 
 type SettingsKey = keyof MenuSettings;
 type AdminTab = "products" | "filters" | "adjustments" | "analytics" | "banners" | "evento";
@@ -161,77 +166,43 @@ export default function AdminPage() {
   const [dateRange, setDateRange] = useState<DateRange>("7d");
 
   useEffect(() => {
-    let loadedProducts = cloneDefaultProducts();
-    let loadedSettings = cloneDefaultSettings();
-    const storedProducts = window.localStorage.getItem(MENU_PRODUCTS_STORAGE_KEY);
-    const storedSettings = window.localStorage.getItem(MENU_SETTINGS_STORAGE_KEY);
-    const storedAppSettings = window.localStorage.getItem(ADMIN_APP_SETTINGS_KEY);
-    const storedPortalSettings = window.localStorage.getItem(PORTAL_SETTINGS_STORAGE_KEY);
-    const storedCredentials = window.localStorage.getItem(ADMIN_CREDENTIALS_KEY);
-    if (storedProducts) {
-      try {
-        const parsed = JSON.parse(storedProducts) as Product[];
-        if (Array.isArray(parsed)) loadedProducts = mergeDefaultProductImages(parsed);
-      } catch { window.localStorage.removeItem(MENU_PRODUCTS_STORAGE_KEY); }
-    }
-    if (storedSettings) {
-      try {
-        const parsed = JSON.parse(storedSettings) as MenuSettings;
-        if (parsed && Array.isArray(parsed.foodGroups)) loadedSettings = parsed;
-      } catch { window.localStorage.removeItem(MENU_SETTINGS_STORAGE_KEY); }
-    }
-    if (storedAppSettings) {
-      try { setAppSettings({ ...DEFAULT_APP_SETTINGS, ...JSON.parse(storedAppSettings) as AppSettings }); }
-      catch { window.localStorage.removeItem(ADMIN_APP_SETTINGS_KEY); }
-    }
-    if (storedPortalSettings) {
-      try {
-        const parsed = JSON.parse(storedPortalSettings) as PortalSettings;
-        setPortalSettings({ ...cloneDefaultPortalSettings(), ...parsed, actions: Array.isArray(parsed.actions) ? parsed.actions : cloneDefaultPortalSettings().actions });
-      } catch { window.localStorage.removeItem(PORTAL_SETTINGS_STORAGE_KEY); }
-    }
-    if (storedCredentials) {
-      try {
-        const parsed = JSON.parse(storedCredentials) as AdminCredentials;
-        if (parsed.username) {
-          setSecurityUsername(parsed.username);
-          setHasCustomCredentials(true);
-        }
-      } catch { window.localStorage.removeItem(ADMIN_CREDENTIALS_KEY); }
-    }
     setAuthenticated(window.sessionStorage.getItem(ADMIN_SESSION_KEY) === "active");
-    setProducts(loadedProducts);
-    setSettings(loadedSettings);
-    const storedBanners = window.localStorage.getItem(BANNERS_STORAGE_KEY);
-    if (storedBanners) {
-      try {
-        const parsed = JSON.parse(storedBanners) as Banner[];
-        if (Array.isArray(parsed)) setBanners(parsed);
-      } catch { window.localStorage.removeItem(BANNERS_STORAGE_KEY); }
-    }
-    const storedPromos = window.localStorage.getItem(PROMOS_STORAGE_KEY);
-    if (storedPromos) {
-      try {
-        const parsed = JSON.parse(storedPromos) as Promo[];
-        if (Array.isArray(parsed)) setPromos(parsed);
-      } catch { window.localStorage.removeItem(PROMOS_STORAGE_KEY); }
-    }
-    const storedEvents = window.localStorage.getItem(EVENTS_STORAGE_KEY);
-    if (storedEvents) {
-      try {
-        const parsed = JSON.parse(storedEvents) as EventItem[];
-        if (Array.isArray(parsed)) setEvents(parsed);
-      } catch { window.localStorage.removeItem(EVENTS_STORAGE_KEY); }
-    }
-    setAnalyticsEvents(getStoredEvents());
-    if (loadedProducts[0]) {
-      setSelectedId(loadedProducts[0].id);
-      setDraft(structuredClone(loadedProducts[0]));
-      setIsNew(false);
-    } else {
-      setDraft(createEmptyProduct("Cocina", loadedSettings));
-    }
-    setHydrated(true);
+
+    Promise.all([
+      getProducts(),
+      getMenuSettings(),
+      getAppSettings(),
+      getBanners(),
+      getPromos(),
+      getEvents(),
+      getPortalSettings(),
+      getAdminCredentials(),
+    ]).then(([prods, menuSetts, appSetts, bans, proms, evts, portalSetts, creds]) => {
+      const loadedProducts = prods ?? cloneDefaultProducts();
+      const loadedSettings = menuSetts ?? cloneDefaultSettings();
+
+      setProducts(loadedProducts);
+      setSettings(loadedSettings);
+      if (appSetts) setAppSettings({ ...DEFAULT_APP_SETTINGS, ...appSetts });
+      if (bans) setBanners(bans);
+      if (proms) setPromos(proms);
+      if (evts) setEvents(evts);
+      if (portalSetts) setPortalSettings({ ...cloneDefaultPortalSettings(), ...portalSetts, actions: Array.isArray(portalSetts.actions) ? portalSetts.actions : cloneDefaultPortalSettings().actions });
+      if (creds?.username) {
+        setSecurityUsername(creds.username);
+        setHasCustomCredentials(true);
+      }
+      if (loadedProducts[0]) {
+        setSelectedId(loadedProducts[0].id);
+        setDraft(structuredClone(loadedProducts[0]));
+        setIsNew(false);
+      } else {
+        setDraft(createEmptyProduct("Cocina", loadedSettings));
+      }
+      setHydrated(true);
+    });
+
+    getStoredEvents().then(setAnalyticsEvents);
   }, []);
 
   const filteredProducts = useMemo(() => {
@@ -365,14 +336,9 @@ export default function AdminPage() {
   }
 
   function persistProducts(next: Product[]) {
-    try {
-      window.localStorage.setItem(MENU_PRODUCTS_STORAGE_KEY, JSON.stringify(next));
-      setProducts(next);
-      return true;
-    } catch {
-      setNotice("No se pudo guardar. La fotografía puede ser demasiado pesada para este prototipo local.");
-      return false;
-    }
+    setProducts(next);
+    saveProducts(next).catch(() => setNotice("Error al guardar en la base de datos."));
+    return true;
   }
 
   function saveProduct() {
@@ -420,11 +386,8 @@ export default function AdminPage() {
         image: draft.image?.trim() || "",
       };
       const next = products.map((p) => p.id === selectedId ? normalized : p);
-      try {
-        window.localStorage.setItem(MENU_PRODUCTS_STORAGE_KEY, JSON.stringify(next));
-        setProducts(next);
-        setNotice("Guardado automáticamente ✓");
-      } catch { /* silencioso */ }
+      setProducts(next);
+      saveProducts(next).then(() => setNotice("Guardado automaticamente ✓")).catch(() => setNotice("Error al guardar."));
     }, 1200);
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
   }, [draft]);
@@ -434,7 +397,8 @@ export default function AdminPage() {
     if (promoSaveTimer.current) clearTimeout(promoSaveTimer.current);
     promoSaveTimer.current = setTimeout(() => {
       const next = promos.map((p) => p.id === promoDraft.id ? promoDraft : p);
-      try { window.localStorage.setItem(PROMOS_STORAGE_KEY, JSON.stringify(next)); setPromos(next); setNotice("Promoción guardada automáticamente ✓"); } catch { /* silencioso */ }
+      setPromos(next);
+      savePromos(next).then(() => setNotice("Promocion guardada automaticamente ✓")).catch(() => undefined);
     }, 1000);
     return () => { if (promoSaveTimer.current) clearTimeout(promoSaveTimer.current); };
   }, [promoDraft]);
@@ -444,7 +408,8 @@ export default function AdminPage() {
     if (bannerSaveTimer.current) clearTimeout(bannerSaveTimer.current);
     bannerSaveTimer.current = setTimeout(() => {
       const next = banners.map((b) => b.id === bannerDraft.id ? bannerDraft : b);
-      try { window.localStorage.setItem(BANNERS_STORAGE_KEY, JSON.stringify(next)); setBanners(next); setNotice("Novedad guardada automáticamente ✓"); } catch { /* silencioso */ }
+      setBanners(next);
+      saveBanners(next).then(() => setNotice("Novedad guardada automaticamente ✓")).catch(() => undefined);
     }, 1000);
     return () => { if (bannerSaveTimer.current) clearTimeout(bannerSaveTimer.current); };
   }, [bannerDraft]);
@@ -454,7 +419,8 @@ export default function AdminPage() {
     if (eventSaveTimer.current) clearTimeout(eventSaveTimer.current);
     eventSaveTimer.current = setTimeout(() => {
       const next = events.map((e) => e.id === eventDraft.id ? eventDraft : e);
-      try { window.localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(next)); setEvents(next); setNotice("Evento guardado automáticamente ✓"); } catch { /* silencioso */ }
+      setEvents(next);
+      saveEvents(next).then(() => setNotice("Evento guardado automaticamente ✓")).catch(() => undefined);
     }, 1000);
     return () => { if (eventSaveTimer.current) clearTimeout(eventSaveTimer.current); };
   }, [eventDraft]);
@@ -463,7 +429,7 @@ export default function AdminPage() {
     if (isFirstSettingsRender.current) { isFirstSettingsRender.current = false; return; }
     if (settingsSaveTimer.current) clearTimeout(settingsSaveTimer.current);
     settingsSaveTimer.current = setTimeout(() => {
-      try { window.localStorage.setItem(ADMIN_APP_SETTINGS_KEY, JSON.stringify(appSettings)); setNotice("Ajustes guardados automáticamente ✓"); } catch { /* silencioso */ }
+      saveAppSettings(appSettings).then(() => setNotice("Ajustes guardados automaticamente ✓")).catch(() => undefined);
     }, 1000);
     return () => { if (settingsSaveTimer.current) clearTimeout(settingsSaveTimer.current); };
   }, [appSettings]);
@@ -551,13 +517,8 @@ export default function AdminPage() {
   }
 
   function saveSettings(next: MenuSettings, message: string) {
-    try {
-      window.localStorage.setItem(MENU_SETTINGS_STORAGE_KEY, JSON.stringify(next));
-      setSettings(next);
-      setNotice(message);
-    } catch {
-      setNotice("No se pudieron guardar las categorías.");
-    }
+    setSettings(next);
+    saveMenuSettings(next).then(() => setNotice(message)).catch(() => setNotice("No se pudieron guardar las categorias."));
   }
 
   function addOption(key: SettingsKey) {
@@ -573,20 +534,9 @@ export default function AdminPage() {
     saveSettings(next, `Se quitó "${value}" de las opciones disponibles.`);
   }
 
-  function readCredentials(): AdminCredentials | null {
-    const stored = window.localStorage.getItem(ADMIN_CREDENTIALS_KEY);
-    if (!stored) return null;
-    try { return JSON.parse(stored) as AdminCredentials; }
-    catch { return null; }
-  }
-
   function persistBanners(next: Banner[]) {
-    try {
-      window.localStorage.setItem(BANNERS_STORAGE_KEY, JSON.stringify(next));
-      setBanners(next);
-    } catch {
-      setNotice("No se pudieron guardar las novedades.");
-    }
+    setBanners(next);
+    saveBanners(next).catch(() => setNotice("No se pudieron guardar las novedades."));
   }
 
   function addBanner() {
@@ -623,10 +573,8 @@ export default function AdminPage() {
   }
 
   function persistPromos(next: Promo[]) {
-    try {
-      window.localStorage.setItem(PROMOS_STORAGE_KEY, JSON.stringify(next));
-      setPromos(next);
-    } catch { setNotice("No se pudieron guardar las promociones."); }
+    setPromos(next);
+    savePromos(next).catch(() => setNotice("No se pudieron guardar las promociones."));
   }
 
   function addPromo() {
@@ -651,7 +599,8 @@ export default function AdminPage() {
   }
 
   function persistEvents(next: EventItem[]) {
-    try { window.localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(next)); setEvents(next); } catch { setNotice("No se pudieron guardar los eventos."); }
+    setEvents(next);
+    saveEvents(next).catch(() => setNotice("No se pudieron guardar los eventos."));
   }
 
   function addEvent() {
@@ -675,33 +624,31 @@ export default function AdminPage() {
   }
 
   function refreshAnalytics() {
-    setAnalyticsEvents(getStoredEvents());
-    setNotice("Datos de analíticas actualizados.");
+    getStoredEvents().then(setAnalyticsEvents);
+    setNotice("Datos de analiticas actualizados.");
   }
 
   function handleClearAnalytics() {
-    if (!window.confirm("¿Borrar todos los eventos registrados? Esta acción no se puede deshacer.")) return;
-    clearStoredEvents();
-    setAnalyticsEvents([]);
-    setNotice("Historial de analíticas borrado.");
+    if (!window.confirm("¿Borrar todos los eventos registrados? Esta accion no se puede deshacer.")) return;
+    clearStoredEvents().then(() => { setAnalyticsEvents([]); setNotice("Historial de analiticas borrado."); });
   }
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoginError("");
-    const credentials = readCredentials();
+    const credentials = await getAdminCredentials();
     const expectedUsername = credentials?.username ?? DEFAULT_ADMIN_USERNAME;
-    const expectedHash = credentials?.passwordHash ?? await hashPassword(DEFAULT_ADMIN_PASSWORD);
+    const expectedHash = credentials?.password_hash ?? await hashPassword(DEFAULT_ADMIN_PASSWORD);
     const suppliedHash = await hashPassword(loginPassword);
     if (loginUsername.trim() !== expectedUsername || suppliedHash !== expectedHash) {
-      setLoginError("El usuario o la contraseña no son correctos.");
+      setLoginError("El usuario o la contrasena no son correctos.");
       return;
     }
     window.sessionStorage.setItem(ADMIN_SESSION_KEY, "active");
     setAuthenticated(true);
     setSecurityUsername(expectedUsername);
     setLoginPassword("");
-    setNotice("Sesión iniciada correctamente.");
+    setNotice("Sesion iniciada correctamente.");
   }
 
   function logout() {
@@ -795,45 +742,39 @@ export default function AdminPage() {
   }
 
   function savePortalSettings() {
-    try {
-      window.localStorage.setItem(PORTAL_SETTINGS_STORAGE_KEY, JSON.stringify(portalSettings));
-      setNotice("Portal guardado. Los cambios ya están disponibles en la portada pública.");
-    } catch {
-      setNotice("No se pudo guardar el portal. Probá con una imagen de portada más liviana.");
-    }
+    savePortalToDb(portalSettings)
+      .then(() => setNotice("Portal guardado. Los cambios ya estan disponibles en la portada publica."))
+      .catch(() => setNotice("No se pudo guardar el portal."));
   }
 
   async function saveSecuritySettings(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const credentials = readCredentials();
-    const expectedHash = credentials?.passwordHash ?? await hashPassword(DEFAULT_ADMIN_PASSWORD);
+    const credentials = await getAdminCredentials();
+    const expectedHash = credentials?.password_hash ?? await hashPassword(DEFAULT_ADMIN_PASSWORD);
     if (await hashPassword(currentPassword) !== expectedHash) {
-      setNotice("La contraseña actual no coincide.");
+      setNotice("La contrasena actual no coincide.");
       return;
     }
     if (!securityUsername.trim()) {
-      setNotice("El nombre de usuario no puede quedar vacío.");
+      setNotice("El nombre de usuario no puede quedar vacio.");
       return;
     }
     if (newPassword && newPassword.length < 6) {
-      setNotice("La contraseña nueva debe tener al menos 6 caracteres.");
+      setNotice("La contrasena nueva debe tener al menos 6 caracteres.");
       return;
     }
     if (newPassword !== confirmPassword) {
-      setNotice("La confirmación de la contraseña no coincide.");
+      setNotice("La confirmacion de la contrasena no coincide.");
       return;
     }
-    const next: AdminCredentials = {
-      username: securityUsername.trim(),
-      passwordHash: newPassword ? await hashPassword(newPassword) : expectedHash,
-    };
-    window.localStorage.setItem(ADMIN_CREDENTIALS_KEY, JSON.stringify(next));
+    const newHash = newPassword ? await hashPassword(newPassword) : expectedHash;
+    await saveAdminCredentials(securityUsername.trim(), newHash);
     setHasCustomCredentials(true);
-    setSecurityUsername(next.username);
+    setSecurityUsername(securityUsername.trim());
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
-    setNotice("Usuario y contraseña actualizados correctamente.");
+    setNotice("Usuario y contrasena actualizados correctamente.");
   }
 
   if (!hydrated) return <main className="admin-loading">Preparando el panel del restaurante…</main>;

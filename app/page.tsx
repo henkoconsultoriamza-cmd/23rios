@@ -2,10 +2,11 @@
 
 import { CSSProperties, Dispatch, Fragment, FormEvent, SetStateAction, useEffect, useMemo, useRef, useState } from "react";
 import { Language, languageOptions, translate } from "./translations";
-import { ADMIN_APP_SETTINGS_KEY, AppSettings, DEFAULT_APP_SETTINGS, DEFAULT_MENU_SETTINGS, DEFAULT_PRODUCTS, MENU_PRODUCTS_STORAGE_KEY, MENU_SETTINGS_STORAGE_KEY, MenuSettings, Product, mergeDefaultProductImages, Promo, PROMOS_STORAGE_KEY, isPromoActive, promoMatchesProduct } from "./menu-data";
+import { AppSettings, DEFAULT_APP_SETTINGS, DEFAULT_MENU_SETTINGS, DEFAULT_PRODUCTS, MenuSettings, Product, Promo, isPromoActive, promoMatchesProduct } from "./menu-data";
 import { trackEvent } from "./analytics";
-import { Banner, BANNERS_STORAGE_KEY, DEFAULT_BANNERS } from "./banner-data";
-import { EventItem, EVENTS_STORAGE_KEY } from "./event-data";
+import { Banner, DEFAULT_BANNERS } from "./banner-data";
+import { EventItem } from "./event-data";
+import { getProducts, getMenuSettings, getAppSettings, getBanners, getPromos, getEvents, subscribeToConfig } from "../db/config";
 
 type Message = { id: number; role: "assistant" | "user"; text: string };
 type OrderStatus = "idle" | "draft" | "sent";
@@ -166,49 +167,11 @@ export default function Home() {
   ]);
 
   useEffect(() => {
-    const savedProducts = window.localStorage.getItem(MENU_PRODUCTS_STORAGE_KEY);
-    if (savedProducts) {
-      try {
-        const parsed = JSON.parse(savedProducts) as Product[];
-        const hasNewStructure = Array.isArray(parsed) && parsed.some((p) => p.group === "Cervezas clásicas" || p.group === "Tragos clásicos");
-        if (hasNewStructure) {
-          setCatalogProducts(mergeDefaultProductImages(parsed));
-        } else {
-          window.localStorage.removeItem(MENU_PRODUCTS_STORAGE_KEY);
-        }
-      } catch { window.localStorage.removeItem(MENU_PRODUCTS_STORAGE_KEY); }
+    // Cargar preferencias del dispositivo (idioma, favoritos, pedido en curso)
+    const savedFavorites = window.localStorage.getItem("restaurant-template-favorites");
+    if (savedFavorites) {
+      try { setFavorites(JSON.parse(savedFavorites)); } catch { window.localStorage.removeItem("restaurant-template-favorites"); }
     }
-    const savedSettings = window.localStorage.getItem(MENU_SETTINGS_STORAGE_KEY);
-    if (savedSettings) {
-      try {
-        const parsed = JSON.parse(savedSettings) as MenuSettings;
-        const hasNewGroups = parsed && Array.isArray(parsed.drinkGroups) && parsed.drinkGroups.includes("Cervezas clásicas");
-        if (hasNewGroups) {
-          setMenuSettings(parsed);
-        } else {
-          window.localStorage.removeItem(MENU_SETTINGS_STORAGE_KEY);
-        }
-      } catch { window.localStorage.removeItem(MENU_SETTINGS_STORAGE_KEY); }
-    }
-    let loadedAppSettings = DEFAULT_APP_SETTINGS;
-    const savedAppSettings = window.localStorage.getItem(ADMIN_APP_SETTINGS_KEY);
-    if (savedAppSettings) {
-      try {
-        const parsed = JSON.parse(savedAppSettings) as AppSettings;
-        // Migrate any old golden/amber accent to celeste
-        const goldenAccents = ["#c8930a","#c85c0a","#9a8040","#c9a800","#ea8215","#f5c800","#f7d430"];
-        if (goldenAccents.includes(parsed.accentColor?.toLowerCase())) parsed.accentColor = "#3a9ad9";
-        loadedAppSettings = { ...DEFAULT_APP_SETTINGS, ...parsed };
-        setAppSettings(loadedAppSettings);
-      } catch { window.localStorage.removeItem(ADMIN_APP_SETTINGS_KEY); }
-    }
-    const saved = window.localStorage.getItem("restaurant-template-favorites");
-    if (saved) {
-      try { setFavorites(JSON.parse(saved)); } catch { window.localStorage.removeItem("restaurant-template-favorites"); }
-    }
-    const savedLanguage = window.localStorage.getItem("restaurant-template-language") as Language | null;
-    if (savedLanguage && languageOptions.some((option) => option.code === savedLanguage)) setLanguage(savedLanguage);
-    else if (languageOptions.some((option) => option.code === loadedAppSettings.defaultLanguage)) setLanguage(loadedAppSettings.defaultLanguage as Language);
     const savedOrder = window.localStorage.getItem("restaurant-template-current-order-v2");
     if (savedOrder) {
       try {
@@ -220,42 +183,33 @@ export default function Home() {
         if (typeof parsed.billRequested === "boolean") setBillRequested(parsed.billRequested);
       } catch { window.localStorage.removeItem("restaurant-template-current-order-v2"); }
     }
-    const savedHistory = window.localStorage.getItem("restaurant-template-order-history-v1");
-    if (savedHistory) {
-      try {
-        const parsed = JSON.parse(savedHistory) as LaunchedOrder[];
-        if (Array.isArray(parsed)) setLaunchedOrders(parsed.map((order) => ({ ...order, tableNumber: order.tableNumber ?? "" })));
-      } catch { window.localStorage.removeItem("restaurant-template-order-history-v1"); }
-    }
-    const savedBanners = window.localStorage.getItem(BANNERS_STORAGE_KEY);
-    if (savedBanners) {
-      try {
-        const parsed = JSON.parse(savedBanners) as Banner[];
-        const hasNew = Array.isArray(parsed) && parsed.some((b) => b.id === "cerveza-nueva-seasonal" || b.imageUrl?.includes(".svg"));
-        if (hasNew) {
-          setBanners(parsed);
-        } else {
-          window.localStorage.removeItem(BANNERS_STORAGE_KEY);
-        }
-      } catch { window.localStorage.removeItem(BANNERS_STORAGE_KEY); }
-    }
-    const savedPromos = window.localStorage.getItem(PROMOS_STORAGE_KEY);
-    if (savedPromos) {
-      try {
-        const parsed = JSON.parse(savedPromos) as Promo[];
-        if (Array.isArray(parsed)) setPromos(parsed);
-      } catch { window.localStorage.removeItem(PROMOS_STORAGE_KEY); }
-    }
-    const savedEvents = window.localStorage.getItem(EVENTS_STORAGE_KEY);
-    if (savedEvents) {
-      try {
-        const parsed = JSON.parse(savedEvents) as EventItem[];
-        if (Array.isArray(parsed)) setEvents(parsed);
-      } catch { window.localStorage.removeItem(EVENTS_STORAGE_KEY); }
-    }
-    setOrderHydrated(true);
+
+    // Cargar datos del menu desde Supabase
+    Promise.all([
+      getProducts(),
+      getMenuSettings(),
+      getAppSettings(),
+      getBanners(),
+      getPromos(),
+      getEvents(),
+    ]).then(([products, menuSetts, appSetts, bans, proms, evts]) => {
+      if (products) setCatalogProducts(products);
+      if (menuSetts) setMenuSettings(menuSetts);
+      if (appSetts) {
+        const merged = { ...DEFAULT_APP_SETTINGS, ...appSetts };
+        setAppSettings(merged);
+        const savedLanguage = window.localStorage.getItem("restaurant-template-language") as Language | null;
+        if (savedLanguage && languageOptions.some((o) => o.code === savedLanguage)) setLanguage(savedLanguage);
+        else if (languageOptions.some((o) => o.code === merged.defaultLanguage)) setLanguage(merged.defaultLanguage as Language);
+      }
+      if (bans) setBanners(bans);
+      if (proms) setPromos(proms);
+      if (evts) setEvents(evts);
+      setOrderHydrated(true);
+    });
+
     trackEvent("session_start");
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).then((registration) => registration.update()).catch(() => undefined);
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).then((r) => r.update()).catch(() => undefined);
   }, []);
 
   useEffect(() => { window.localStorage.setItem("restaurant-template-favorites", JSON.stringify(favorites)); }, [favorites]);
@@ -294,28 +248,16 @@ export default function Home() {
   }, [selected?.id]);
 
   useEffect(() => {
-    function syncAdminChanges(event: StorageEvent) {
-      if (event.key === MENU_PRODUCTS_STORAGE_KEY && event.newValue) {
-        try { setCatalogProducts(JSON.parse(event.newValue) as Product[]); } catch { /* Ignore malformed external data. */ }
-      }
-      if (event.key === MENU_SETTINGS_STORAGE_KEY && event.newValue) {
-        try { setMenuSettings(JSON.parse(event.newValue) as MenuSettings); } catch { /* Ignore malformed external data. */ }
-      }
-      if (event.key === ADMIN_APP_SETTINGS_KEY && event.newValue) {
-        try { setAppSettings({ ...DEFAULT_APP_SETTINGS, ...JSON.parse(event.newValue) as AppSettings }); } catch { /* Ignore malformed external data. */ }
-      }
-      if (event.key === BANNERS_STORAGE_KEY && event.newValue) {
-        try { setBanners(JSON.parse(event.newValue) as Banner[]); } catch { /* Ignore malformed external data. */ }
-      }
-      if (event.key === PROMOS_STORAGE_KEY && event.newValue) {
-        try { setPromos(JSON.parse(event.newValue) as Promo[]); } catch { /* Ignore malformed external data. */ }
-      }
-      if (event.key === EVENTS_STORAGE_KEY && event.newValue) {
-        try { setEvents(JSON.parse(event.newValue) as EventItem[]); } catch { /* Ignore malformed external data. */ }
-      }
-    }
-    window.addEventListener("storage", syncAdminChanges);
-    return () => window.removeEventListener("storage", syncAdminChanges);
+    // Realtime: cuando el admin guarda, el menu publico se actualiza solo
+    const channel = subscribeToConfig((key, value) => {
+      if (key === "products") setCatalogProducts(value as Product[]);
+      if (key === "menu_settings") setMenuSettings(value as MenuSettings);
+      if (key === "app_settings") setAppSettings({ ...DEFAULT_APP_SETTINGS, ...(value as AppSettings) });
+      if (key === "banners") setBanners(value as Banner[]);
+      if (key === "promos") setPromos(value as Promo[]);
+      if (key === "events") setEvents(value as EventItem[]);
+    });
+    return () => { channel.unsubscribe(); };
   }, []);
 
   const brandName = appSettings.businessName.trim() || DEFAULT_APP_SETTINGS.businessName;

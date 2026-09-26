@@ -1,3 +1,5 @@
+import { insertAnalyticsEvent, fetchAnalyticsEvents, clearAnalyticsEvents as clearFromDb } from "../db/config";
+
 export type EventType =
   | "session_start"
   | "product_view"
@@ -26,11 +28,10 @@ export type AnalyticsEvent = {
   filterType?: string;
 };
 
-export const ANALYTICS_STORAGE_KEY = "restaurant-analytics-v1";
 const SESSION_ID_KEY = "restaurant-analytics-session-id-v1";
-const MAX_EVENTS = 1000;
 
 function getOrCreateSessionId(): string {
+  if (typeof window === "undefined") return "server";
   let id = window.sessionStorage.getItem(SESSION_ID_KEY);
   if (!id) {
     id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
@@ -51,23 +52,14 @@ export function trackEvent(
     timestamp: new Date().toISOString(),
     ...data,
   };
-  try {
-    const raw = window.localStorage.getItem(ANALYTICS_STORAGE_KEY);
-    const events: AnalyticsEvent[] = raw ? (JSON.parse(raw) as AnalyticsEvent[]) : [];
-    events.push(event);
-    if (events.length > MAX_EVENTS) events.splice(0, events.length - MAX_EVENTS);
-    window.localStorage.setItem(ANALYTICS_STORAGE_KEY, JSON.stringify(events));
-  } catch { /* ignore */ }
+  // Fire and forget — no bloquea la UI
+  insertAnalyticsEvent(event).catch(() => undefined);
 }
 
-export function getStoredEvents(): AnalyticsEvent[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(ANALYTICS_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as AnalyticsEvent[]) : [];
-  } catch { return []; }
+export async function getStoredEvents(): Promise<AnalyticsEvent[]> {
+  return fetchAnalyticsEvents();
 }
 
-export function clearStoredEvents(): void {
-  window.localStorage.removeItem(ANALYTICS_STORAGE_KEY);
+export async function clearStoredEvents(): Promise<void> {
+  return clearFromDb();
 }
