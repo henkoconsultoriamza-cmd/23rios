@@ -276,7 +276,7 @@ img { display: block; max-width: 100%; }
 .events-banner-dots { position: absolute; top: 14px; right: 16px; display: flex; gap: 6px; }
 .events-banner-dots button { width: 7px; height: 7px; border-radius: 50%; border: none; background: rgba(255,255,255,.4); cursor: pointer; padding: 0; transition: background .2s; }
 .events-banner-dots button.active { background: white; }
-.events-banner-cta { width: 100%; min-height: 56px; border-radius: 0; font-size: 16px; border: 0; background: white; color: var(--ink); font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 24px; cursor: pointer; transition: .2s ease; }
+.events-banner-cta { width: 100%; min-height: 56px; border-radius: 0 !important; font-size: 16px; border: 0; background: white; color: var(--ink); font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 24px; cursor: pointer; transition: .2s ease; padding: 0; }
 .events-banner-cta:hover { background: var(--yellow); }
 .assistant-symbol { height: 62px; width: 62px; display: grid; place-items: center; background: var(--yellow); color: var(--ink); border-radius: 50%; position: relative; z-index: 1; }
 .assistant-symbol.small { height: 40px; width: 40px; }
