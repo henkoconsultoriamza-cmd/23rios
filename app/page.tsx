@@ -683,7 +683,7 @@ export default function Home() {
                         {(() => { const p = getPromoForProduct(product); if (!p) return null; const label = p.type === "2x1" ? "2×1" : p.type === "porcentaje" ? `-${p.promoPercent}%` : "Oferta"; return <span className="promo-badge-image">{label}</span>; })()}
                       </div>
                       <div className="product-info">
-                        <p className="product-category">{tr(product.group)}{product.beerStyle ? ` · ${tr(product.beerStyle)}` : ""}</p>
+
                         <div className="product-title"><button onClick={() => setSelected(product)}><h3>{tr(product.name)}</h3></button><button className={favorites.includes(product.id) ? "favorite active" : "favorite"} onClick={() => toggleFavorite(product.id)} aria-label={`Guardar ${tr(product.name)}`}><Icon name="heart" size={18}/></button></div>
                         <p>{tr(product.description)}</p>
                         {(() => {
@@ -851,7 +851,6 @@ export default function Home() {
           <button className="modal-close" onClick={() => setSelected(null)} aria-label="Cerrar"><Icon name="close"/></button>
           <div className="detail-image">{selected.image ? <img className={selected.id === "filet-numa" ? "filet-numa-image" : undefined} src={selected.image} alt={`${selected.name} de ${brandName}, vista ampliada`}/> : <div className="detail-photo-pending"><Icon name="expand" size={28}/><strong>Fotografía real pendiente</strong><small>Este espacio se reemplazará por la imagen real del restaurante.</small></div>}<span>{selected.image ? "FOTO DEL PRODUCTO" : "RECURSO PENDIENTE"}</span></div>
           <div className="detail-copy">
-            <p className="product-category">{tr(selected.category === "Cocina" ? "Comida" : "Bebida")}</p>
             <h2 id="product-title">{tr(selected.name)}</h2>
             {selected.beerProfile && <section className="beer-profile" aria-label={`Características de ${selected.name}`}>
               {selected.beerStyle && <p className="beer-style-badge">{selected.beerStyle.toUpperCase()}</p>}
