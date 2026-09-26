@@ -150,9 +150,13 @@ function EventsBannerSlider({ events, brandName, onOpen, tr }: { events: EventIt
         ))}
       </div>
       {events.length > 1 && (
-        <div className="events-banner-dots">
-          {events.map((_, i) => <button key={i} className={i === current ? "active" : ""} onClick={() => setCurrent(i)} aria-label={`Evento ${i + 1}`}/>)}
-        </div>
+        <>
+          <button className="events-banner-arrow events-banner-arrow-prev" onClick={() => setCurrent(i => (i - 1 + events.length) % events.length)} aria-label="Anterior">&#8249;</button>
+          <button className="events-banner-arrow events-banner-arrow-next" onClick={() => setCurrent(i => (i + 1) % events.length)} aria-label="Siguiente">&#8250;</button>
+          <div className="events-banner-dots">
+            {events.map((_, i) => <button key={i} className={i === current ? "active" : ""} onClick={() => setCurrent(i)} aria-label={`Evento ${i + 1}`}/>)}
+          </div>
+        </>
       )}
       <button className="events-banner-cta" onClick={onOpen}>{tr("Ver eventos")} <Icon name="arrow" size={18}/></button>
     </section>
