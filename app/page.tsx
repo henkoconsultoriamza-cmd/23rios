@@ -859,7 +859,7 @@ export default function Home() {
       {selected && <div className="overlay" onMouseDown={() => setSelected(null)}>
         <article className="detail-modal" role="dialog" aria-modal="true" aria-labelledby="product-title" data-style={selected.beerStyle?.toLowerCase().replace(/\s+/g, "-")} onMouseDown={(event) => event.stopPropagation()}>
           <button className="modal-close" onClick={() => setSelected(null)} aria-label="Cerrar"><Icon name="close"/></button>
-          <div className="detail-image">{selected.image ? <img className={selected.id === "filet-numa" ? "filet-numa-image" : undefined} src={selected.image} alt={`${selected.name} de ${brandName}, vista ampliada`}/> : <div className="detail-photo-pending"><Icon name="expand" size={28}/><strong>Fotografía real pendiente</strong><small>Este espacio se reemplazará por la imagen real del restaurante.</small></div>}<span>{selected.image ? "FOTO DEL PRODUCTO" : "RECURSO PENDIENTE"}</span></div>
+          <div className="detail-image">{selected.image ? <img className={selected.id === "filet-numa" ? "filet-numa-image" : undefined} src={selected.image} alt={`${selected.name} de ${brandName}, vista ampliada`}/> : <div className="detail-photo-pending"><Icon name="expand" size={28}/><strong>Fotografía real pendiente</strong><small>Este espacio se reemplazará por la imagen real del restaurante.</small></div>}</div>
           <div className="detail-copy">
             <h2 id="product-title">{tr(selected.name)}</h2>
             {selected.beerProfile && <section className="beer-profile" aria-label={`Características de ${selected.name}`}>
@@ -894,17 +894,8 @@ export default function Home() {
             </section> : <div className="single-price">{(() => { const promo = getPromoForProduct(selected); const effPrice = promoPrice(selected); return <><span>{tr("Precios de muestra")}</span>{promo && effPrice !== selected.price && <s className="price-original">{displayPrice(selected.price)}</s>}<strong>{displayPrice(effPrice)}</strong></>; })()}</div>}
 
             <section className="nutrition-card" aria-labelledby="nutrition-title">
-              <div className="detail-section-heading"><div><p>{tr("INFORMACIÓN NUTRICIONAL")}</p><h3 id="nutrition-title">{tr("Valores nutricionales")}</h3></div><small>{tr(selected.nutrition.basis)}</small></div>
-              <dl>
-                <div><dt>{tr("Calorías")}</dt><dd>{selected.nutrition.calories}</dd></div>
-                <div><dt>{tr("Grasas")}</dt><dd>{selected.nutrition.fats}</dd></div>
-                <div><dt>{tr("Proteínas")}</dt><dd>{selected.nutrition.proteins}</dd></div>
-                <div><dt>{tr("Carbohidratos")}</dt><dd>{selected.nutrition.carbs}</dd></div>
-                <div><dt>{tr("Azúcares")}</dt><dd>{selected.nutrition.sugars}</dd></div>
-              </dl>
               <div className="allergen-summary"><strong>{tr("Alérgenos")}</strong><div>{selected.allergens.length ? selected.allergens.map((allergen) => <span className="allergen-item" key={allergen}><i aria-hidden="true">{allergenIcons[allergen] ?? "•"}</i>{tr(allergen)}</span>) : <span className="allergen-item allergen-free"><i aria-hidden="true">✓</i>Sin alérgenos declarados</span>}</div></div>
             </section>
-            <div className="validation-note"><strong>{tr("Información provisional")}</strong><span>{language === "es" ? selected.note : tr("Información pendiente de validación con la carta oficial.")} {tr("Los precios y valores nutricionales mostrados son demostrativos.")}</span></div>
             {(() => {
               const modalKey = selectedServingOption ? `${selected.id}:${selectedServingOption.label}` : selected.id;
               const modalItem = orderItems.find(i => i.key === modalKey);
@@ -939,7 +930,6 @@ export default function Home() {
                 </button>)}
               </div>
             </section>
-            <button className={favorites.includes(selected.id) ? "save-button active" : "save-button"} onClick={() => toggleFavorite(selected.id)}><Icon name="heart" size={18}/>{tr(favorites.includes(selected.id) ? "Guardado en favoritos" : "Guardar para decidir después")}</button>
           </div>
         </article>
       </div>}
