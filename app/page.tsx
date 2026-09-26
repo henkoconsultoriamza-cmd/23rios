@@ -642,8 +642,7 @@ export default function Home() {
       </section>
 
       {events.filter(e => e.active).length > 0 && <section className="events-banner">
-        <div className="events-banner-poster">{events.filter(e => e.active)[0].imageUrl && <img src={events.filter(e => e.active)[0].imageUrl} alt={`Evento en ${brandName}`}/>}<span>{events.filter(e => e.active)[0].date}</span></div>
-        <div className="events-banner-copy"><p className="eyebrow">EXPERIENCIAS EN {brandName.toLocaleUpperCase("es")}</p><h2>{events.filter(e => e.active)[0].title}</h2>{events.filter(e => e.active)[0].subtitle && <p>{events.filter(e => e.active)[0].subtitle}</p>}{events.filter(e => e.active)[0].time && <div><span>EVENTO DESTACADO</span><strong>{events.filter(e => e.active)[0].title} · {events.filter(e => e.active)[0].time}</strong></div>}</div>
+        <div className="events-banner-poster">{events.filter(e => e.active)[0].imageUrl && <img src={events.filter(e => e.active)[0].imageUrl} alt={`Evento en ${brandName}`}/>}</div>
         <button onClick={() => setEventsOpen(true)}>{tr("Ver eventos")} <Icon name="arrow" size={18}/></button>
       </section>}
 
