@@ -27,7 +27,7 @@ import { Banner, BANNERS_STORAGE_KEY } from "../banner-data";
 import { EventItem, EVENTS_STORAGE_KEY } from "../event-data";
 
 type SettingsKey = keyof MenuSettings;
-type AdminTab = "products" | "filters" | "portal" | "adjustments" | "analytics" | "banners" | "evento";
+type AdminTab = "products" | "filters" | "adjustments" | "analytics" | "banners" | "evento";
 type DateRange = "today" | "7d" | "30d" | "all";
 type AdminCredentials = { username: string; passwordHash: string };
 
@@ -806,25 +806,24 @@ export default function AdminPage() {
     <main className="admin-shell">
       <header className="admin-topbar">
         <div className="admin-brand"><img src={appSettings.logoUrl} alt={appSettings.businessName}/><span><small>GESTIÓN DEL MENÚ</small><strong>Panel administrativo</strong></span></div>
-        <div className="admin-top-actions"><span className="admin-local-badge">● Guardado local</span><span className="admin-user-badge"><i>{securityUsername.slice(0, 1).toLocaleUpperCase("es")}</i><b>{securityUsername}</b></span><button className="admin-logout" onClick={logout}>Salir</button><a href="/portal">Ver portal <b>→</b></a><a href="/">Ver menú <b>→</b></a></div>
+        <div className="admin-top-actions"><span className="admin-local-badge">● Guardado local</span><span className="admin-user-badge"><i>{securityUsername.slice(0, 1).toLocaleUpperCase("es")}</i><b>{securityUsername}</b></span><button className="admin-logout" onClick={logout}>Salir</button><a href="/">Ver menú <b>→</b></a></div>
       </header>
 
       <div className="admin-layout">
         <aside className="admin-sidebar">
           <div className="admin-nav-label">ADMINISTRACIÓN</div>
           <button className={tab === "products" ? "active" : ""} onClick={() => setTab("products")}><span>01</span><div><strong>Productos</strong><small>Fotos, textos y precios</small></div></button>
-          <button className={tab === "portal" ? "active" : ""} onClick={() => setTab("portal")}><span>02</span><div><strong>Portal</strong><small>Portada y accesos</small></div></button>
-          <button className={tab === "adjustments" ? "active" : ""} onClick={() => setTab("adjustments")}><span>03</span><div><strong>Ajustes</strong><small>Negocio y seguridad</small></div></button>
-          <button className={tab === "banners" ? "active" : ""} onClick={() => setTab("banners")}><span>04</span><div><strong>Novedades</strong><small>Promos, banners y eventos</small></div></button>
-          <button className={tab === "evento" ? "active" : ""} onClick={() => setTab("evento")}><span>05</span><div><strong>Menú Evento</strong><small>Carta reducida para eventos</small></div></button>
-          <button className={tab === "analytics" ? "active" : ""} onClick={() => { setTab("analytics"); setAnalyticsEvents(getStoredEvents()); }}><span>06</span><div><strong>Analíticas</strong><small>Métricas del menú</small></div></button>
+          <button className={tab === "adjustments" ? "active" : ""} onClick={() => setTab("adjustments")}><span>02</span><div><strong>Ajustes</strong><small>Negocio y seguridad</small></div></button>
+          <button className={tab === "banners" ? "active" : ""} onClick={() => setTab("banners")}><span>03</span><div><strong>Novedades</strong><small>Promos, banners y eventos</small></div></button>
+          <button className={tab === "evento" ? "active" : ""} onClick={() => setTab("evento")}><span>04</span><div><strong>Menú Evento</strong><small>Carta reducida para eventos</small></div></button>
+          <button className={tab === "analytics" ? "active" : ""} onClick={() => { setTab("analytics"); setAnalyticsEvents(getStoredEvents()); }}><span>05</span><div><strong>Analíticas</strong><small>Métricas del menú</small></div></button>
           <div className="admin-sidebar-note"><strong>Sesión protegida</strong><p>Este acceso funciona en el dispositivo de demostración. En producción se validará desde el servidor y la base de datos.</p></div>
         </aside>
 
         <section className="admin-content">
           <div className="admin-heading">
-            <div><p>{appSettings.businessName.toLocaleUpperCase("es")} · EXPERIENCIA DIGITAL</p><h1>{tab === "products" ? "Productos del menú" : tab === "filters" ? "Filtros y clasificaciones" : tab === "portal" ? "Portal del restaurante" : tab === "banners" ? "Novedades y banners" : tab === "analytics" ? "Analíticas del menú" : tab === "evento" ? "Menú Evento" : "Ajustes del sistema"}</h1><span>{tab === "products" ? "Editá lo que el cliente ve al abrir cada producto." : tab === "filters" ? "Definí las opciones que aparecen en los filtros y formularios." : tab === "portal" ? "Configurá la portada, los accesos y su orden sin modificar el menú." : tab === "banners" ? "Creá y publicá banners visibles en la carta. El cliente los ve al abrir el menú." : tab === "analytics" ? "Seguimiento de interacciones, conversiones y comportamiento de los clientes." : tab === "evento" ? "Activá la carta reducida para eventos especiales. Solo se muestran los productos marcados." : "Administrá la identidad, los datos del negocio y las credenciales."}</span></div>
-            {tab === "products" ? <button className="admin-primary-action" onClick={() => startNew()}>＋ Nuevo producto</button> : tab === "portal" ? <button className="admin-primary-action" onClick={addPortalAction}>＋ Nuevo acceso</button> : tab === "banners" ? <div className="admin-heading-actions"><button className="admin-primary-action" onClick={addPromo}>＋ Nueva promoción</button><button className="admin-primary-action admin-action-outline" onClick={addEvent}>＋ Nuevo evento</button><button className="admin-primary-action admin-action-outline" onClick={addBanner}>＋ Nuevo banner</button></div> : tab === "analytics" ? <button className="admin-primary-action" onClick={refreshAnalytics}>↺ Actualizar</button> : null}
+            <div><p>{appSettings.businessName.toLocaleUpperCase("es")} · EXPERIENCIA DIGITAL</p><h1>{tab === "products" ? "Productos del menú" : tab === "filters" ? "Filtros y clasificaciones" : tab === "banners" ? "Novedades y banners" : tab === "analytics" ? "Analíticas del menú" : tab === "evento" ? "Menú Evento" : "Ajustes del sistema"}</h1><span>{tab === "products" ? "Editá lo que el cliente ve al abrir cada producto." : tab === "filters" ? "Definí las opciones que aparecen en los filtros y formularios." : tab === "banners" ? "Creá y publicá banners visibles en la carta. El cliente los ve al abrir el menú." : tab === "analytics" ? "Seguimiento de interacciones, conversiones y comportamiento de los clientes." : tab === "evento" ? "Activá la carta reducida para eventos especiales. Solo se muestran los productos marcados." : "Administrá la identidad, los datos del negocio y las credenciales."}</span></div>
+            {tab === "products" ? <button className="admin-primary-action" onClick={() => startNew()}>＋ Nuevo producto</button> : tab === "banners" ? <div className="admin-heading-actions"><button className="admin-primary-action" onClick={addPromo}>＋ Nueva promoción</button><button className="admin-primary-action admin-action-outline" onClick={addEvent}>＋ Nuevo evento</button><button className="admin-primary-action admin-action-outline" onClick={addBanner}>＋ Nuevo banner</button></div> : tab === "analytics" ? <button className="admin-primary-action" onClick={refreshAnalytics}>↺ Actualizar</button> : null}
           </div>
 
           {(tab === "products" || tab === "evento") && <div className="admin-stats">
@@ -1178,70 +1177,6 @@ export default function AdminPage() {
                 <span>{products.filter((p) => p.eventoMenu).length} productos marcados para evento</span>
               </div>
             </article>
-          </div> : tab === "portal" ? <div className="admin-portal-layout">
-            <div className="admin-portal-editor">
-              <article className="admin-portal-section">
-                <div className="admin-section-title"><span>01</span><div><h3>Presentación del portal</h3><p>La identidad utiliza el logo, nombre y color definidos en Ajustes.</p></div></div>
-                <div className="admin-photo-editor admin-portal-cover">
-                  <div><img src={portalSettings.coverImageUrl || appSettings.heroImageUrl} alt="Vista previa de la portada"/></div>
-                  <section><label>Dirección de imagen<input value={portalSettings.coverImageUrl} onChange={(event) => updatePortalSetting("coverImageUrl", event.target.value)} placeholder="/images/portada.jpg o dirección web"/></label><label className="admin-upload">Elegir portada del dispositivo<input type="file" accept="image/*" onChange={handlePortalCover}/></label><small>En esta demo: JPG, PNG o WebP de hasta 1,5 MB.</small></section>
-                </div>
-                <div className="admin-form-grid admin-portal-copy-fields">
-                  <label className="wide">Texto superior<input value={portalSettings.eyebrow} onChange={(event) => updatePortalSetting("eyebrow", event.target.value)}/></label>
-                  <label>Título principal<input value={portalSettings.title} onChange={(event) => updatePortalSetting("title", event.target.value)}/></label>
-                  <label>Frase destacada<input value={portalSettings.highlight} onChange={(event) => updatePortalSetting("highlight", event.target.value)}/></label>
-                  <label className="wide">Descripción<textarea rows={3} value={portalSettings.description} onChange={(event) => updatePortalSetting("description", event.target.value)}/></label>
-                </div>
-              </article>
-
-              <article className="admin-portal-section">
-                <div className="admin-section-title"><span>02</span><div><h3>Información del local</h3><p>Estado, horarios y ubicación visibles al entrar.</p></div></div>
-                <div className="admin-form-grid">
-                  <label>Estado actual<input value={portalSettings.statusLabel} onChange={(event) => updatePortalSetting("statusLabel", event.target.value)}/></label>
-                  <label>Detalle del estado<input value={portalSettings.statusDetail} onChange={(event) => updatePortalSetting("statusDetail", event.target.value)}/></label>
-                  <label>Dirección<input value={portalSettings.address} onChange={(event) => updatePortalSetting("address", event.target.value)}/></label>
-                  <label>Horarios<input value={portalSettings.hours} onChange={(event) => updatePortalSetting("hours", event.target.value)}/></label>
-                </div>
-                <div className="admin-portal-switches">
-                  <label><input type="checkbox" checked={portalSettings.showStatus} onChange={(event) => updatePortalSetting("showStatus", event.target.checked)}/><span><strong>Mostrar estado</strong><small>Abierto, cerrado o servicio especial</small></span></label>
-                  <label><input type="checkbox" checked={portalSettings.showAddress} onChange={(event) => updatePortalSetting("showAddress", event.target.checked)}/><span><strong>Mostrar dirección</strong><small>En el pie del portal</small></span></label>
-                  <label><input type="checkbox" checked={portalSettings.showHours} onChange={(event) => updatePortalSetting("showHours", event.target.checked)}/><span><strong>Mostrar horarios</strong><small>Días y franja de atención</small></span></label>
-                </div>
-              </article>
-
-              <article className="admin-portal-section">
-                <div className="admin-section-title"><span>03</span><div><h3>Accesos del cliente</h3><p>Editá textos, destinos, jerarquía, orden y visibilidad.</p></div></div>
-                <div className="admin-portal-actions-list">{portalSettings.actions.map((action, index) => <article key={action.id} className={!action.visible ? "is-hidden" : ""}>
-                  <header><div><b>{String(index + 1).padStart(2, "0")}</b><span><strong>{action.label}</strong><small>{action.style === "featured" ? "Acción principal" : action.style === "card" ? "Tarjeta destacada" : "Acceso secundario"}</small></span></div><div><button onClick={() => movePortalAction(action.id, -1)} disabled={index === 0} aria-label={`Subir ${action.label}`}>↑</button><button onClick={() => movePortalAction(action.id, 1)} disabled={index === portalSettings.actions.length - 1} aria-label={`Bajar ${action.label}`}>↓</button><button className="remove" onClick={() => removePortalAction(action)} aria-label={`Eliminar ${action.label}`}>×</button></div></header>
-                  <div className="admin-form-grid">
-                    <label>Título<input value={action.label} onChange={(event) => updatePortalAction(action.id, { label: event.target.value })}/></label>
-                    <label>Descripción<input value={action.description} onChange={(event) => updatePortalAction(action.id, { description: event.target.value })}/></label>
-                    <label className="wide">Destino<input value={action.href} onChange={(event) => updatePortalAction(action.id, { href: event.target.value })} placeholder="/ruta o https://..."/></label>
-                    <label>Presentación<select value={action.style} onChange={(event) => updatePortalAction(action.id, { style: event.target.value as PortalAction["style"] })}><option value="featured">Principal</option><option value="card">Tarjeta</option><option value="compact">Secundario</option></select></label>
-                    <label>Ícono<select value={action.icon} onChange={(event) => updatePortalAction(action.id, { icon: event.target.value as PortalAction["icon"] })}><option value="menu">Menú</option><option value="calendar">Calendario</option><option value="pin">Ubicación</option><option value="wine">Vino</option><option value="cocktail">Cóctel</option><option value="whatsapp">WhatsApp</option><option value="instagram">Instagram</option><option value="link">Enlace</option></select></label>
-                  </div>
-                  <label className="admin-action-visible"><input type="checkbox" checked={action.visible} onChange={(event) => updatePortalAction(action.id, { visible: event.target.checked })}/><span>Visible para el cliente</span></label>
-                </article>)}</div>
-                <button className="admin-add-portal-action" onClick={addPortalAction}>＋ Agregar otro acceso</button>
-              </article>
-
-              <div className="admin-portal-save"><span>Los cambios se ven en esta demostración después de guardar.</span><button onClick={savePortalSettings}>Guardar y publicar portal</button></div>
-            </div>
-
-            <aside className="admin-portal-preview">
-              <header><span>VISTA PREVIA</span><a href="/portal" target="_blank">Abrir completa ↗</a></header>
-              <div className="admin-phone-preview" style={{ "--preview-accent": appSettings.accentColor } as CSSProperties}>
-                <img className="admin-preview-cover" src={portalSettings.coverImageUrl || appSettings.heroImageUrl} alt=""/>
-                <div className="admin-preview-shade"/>
-                <div className="admin-preview-content">
-                  <img className="admin-preview-logo" src={appSettings.logoUrl} alt=""/>
-                  {portalSettings.showStatus && <span className="admin-preview-status">● {portalSettings.statusLabel}</span>}
-                  <p>{portalSettings.eyebrow}</p><h2>{portalSettings.title}<em>{portalSettings.highlight}</em></h2><small>{portalSettings.description}</small>
-                  <div>{portalSettings.actions.filter((action) => action.visible).slice(0, 5).map((action) => <span className={`preview-${action.style}`} key={action.id}><b>{action.label}</b><i>↗</i></span>)}</div>
-                </div>
-              </div>
-              <p>La vista previa se actualiza mientras editás. Guardá para aplicar los cambios en el portal público.</p>
-            </aside>
           </div> : <div className="admin-adjustments-grid">
             <article className="admin-adjustment-card admin-business-settings">
               <div className="admin-adjustment-heading"><span>01</span><div><h2>Información básica</h2></div></div>
