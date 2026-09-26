@@ -597,14 +597,15 @@ footer img { width: 80px; height: 58px; object-fit: contain; mix-blend-mode: scr
   .novedades-strip { margin: 0; gap: 0; }
   .novedad-card { height: auto; padding: 0; }
   .novedad-img { height: auto; }
-  .events-banner { min-height: 0; margin: 0 12px 60px; padding: 12px; grid-template-columns: 105px minmax(0, 1fr); gap: 14px; }
-  .events-banner::after { font-size: 60px; right: -10px; bottom: 18px; }
-  .events-banner-poster { height: 160px; border-radius: 11px; }
-  .events-banner-poster span { left: 7px; bottom: 7px; padding: 5px 7px; font-size: 7px; }
-  .events-banner-copy h2 { font-size: 24px; }
-  .events-banner-copy > p:not(.eyebrow) { margin: 8px 0 10px; font-size: 10px; line-height: 1.4; }
-  .events-banner-copy > div { display: none; }
-  .events-banner > button { grid-column: 1 / -1; width: 100%; min-height: 48px; }
+  .events-banner { min-height: 0; margin: 0 0 60px; padding: 0; grid-template-columns: 1fr; border-radius: 0; gap: 0; }
+  .events-banner::after { display: none; }
+  .events-banner-poster { height: 56vw; min-height: 220px; border-radius: 0; }
+  .events-banner-poster span { left: 12px; bottom: 12px; padding: 6px 10px; font-size: 8px; }
+  .events-banner-copy { padding: 18px 20px 4px; }
+  .events-banner-copy h2 { font-size: 26px; }
+  .events-banner-copy > p:not(.eyebrow) { margin: 10px 0 14px; font-size: 12px; line-height: 1.45; }
+  .events-banner-copy > div { display: flex; }
+  .events-banner > button { margin: 16px 20px 20px; width: calc(100% - 40px); min-height: 52px; font-size: 15px; }
   .assistant-symbol { height: 52px; width: 52px; }
   footer { padding: 28px 20px 95px; align-items: flex-start; gap: 20px; }
   footer p { text-align: right; max-width: 210px; }
