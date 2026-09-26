@@ -265,9 +265,21 @@ export default function Home() {
       } catch { window.localStorage.removeItem("restaurant-template-current-order-v2"); }
     }
 
-    // Banners y eventos primero — aparecen arriba de todo
-    getBanners().then((bans) => setBanners(bans ?? []));
-    getEvents().then((evts) => { if (evts) setEvents(evts); });
+    // Banners: mostrar caché instantáneo, luego actualizar desde Supabase
+    const cachedBanners = window.localStorage.getItem("cache-banners-v1");
+    if (cachedBanners) { try { setBanners(JSON.parse(cachedBanners)); } catch { /* ignore */ } }
+    getBanners().then((bans) => {
+      const result = bans ?? [];
+      setBanners(result);
+      window.localStorage.setItem("cache-banners-v1", JSON.stringify(result));
+    });
+
+    // Eventos: misma estrategia
+    const cachedEvents = window.localStorage.getItem("cache-events-v1");
+    if (cachedEvents) { try { setEvents(JSON.parse(cachedEvents)); } catch { /* ignore */ } }
+    getEvents().then((evts) => {
+      if (evts) { setEvents(evts); window.localStorage.setItem("cache-events-v1", JSON.stringify(evts)); }
+    });
 
     // Resto de datos en paralelo
     Promise.all([
