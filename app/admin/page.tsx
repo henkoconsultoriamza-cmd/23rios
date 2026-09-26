@@ -77,6 +77,56 @@ async function hashPassword(value: string) {
   return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+function RelatedPicker({ all, selected, onToggle }: { all: Product[]; selected: string[]; onToggle: (id: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const filtered = all.filter((p) => p.name.toLocaleLowerCase("es").includes(search.toLocaleLowerCase("es")));
+  const selectedProducts = all.filter((p) => selected.includes(p.id));
+
+  return (
+    <div className="related-picker" ref={ref}>
+      <div className="related-chips">
+        {selectedProducts.map((p) => (
+          <span key={p.id} className="related-chip">
+            {p.image ? <img src={p.image} alt=""/> : <i>CN</i>}
+            {p.name}
+            <button type="button" onClick={() => onToggle(p.id)} aria-label={`Quitar ${p.name}`}>×</button>
+          </span>
+        ))}
+        <button type="button" className="related-add-btn" onClick={() => setOpen((o) => !o)}>
+          ＋ Agregar
+        </button>
+      </div>
+      {open && (
+        <div className="related-dropdown">
+          <input autoFocus placeholder="Buscar producto…" value={search} onChange={(e) => setSearch(e.target.value)}/>
+          <ul>
+            {filtered.map((p) => (
+              <li key={p.id} className={selected.includes(p.id) ? "is-selected" : ""} onClick={() => onToggle(p.id)}>
+                {p.image ? <img src={p.image} alt=""/> : <span>CN</span>}
+                <strong>{p.name}</strong>
+                <small>{p.group}</small>
+                {selected.includes(p.id) && <b>✓</b>}
+              </li>
+            ))}
+            {filtered.length === 0 && <li className="related-empty">Sin resultados</li>}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const [tab, setTab] = useState<AdminTab>("products");
   const [authenticated, setAuthenticated] = useState(false);
@@ -903,9 +953,13 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="admin-form-section">
-                <div className="admin-section-title"><span>{isCraftBeer ? "05" : "04"}</span><div><h3>Venta relacionada</h3><p>Elegí qué productos mostrar en “Se puede acompañar con”.</p></div></div>
-                <div className="admin-related-grid">{products.filter((product) => product.id !== selectedId).map((product) => <label key={product.id}><input type="checkbox" checked={draft.relatedIds.includes(product.id)} onChange={() => toggleDraftList("relatedIds", product.id)}/>{product.image ? <img src={product.image} alt=""/> : <span>CN</span>}<strong>{product.name}</strong></label>)}</div>
+              <div className=”admin-form-section”>
+                <div className=”admin-section-title”><span>{isCraftBeer ? “05” : “04”}</span><div><h3>Venta relacionada</h3><p>Elegí qué productos mostrar en “Se puede acompañar con”.</p></div></div>
+                <RelatedPicker
+                  all={products.filter((p) => p.id !== selectedId)}
+                  selected={draft.relatedIds}
+                  onToggle={(id) => toggleDraftList(“relatedIds”, id)}
+                />
               </div>
 
               {draft.category === "Cocina" && <div className="admin-form-section">
