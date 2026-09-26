@@ -843,8 +843,12 @@ export default function AdminPage() {
               <div className="admin-editor-title"><div><p>{isNew ? "NUEVO PRODUCTO" : "EDITAR PRODUCTO"}</p><h2>{draft.name || "Sin nombre todavía"}</h2></div><span>{draft.category === "Cocina" ? "Comida" : "Bebida"}</span></div>
 
               <div className="admin-photo-editor">
-                <div>{draft.image ? <img src={draft.image} alt="Vista previa del producto"/> : <span>Sin foto</span>}</div>
-                <section><label>Imagen del producto<input value={draft.image ?? ""} onChange={(event) => updateDraft("image", event.target.value)} placeholder="/images/producto.jpg o dirección web"/></label><label className="admin-upload">Elegir foto del dispositivo — 800 × 800 px recomendado para móvil<input type="file" accept="image/*" onChange={handlePhoto}/></label><small>JPG, PNG o WebP · máx. 1,5 MB</small></section>
+                <div className="wide admin-event-image-field">
+                  {draft.image && <img src={draft.image} alt="Vista previa del producto" className="admin-event-image-preview"/>}
+                  <label className="admin-upload-slim">Subir imagen — 800 × 800 px recomendado para móvil<input type="file" accept="image/*" onChange={handlePhoto}/></label>
+                  <div className="admin-image-url-divider">o pegá una URL</div>
+                  <input value={draft.image?.startsWith("data:") ? "" : (draft.image ?? "")} onChange={(e) => updateDraft("image", e.target.value)} placeholder="https://..."/>
+                </div>
               </div>
 
               <div className="admin-form-section">
