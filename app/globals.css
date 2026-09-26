@@ -950,6 +950,7 @@ textarea, select { font: inherit; }
 
 .price-original { color: var(--muted); font-size: 11px; text-decoration: line-through; margin-right: 4px; }
 .promo-badge { display: inline-block; background: #e05a3a; color: white; font: 800 10px/1 "Manrope"; padding: 3px 7px; border-radius: 999px; margin-right: 5px; vertical-align: middle; }
+.promo-badge-image { position: absolute; bottom: 10px; left: 10px; background: #e05a3a; color: white; font: 800 15px/1 "Manrope"; padding: 6px 12px; border-radius: 999px; letter-spacing: .3px; box-shadow: 0 2px 8px rgba(0,0,0,.25); z-index: 2; pointer-events: none; }
 .admin-section-block { margin-bottom: 32px; }
 .admin-section-block-header { margin-bottom: 14px; }
 .admin-section-block-header h3 { font-size: 15px; font-weight: 800; margin: 0 0 3px; }

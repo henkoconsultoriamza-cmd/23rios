@@ -659,6 +659,7 @@ export default function Home() {
                         {product.image ? <img className={product.id === "filet-numa" ? "filet-numa-image" : undefined} src={product.image} alt={`${tr(product.name)} · ${brandName}`} /> : <span className="photo-pending"><Icon name="expand" size={20}/><strong>{tr("Foto real pendiente")}</strong></span>}
                         <span className="product-tag">{product.tag}</span>
                         <span className="expand-label"><Icon name="expand" size={14}/> {tr("Ver detalle")}</span>
+                        {(() => { const p = getPromoForProduct(product); if (!p) return null; const label = p.type === "2x1" ? "2×1" : p.type === "porcentaje" ? `-${p.promoPercent}%` : "Oferta"; return <span className="promo-badge-image">{label}</span>; })()}
                       </button>
                       <div className="product-info">
                         <p className="product-category">{tr(product.group)}{product.beerStyle ? ` · ${tr(product.beerStyle)}` : ""}</p>
@@ -679,7 +680,6 @@ export default function Home() {
                             <div className="product-footer">
                               <span>
                                 {hasDiscount && <s className="price-original">{displayPrice(originalPrice!)}</s>}
-                                {activePromo?.type === "2x1" && <span className="promo-badge">2×1</span>}
                                 <small>{tr(product.servings ? "Desde" : "Precio demo")}</small>
                                 <strong>{displayPrice(cardPrice)}</strong>
                               </span>
@@ -852,7 +852,7 @@ export default function Home() {
                   <b>{displayPrice(serving.price)}</b>
                 </button>)}
               </div>
-            </section> : <div className="single-price">{(() => { const promo = getPromoForProduct(selected); const effPrice = promoPrice(selected); return <><span>{tr("Precios de muestra")}</span>{promo && effPrice !== selected.price && <s className="price-original">{displayPrice(selected.price)}</s>}{promo?.type === "2x1" && <span className="promo-badge">2×1</span>}<strong>{displayPrice(effPrice)}</strong></>; })()}</div>}
+            </section> : <div className="single-price">{(() => { const promo = getPromoForProduct(selected); const effPrice = promoPrice(selected); return <><span>{tr("Precios de muestra")}</span>{promo && effPrice !== selected.price && <s className="price-original">{displayPrice(selected.price)}</s>}<strong>{displayPrice(effPrice)}</strong></>; })()}</div>}
 
             <section className="nutrition-card" aria-labelledby="nutrition-title">
               <div className="detail-section-heading"><div><p>{tr("INFORMACIÓN NUTRICIONAL")}</p><h3 id="nutrition-title">{tr("Valores nutricionales")}</h3></div><small>{tr(selected.nutrition.basis)}</small></div>
