@@ -853,7 +853,7 @@ export default function AdminPage() {
 
               <div className="admin-photo-editor">
                 <div>{draft.image ? <img src={draft.image} alt="Vista previa del producto"/> : <span>Sin foto</span>}</div>
-                <section><label>Imagen del producto<input value={draft.image ?? ""} onChange={(event) => updateDraft("image", event.target.value)} placeholder="/images/producto.jpg o dirección web"/></label><label className="admin-upload">Elegir foto del dispositivo<input type="file" accept="image/*" onChange={handlePhoto}/></label><small>En esta demo: JPG, PNG o WebP de hasta 1,5 MB.</small></section>
+                <section><label>Imagen del producto<input value={draft.image ?? ""} onChange={(event) => updateDraft("image", event.target.value)} placeholder="/images/producto.jpg o dirección web"/></label><label className="admin-upload">Elegir foto del dispositivo — 800 × 800 px recomendado para móvil<input type="file" accept="image/*" onChange={handlePhoto}/></label><small>JPG, PNG o WebP · máx. 1,5 MB</small></section>
               </div>
 
               <div className="admin-form-section">
@@ -1011,7 +1011,7 @@ export default function AdminPage() {
                     <label>Hora<input type="time" value={eventDraft.time ?? ""} onChange={(e) => updateEventDraft("time", e.target.value || undefined)}/></label>
                     <div className="wide admin-event-image-field">
                       {eventDraft.imageUrl && <img src={eventDraft.imageUrl} alt="Preview" className="admin-event-image-preview"/>}
-                      <label className="admin-upload-slim">Subir imagen desde el dispositivo<input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; if (file.size > 1_500_000) { setNotice("La imagen debe pesar menos de 1,5 MB."); e.target.value = ""; return; } const reader = new FileReader(); reader.onload = () => { if (typeof reader.result === "string") updateEventDraft("imageUrl", reader.result); }; reader.readAsDataURL(file); }}/></label>
+                      <label className="admin-upload-slim">Subir imagen — 900 × 500 px recomendado para móvil<input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; if (file.size > 1_500_000) { setNotice("La imagen debe pesar menos de 1,5 MB."); e.target.value = ""; return; } const reader = new FileReader(); reader.onload = () => { if (typeof reader.result === "string") updateEventDraft("imageUrl", reader.result); }; reader.readAsDataURL(file); }}/></label>
                       <div className="admin-image-url-divider">o pegá una URL</div>
                       <input value={typeof eventDraft.imageUrl === "string" && eventDraft.imageUrl.startsWith("data:") ? "" : (eventDraft.imageUrl ?? "")} onChange={(e) => updateEventDraft("imageUrl", e.target.value || undefined)} placeholder="https://..."/>
                     </div>
@@ -1041,7 +1041,7 @@ export default function AdminPage() {
                     <label className="wide">Subtítulo<input value={bannerDraft.subtitle} onChange={(e) => updateBannerDraft("subtitle", e.target.value)} placeholder="Descripción breve (opcional)"/></label>
                     <div className="wide admin-event-image-field">
                       {bannerDraft.imageUrl && <img src={bannerDraft.imageUrl} alt="Preview" className="admin-event-image-preview"/>}
-                      <label className="admin-upload-slim">Subir imagen desde el dispositivo (1200 × 480 px)<input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; if (file.size > 1_500_000) { setNotice("La imagen debe pesar menos de 1,5 MB."); e.target.value = ""; return; } const reader = new FileReader(); reader.onload = () => { if (typeof reader.result === "string") updateBannerDraft("imageUrl", reader.result); }; reader.readAsDataURL(file); }}/></label>
+                      <label className="admin-upload-slim">Subir imagen — 1200 × 480 px recomendado para móvil<input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; if (file.size > 1_500_000) { setNotice("La imagen debe pesar menos de 1,5 MB."); e.target.value = ""; return; } const reader = new FileReader(); reader.onload = () => { if (typeof reader.result === "string") updateBannerDraft("imageUrl", reader.result); }; reader.readAsDataURL(file); }}/></label>
                       <div className="admin-image-url-divider">o pegá una URL</div>
                       <input value={typeof bannerDraft.imageUrl === "string" && bannerDraft.imageUrl.startsWith("data:") ? "" : (bannerDraft.imageUrl ?? "")} onChange={(e) => updateBannerDraft("imageUrl", e.target.value)} placeholder="https://..."/>
                     </div>
