@@ -29,6 +29,7 @@ import {
   getEvents, saveEvents,
   getPortalSettings, savePortalSettings as savePortalToDb,
   getAdminCredentials, saveAdminCredentials,
+  uploadImage,
 } from "../../db/config";
 
 type SettingsKey = keyof MenuSettings;
@@ -448,19 +449,9 @@ export default function AdminPage() {
   function handlePhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (file.size > 1_500_000) {
-      setNotice("Para esta demostración, la foto debe pesar menos de 1,5 MB.");
-      event.target.value = "";
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        updateDraft("image", reader.result);
-        setNotice("Foto cargada. Falta guardar el producto.");
-      }
-    };
-    reader.readAsDataURL(file);
+    if (file.size > 2_097_152) { setNotice("La imagen debe pesar menos de 2 MB."); event.target.value = ""; return; }
+    setNotice("Subiendo imagen...");
+    uploadImage(file, "products").then((url) => { updateDraft("image", url); setNotice("Foto cargada. Falta guardar el producto."); }).catch(() => setNotice("Error al subir la imagen. Intentá de nuevo."));
   }
 
   function updateNutrition(key: keyof Product["nutrition"], value: string) {
@@ -1011,9 +1002,9 @@ export default function AdminPage() {
                     <label>Hora<input type="time" value={eventDraft.time ?? ""} onChange={(e) => updateEventDraft("time", e.target.value || undefined)}/></label>
                     <div className="wide admin-event-image-field">
                       {eventDraft.imageUrl && <img src={eventDraft.imageUrl} alt="Preview" className="admin-event-image-preview"/>}
-                      <label className="admin-upload-slim">Subir imagen — 900 × 500 px recomendado para móvil<input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; if (file.size > 1_500_000) { setNotice("La imagen debe pesar menos de 1,5 MB."); e.target.value = ""; return; } const reader = new FileReader(); reader.onload = () => { if (typeof reader.result === "string") updateEventDraft("imageUrl", reader.result); }; reader.readAsDataURL(file); }}/></label>
+                      <label className="admin-upload-slim">Subir imagen — 900 × 500 px recomendado para móvil<input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; if (file.size > 2_097_152) { setNotice("La imagen debe pesar menos de 2 MB."); e.target.value = ""; return; } setNotice("Subiendo imagen..."); uploadImage(file, "events").then((url) => { updateEventDraft("imageUrl", url); setNotice(""); }).catch(() => setNotice("Error al subir la imagen.")); }}/></label>
                       <div className="admin-image-url-divider">o pegá una URL</div>
-                      <input value={typeof eventDraft.imageUrl === "string" && eventDraft.imageUrl.startsWith("data:") ? "" : (eventDraft.imageUrl ?? "")} onChange={(e) => updateEventDraft("imageUrl", e.target.value || undefined)} placeholder="https://..."/>
+                      <input value={eventDraft.imageUrl?.startsWith("data:") ? "" : (eventDraft.imageUrl ?? "")} onChange={(e) => updateEventDraft("imageUrl", e.target.value || undefined)} placeholder="https://..."/>
                     </div>
                     <label className="wide">Texto del botón<input value={eventDraft.ctaLabel ?? ""} onChange={(e) => updateEventDraft("ctaLabel", e.target.value || undefined)} placeholder="Ej. Reservar lugar"/></label>
                     <label className="wide">Destino del botón<input value={eventDraft.ctaHref ?? ""} onChange={(e) => updateEventDraft("ctaHref", e.target.value || undefined)} placeholder="#carta, /portal o https://..."/></label>
@@ -1041,9 +1032,9 @@ export default function AdminPage() {
                     <label className="wide">Subtítulo<input value={bannerDraft.subtitle} onChange={(e) => updateBannerDraft("subtitle", e.target.value)} placeholder="Descripción breve (opcional)"/></label>
                     <div className="wide admin-event-image-field">
                       {bannerDraft.imageUrl && <img src={bannerDraft.imageUrl} alt="Preview" className="admin-event-image-preview"/>}
-                      <label className="admin-upload-slim">Subir imagen — 1200 × 480 px recomendado para móvil<input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; if (file.size > 1_500_000) { setNotice("La imagen debe pesar menos de 1,5 MB."); e.target.value = ""; return; } const reader = new FileReader(); reader.onload = () => { if (typeof reader.result === "string") updateBannerDraft("imageUrl", reader.result); }; reader.readAsDataURL(file); }}/></label>
+                      <label className="admin-upload-slim">Subir imagen — 1200 × 480 px recomendado para móvil<input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; if (file.size > 2_097_152) { setNotice("La imagen debe pesar menos de 2 MB."); e.target.value = ""; return; } setNotice("Subiendo imagen..."); uploadImage(file, "banners").then((url) => { updateBannerDraft("imageUrl", url); setNotice(""); }).catch(() => setNotice("Error al subir la imagen.")); }}/></label>
                       <div className="admin-image-url-divider">o pegá una URL</div>
-                      <input value={typeof bannerDraft.imageUrl === "string" && bannerDraft.imageUrl.startsWith("data:") ? "" : (bannerDraft.imageUrl ?? "")} onChange={(e) => updateBannerDraft("imageUrl", e.target.value)} placeholder="https://..."/>
+                      <input value={bannerDraft.imageUrl?.startsWith("data:") ? "" : (bannerDraft.imageUrl ?? "")} onChange={(e) => updateBannerDraft("imageUrl", e.target.value)} placeholder="https://..."/>
                     </div>
                     <label className="wide">Texto del botón<input value={bannerDraft.ctaLabel} onChange={(e) => updateBannerDraft("ctaLabel", e.target.value)}/></label>
                     <label className="wide">Destino del botón<input value={bannerDraft.ctaHref} onChange={(e) => updateBannerDraft("ctaHref", e.target.value)} placeholder="#carta, /portal o https://..."/></label>
