@@ -987,7 +987,9 @@ export default function AdminPage() {
                           <p style={{margin:"0 0 8px", fontWeight:700, fontSize:13}}>Productos del combo</p>
                           {(promoDraft.comboItems ?? []).map((item, idx) => (
                             <div key={idx} className="admin-combo-item-row">
-                              <select value={item.productId} onChange={(e) => { const next = [...(promoDraft.comboItems ?? [])]; next[idx] = {...item, productId: e.target.value}; updatePromoDraft("comboItems", next); }}>
+                              <select value={item.anyBeer ? "__any_beer__" : item.productId} onChange={(e) => { const next = [...(promoDraft.comboItems ?? [])]; const anyBeer = e.target.value === "__any_beer__"; next[idx] = {...item, productId: anyBeer ? "" : e.target.value, anyBeer: anyBeer || undefined}; updatePromoDraft("comboItems", next); }}>
+                                <option value="__any_beer__">🍺 Cualquier cerveza (el cliente elige)</option>
+                                <option disabled>──────────────────</option>
                                 {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                               </select>
                               <label style={{display:"flex", alignItems:"center", gap:6, whiteSpace:"nowrap"}}>

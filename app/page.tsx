@@ -235,6 +235,7 @@ export default function Home() {
   const [customizeItemKey, setCustomizeItemKey] = useState<string | null>(null);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [eventsOpen, setEventsOpen] = useState(false);
+  const [comboBeerPicker, setComboBeerPicker] = useState<{ combo: Promo; selections: Record<number, string> } | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [promos, setPromos] = useState<Promo[]>([]);
@@ -376,36 +377,45 @@ export default function Home() {
 
   function addComboToCart(combo: Promo) {
     if (!combo.comboItems?.length || combo.comboPrice == null) return;
+    const hasAnyBeer = combo.comboItems.some(ci => ci.anyBeer);
+    if (hasAnyBeer) {
+      setComboBeerPicker({ combo, selections: {} });
+      return;
+    }
+    commitComboToCart(combo, {});
+  }
+
+  function commitComboToCart(combo: Promo, beerSelections: Record<number, string>) {
+    if (!combo.comboItems?.length || combo.comboPrice == null) return;
     const items = combo.comboItems;
-    const normalTotal = items.reduce((sum, ci) => {
+    const stamp = Date.now();
+    const resolvedItems = items.map((ci, idx) => {
+      if (ci.anyBeer) {
+        const beerId = beerSelections[idx];
+        const prod = catalogProducts.find(p => p.id === beerId);
+        return prod ? { ...ci, productId: prod.id, _prod: prod } : null;
+      }
       const prod = catalogProducts.find(p => p.id === ci.productId);
-      return sum + (prod?.price ?? 0) * ci.quantity;
-    }, 0);
+      return prod ? { ...ci, _prod: prod } : null;
+    }).filter(Boolean) as (ComboItem & { _prod: Product })[];
+
+    const normalTotal = resolvedItems.reduce((sum, ci) => sum + ci._prod.price * ci.quantity, 0);
     const discount = combo.comboPrice - normalTotal;
 
     setOrderItems(prev => {
       let next = [...prev];
-      for (const ci of items) {
-        const prod = catalogProducts.find(p => p.id === ci.productId);
-        if (!prod) continue;
-        const key = `${prod.id}-combo-${combo.id}`;
-        const existing = next.find(i => i.key === key);
-        if (existing) {
-          next = next.map(i => i.key === key ? { ...i, quantity: i.quantity + ci.quantity } : i);
-        } else {
-          next = [...next, { key, productId: prod.id, name: prod.name, image: prod.image, unitPrice: prod.price, quantity: ci.quantity, comboId: combo.id }];
-        }
+      for (const ci of resolvedItems) {
+        const key = `${ci._prod.id}-combo-${combo.id}-${stamp}`;
+        next = [...next, { key, productId: ci._prod.id, name: ci._prod.name, image: ci._prod.image, unitPrice: ci._prod.price, quantity: ci.quantity, comboId: combo.id }];
       }
-      // apply combo discount as a negative line
-      const discountKey = `combo-discount-${combo.id}`;
-      const hasDiscount = next.some(i => i.key === discountKey);
-      if (!hasDiscount && discount < 0) {
-        next = [...next, { key: discountKey, productId: "", name: `Descuento combo · ${combo.comboTitle ?? ""}`, unitPrice: discount, quantity: 1, isComboDiscount: true, comboId: combo.id }];
+      if (discount < 0) {
+        next = [...next, { key: `combo-discount-${combo.id}-${stamp}`, productId: "", name: `Descuento combo · ${combo.comboTitle ?? ""}`, unitPrice: discount, quantity: 1, isComboDiscount: true, comboId: combo.id }];
       }
       return next;
     });
     setOrderStatus("draft");
     setOrderFeedback(combo.comboTitle ?? "Combo agregado");
+    setComboBeerPicker(null);
   }
 
   const activePool = appSettings.eventModeActive
@@ -1039,6 +1049,49 @@ export default function Home() {
           <p className="chat-disclaimer">Demo funcional. Las respuestas se conectarán luego con la carta confirmada.</p>
         </section>
       </div>}
+
+      {comboBeerPicker && (() => {
+        const { combo, selections } = comboBeerPicker;
+        const anyBeerSlots = (combo.comboItems ?? []).map((ci, idx) => ci.anyBeer ? { ci, idx } : null).filter(Boolean) as { ci: ComboItem; idx: number }[];
+        const beers = catalogProducts.filter(p => p.category === "Cervezas" && !p.outOfStock);
+        const allSelected = anyBeerSlots.every(({ idx }) => selections[idx]);
+        return (
+          <div className="modal-backdrop" onClick={() => setComboBeerPicker(null)}>
+            <div className="combo-beer-picker-modal" onClick={e => e.stopPropagation()}>
+              <button className="modal-close" onClick={() => setComboBeerPicker(null)}>✕</button>
+              <p className="combo-beer-picker-eyebrow">COMBO · {combo.comboTitle}</p>
+              <h3 className="combo-beer-picker-title">¿Qué cerveza querés?</h3>
+              <div className="combo-beer-picker-slots">
+                {anyBeerSlots.map(({ ci, idx }) => (
+                  <div key={idx} className="combo-beer-slot">
+                    {ci.quantity > 1 && <p className="combo-beer-slot-qty">{ci.quantity} cervezas</p>}
+                    <div className="combo-beer-options">
+                      {beers.map(beer => (
+                        <button
+                          key={beer.id}
+                          className={`combo-beer-option${selections[idx] === beer.id ? " selected" : ""}`}
+                          onClick={() => setComboBeerPicker(prev => prev ? { ...prev, selections: { ...prev.selections, [idx]: beer.id } } : null)}
+                        >
+                          {beer.image && <img src={beer.image} alt={beer.name}/>}
+                          <span>{beer.name}</span>
+                          {selections[idx] === beer.id && <i>✓</i>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button
+                className={`combo-beer-confirm${allSelected ? "" : " disabled"}`}
+                disabled={!allSelected}
+                onClick={() => allSelected && commitComboToCart(combo, selections)}
+              >
+                {allSelected ? `Agregar combo · ${displayPrice(combo.comboPrice ?? 0)}` : "Elegí tu cerveza para continuar"}
+              </button>
+            </div>
+          </div>
+        );
+      })()}
     </main>
 
     {/* Drawer de filtros: fuera del site-shell para evitar stacking context */}
