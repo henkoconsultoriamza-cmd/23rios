@@ -992,11 +992,11 @@ export default function AdminPage() {
                                 <option disabled>──────────────────</option>
                                 {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                               </select>
-                              <label style={{display:"flex", alignItems:"center", gap:6, whiteSpace:"nowrap"}}>
-                                Cant.
-                                <input type="number" min="1" max="20" value={item.quantity} style={{width:60}} onChange={(e) => { const next = [...(promoDraft.comboItems ?? [])]; next[idx] = {...item, quantity: Math.max(1, Number(e.target.value))}; updatePromoDraft("comboItems", next); }}/>
-                              </label>
-                              <button type="button" className="admin-delete-inline" onClick={() => { const next = (promoDraft.comboItems ?? []).filter((_, i) => i !== idx); updatePromoDraft("comboItems", next); }}>×</button>
+                              <div className="qty-badge">
+                                <span>Cant.</span>
+                                <input type="number" min="1" max="20" value={item.quantity} onChange={(e) => { const next = [...(promoDraft.comboItems ?? [])]; next[idx] = {...item, quantity: Math.max(1, Number(e.target.value))}; updatePromoDraft("comboItems", next); }}/>
+                              </div>
+                              <button type="button" className="combo-del-btn" onClick={() => { const next = (promoDraft.comboItems ?? []).filter((_, i) => i !== idx); updatePromoDraft("comboItems", next); }}>×</button>
                             </div>
                           ))}
                           <button type="button" className="admin-combo-add-row" onClick={() => updatePromoDraft("comboItems", [...(promoDraft.comboItems ?? []), { productId: products[0]?.id ?? "", quantity: 1 }])}>＋ Agregar producto al combo</button>
