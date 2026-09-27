@@ -507,9 +507,18 @@ export default function Home() {
 
   function changeOrderQuantity(key: string, change: number) {
     if (orderStatus === "sent") return;
-    setOrderItems((current) => current
-      .map((item) => item.key === key ? { ...item, quantity: item.quantity + change } : item)
-      .filter((item) => item.quantity > 0));
+    setOrderItems((current) => {
+      const updated = current
+        .map((item) => item.key === key ? { ...item, quantity: item.quantity + change } : item)
+        .filter((item) => item.quantity > 0);
+      // remove combo discount if no products of that combo remain
+      const removedItem = current.find(i => i.key === key);
+      if (removedItem?.comboId) {
+        const comboStillHasProducts = updated.some(i => i.comboId === removedItem.comboId && !i.isComboDiscount);
+        if (!comboStillHasProducts) return updated.filter(i => i.comboId !== removedItem.comboId);
+      }
+      return updated;
+    });
   }
 
   const isOnPremise = !appSettings.orderToken || urlToken === appSettings.orderToken;
