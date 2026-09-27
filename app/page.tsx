@@ -695,42 +695,6 @@ export default function Home() {
         <NovedadesSlider banners={banners.filter((b) => b.visible)} />
       )}
 
-      {activeCombos.length > 0 && (
-        <section className="combos-section">
-          <p className="combos-eyebrow">PROMOS ESPECIALES</p>
-          <div className="combos-grid">
-            {activeCombos.map(combo => {
-              const items = combo.comboItems ?? [];
-              const normalTotal = items.reduce((sum, ci) => {
-                const prod = catalogProducts.find(p => p.id === ci.productId);
-                return sum + (prod?.price ?? 0) * ci.quantity;
-              }, 0);
-              return (
-                <div key={combo.id} className="combo-card">
-                  <div className="combo-card-body">
-                    <p className="combo-tag">COMBO</p>
-                    <h3 className="combo-title">{combo.comboTitle || "Combo especial"}</h3>
-                    <ul className="combo-items-list">
-                      {items.map((ci, idx) => {
-                        const prod = catalogProducts.find(p => p.id === ci.productId);
-                        return <li key={idx}>{ci.quantity > 1 ? `${ci.quantity}×` : ""} {prod?.name ?? ci.productId}</li>;
-                      })}
-                    </ul>
-                    <div className="combo-pricing">
-                      {normalTotal > (combo.comboPrice ?? 0) && <s className="combo-normal-price">{displayPrice(normalTotal)}</s>}
-                      <strong className="combo-price">{displayPrice(combo.comboPrice ?? 0)}</strong>
-                    </div>
-                  </div>
-                  <button className="combo-cta" onClick={() => addComboToCart(combo)}>
-                    + Lo quiero
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
       <section className="menu-section" id="carta">
         <div className="section-heading">
           <div><p className="eyebrow dark">{tr("NUESTRA CARTA")}</p><h2>{tr("Algo para cada momento.")}</h2></div>
@@ -742,10 +706,51 @@ export default function Home() {
         <div className="category-tabs">
           <button className={category === "Cocina" ? "active" : ""} onClick={() => changeCategory("Cocina")}>{tr("Comida")}</button>
           <button className={category === "Cervezas" ? "active" : ""} onClick={() => changeCategory("Cervezas")}>{tr("Bebida")}</button>
+          {activeCombos.length > 0 && <button className={category === ("Combos" as any) ? "active" : ""} onClick={() => setCategory("Combos" as any)}>🎁 {tr("Combos")}</button>}
         </div>
 
         <div className="menu-layout">
           <div className="menu-results">
+
+            {(category as string) === "Combos" ? (
+              <div className="product-grid">
+                {activeCombos.map(combo => {
+                  const items = combo.comboItems ?? [];
+                  const normalTotal = items.reduce((sum, ci) => {
+                    const prod = catalogProducts.find(p => p.id === ci.productId);
+                    return sum + (prod?.price ?? 0) * ci.quantity;
+                  }, 0);
+                  return (
+                    <article className="product-card combo-product-card" key={combo.id}>
+                      <div className="product-visual-wrap">
+                        <div className="product-visual combo-visual">
+                          {combo.comboImageUrl
+                            ? <img src={combo.comboImageUrl} alt={combo.comboTitle ?? "Combo"} />
+                            : <span className="photo-pending combo-no-image"><strong>🎁 COMBO</strong></span>}
+                          <span className="product-tag combo-card-tag">COMBO</span>
+                        </div>
+                      </div>
+                      <div className="product-info">
+                        <div className="product-title"><span><h3>{combo.comboTitle || "Combo especial"}</h3></span></div>
+                        <p className="combo-items-inline">{items.map((ci, idx) => {
+                          const prod = catalogProducts.find(p => p.id === ci.productId);
+                          return `${ci.quantity > 1 ? ci.quantity + "× " : ""}${prod?.name ?? ci.productId}`;
+                        }).join(" · ")}</p>
+                        <div className="product-footer">
+                          <span>
+                            {normalTotal > (combo.comboPrice ?? 0) && <s className="price-original">{displayPrice(normalTotal)}</s>}
+                            <strong>{displayPrice(combo.comboPrice ?? 0)}</strong>
+                          </span>
+                          <button className="add-to-cart-btn" onClick={() => addComboToCart(combo)}>Lo quiero <Icon name="plus" size={15}/></button>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : null}
+
+            {(category as string) !== "Combos" && <>
             <div className="results-summary"><span>{visibleProducts.length} {tr(visibleProducts.length === 1 ? "resultado" : "resultados")}</span></div>
 
             {visibleProducts.length ? <div className="product-grid">
@@ -796,6 +801,7 @@ export default function Home() {
                 </Fragment>
               ))}
             </div> : <div className="empty-state"><h3>No hay resultados con esos filtros</h3><p>Probá desmarcar una opción o limpiar los filtros.</p><button onClick={clearSidebarFilters}>Limpiar filtros</button></div>}
+            </>}
           </div>
         </div>
       </section>

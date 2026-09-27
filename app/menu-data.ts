@@ -46,6 +46,7 @@ export type Promo = {
   comboTitle?: string;
   comboItems?: ComboItem[];
   comboPrice?: number;
+  comboImageUrl?: string;
   days: number[];       // 0=Dom 1=Lun … 6=Sab; vacío = todos los días
   timeStart?: string;   // "18:00"
   timeEnd?: string;     // "23:00"

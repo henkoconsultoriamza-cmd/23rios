@@ -977,6 +977,12 @@ export default function AdminPage() {
 
                       {promoDraft.type === "combo" && <>
                         <label className="wide">Nombre del combo<input value={promoDraft.comboTitle ?? ""} onChange={(e) => updatePromoDraft("comboTitle", e.target.value || undefined)} placeholder="Ej. 1 Pizza + 2 Birras"/></label>
+                        <div className="wide admin-event-image-field">
+                          {promoDraft.comboImageUrl && <img src={promoDraft.comboImageUrl} alt="Preview" className="admin-event-image-preview"/>}
+                          <label className="admin-upload-slim">Subir imagen del combo — 800 × 600 px recomendado<input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; if (file.size > 2_097_152) { setNotice("La imagen debe pesar menos de 2 MB."); e.target.value = ""; return; } setNotice("Subiendo imagen..."); uploadImage(file, "combos").then((url) => { updatePromoDraft("comboImageUrl", url); setNotice(""); }).catch(() => setNotice("Error al subir la imagen.")); }}/></label>
+                          <div className="admin-image-url-divider">o pegá una URL</div>
+                          <input value={promoDraft.comboImageUrl?.startsWith("data:") ? "" : (promoDraft.comboImageUrl ?? "")} onChange={(e) => updatePromoDraft("comboImageUrl", e.target.value || undefined)} placeholder="https://..."/>
+                        </div>
                         <div className="wide">
                           <p style={{margin:"0 0 8px", fontWeight:700, fontSize:13}}>Productos del combo</p>
                           {(promoDraft.comboItems ?? []).map((item, idx) => (
