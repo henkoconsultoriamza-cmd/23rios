@@ -1056,7 +1056,7 @@ export default function Home() {
         const beers = catalogProducts.filter(p => p.category === "Cervezas" && !p.outOfStock);
         const allSelected = anyBeerSlots.every(({ idx }) => selections[idx]);
         return (
-          <div className="modal-backdrop" onClick={() => setComboBeerPicker(null)}>
+          <div className="overlay" onClick={() => setComboBeerPicker(null)}>
             <div className="combo-beer-picker-modal" onClick={e => e.stopPropagation()}>
               <button className="modal-close" onClick={() => setComboBeerPicker(null)}>✕</button>
               <p className="combo-beer-picker-eyebrow">COMBO · {combo.comboTitle}</p>
