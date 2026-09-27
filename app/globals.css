@@ -472,16 +472,16 @@ footer img { width: 80px; height: 58px; object-fit: contain; mix-blend-mode: scr
 .save-button.active { background: var(--yellow); border-color: var(--yellow); }
 .save-button.active svg { fill: var(--ink); }
 .cross-sell { padding: 21px 0 19px; margin: 3px 0 19px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.cross-sell > p { margin: 0 0 5px; color: #2a9a6e; font-size: 8px; font-weight: 800; letter-spacing: .14em; }
-.cross-sell h3 { margin: 0 0 12px; font: 800 16px/1.2 "Manrope"; letter-spacing: -.02em; }
+.cross-sell > p { margin: 0 0 5px; color: #2a9a6e; font-size: 11px; font-weight: 800; letter-spacing: .11em; }
+.cross-sell h3 { margin: 0 0 12px; font: 800 19px/1.2 "Manrope"; letter-spacing: -.02em; }
 .cross-sell-grid { display: grid; gap: 0; }
 .cross-sell-grid > button { width: 100%; min-width: 0; padding: 9px 0; border: 0; border-bottom: 1px solid var(--line); background: transparent; display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; align-items: center; gap: 10px; text-align: left; cursor: pointer; transition: .2s ease; }
 .cross-sell-grid > button:hover { border-color: #a77d19; background: transparent; }
 .cross-sell-grid img, .cross-sell-placeholder { width: 54px; height: 48px; border-radius: 10px; object-fit: cover; }
 .cross-sell-placeholder { display: grid; place-items: center; color: rgba(255,255,255,.55); background: linear-gradient(135deg, #1c1b17, #352d1b); }
 .cross-sell-grid button > span:not(.cross-sell-placeholder) { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.cross-sell-grid strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 11px/1.2 "Manrope"; }
-.cross-sell-grid small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 8px; text-transform: uppercase; letter-spacing: .07em; }
+.cross-sell-grid strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 14px/1.2 "Manrope"; }
+.cross-sell-grid small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
 .quick-action-dialog { width: min(520px, 100%); padding: 42px; border-radius: 22px; background: var(--ink); color: white; position: relative; border: 1px solid rgba(248,206,54,.38); box-shadow: 0 35px 100px rgba(0,0,0,.5); }
 .table-dialog { width: min(480px, 100%); padding: 38px; border-radius: 22px; background: var(--ink); color: white; position: relative; border: 1px solid rgba(248,206,54,.38); box-shadow: 0 35px 100px rgba(0,0,0,.5); }
 .table-dialog-number { width: 68px; height: 68px; margin-bottom: 22px; border-radius: 18px; background: var(--yellow); color: var(--ink); display: grid; place-items: center; font: 800 25px "Manrope"; }
