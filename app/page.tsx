@@ -235,7 +235,7 @@ export default function Home() {
   const [customizeItemKey, setCustomizeItemKey] = useState<string | null>(null);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [eventsOpen, setEventsOpen] = useState(false);
-  const [comboBeerPicker, setComboBeerPicker] = useState<{ combo: Promo; selections: Record<number, string> } | null>(null);
+  const [comboBeerPicker, setComboBeerPicker] = useState<{ combo: Promo; selections: Record<number, string[]> } | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [promos, setPromos] = useState<Promo[]>([]);
@@ -385,29 +385,37 @@ export default function Home() {
     commitComboToCart(combo, {});
   }
 
-  function commitComboToCart(combo: Promo, beerSelections: Record<number, string>) {
+  function commitComboToCart(combo: Promo, beerSelections: Record<number, string[]>) {
     if (!combo.comboItems?.length || combo.comboPrice == null) return;
-    const items = combo.comboItems;
     const stamp = Date.now();
-    const resolvedItems = items.map((ci, idx) => {
-      if (ci.anyBeer) {
-        const beerId = beerSelections[idx];
-        const prod = catalogProducts.find(p => p.id === beerId);
-        return prod ? { ...ci, productId: prod.id, _prod: prod } : null;
-      }
-      const prod = catalogProducts.find(p => p.id === ci.productId);
-      return prod ? { ...ci, _prod: prod } : null;
-    }).filter(Boolean) as (ComboItem & { _prod: Product })[];
 
-    const normalTotal = resolvedItems.reduce((sum, ci) => sum + ci._prod.price * ci.quantity, 0);
+    // Build flat list of cart entries from combo items
+    const cartEntries: { productId: string; name: string; image?: string; price: number; qty: number }[] = [];
+
+    combo.comboItems.forEach((ci, idx) => {
+      if (ci.anyBeer) {
+        // group selected beer IDs by id to merge duplicates
+        const chosen = beerSelections[idx] ?? [];
+        const counts: Record<string, number> = {};
+        chosen.forEach(id => { counts[id] = (counts[id] ?? 0) + 1; });
+        Object.entries(counts).forEach(([id, qty]) => {
+          const prod = catalogProducts.find(p => p.id === id);
+          if (prod) cartEntries.push({ productId: prod.id, name: prod.name, image: prod.image, price: prod.price, qty });
+        });
+      } else {
+        const prod = catalogProducts.find(p => p.id === ci.productId);
+        if (prod) cartEntries.push({ productId: prod.id, name: prod.name, image: prod.image, price: prod.price, qty: ci.quantity });
+      }
+    });
+
+    const normalTotal = cartEntries.reduce((sum, e) => sum + e.price * e.qty, 0);
     const discount = combo.comboPrice - normalTotal;
 
     setOrderItems(prev => {
       let next = [...prev];
-      for (const ci of resolvedItems) {
-        const key = `${ci._prod.id}-combo-${combo.id}-${stamp}`;
-        next = [...next, { key, productId: ci._prod.id, name: ci._prod.name, image: ci._prod.image, unitPrice: ci._prod.price, quantity: ci.quantity, comboId: combo.id }];
-      }
+      cartEntries.forEach((e, i) => {
+        next = [...next, { key: `${e.productId}-combo-${combo.id}-${stamp}-${i}`, productId: e.productId, name: e.name, image: e.image, unitPrice: e.price, quantity: e.qty, comboId: combo.id }];
+      });
       if (discount < 0) {
         next = [...next, { key: `combo-discount-${combo.id}-${stamp}`, productId: "", name: `Descuento combo · ${combo.comboTitle ?? ""}`, unitPrice: discount, quantity: 1, isComboDiscount: true, comboId: combo.id }];
       }
@@ -1054,7 +1062,28 @@ export default function Home() {
         const { combo, selections } = comboBeerPicker;
         const anyBeerSlots = (combo.comboItems ?? []).map((ci, idx) => ci.anyBeer ? { ci, idx } : null).filter(Boolean) as { ci: ComboItem; idx: number }[];
         const beers = catalogProducts.filter(p => p.category === "Cervezas" && !p.outOfStock);
-        const allSelected = anyBeerSlots.every(({ idx }) => selections[idx]);
+        const allSelected = anyBeerSlots.every(({ ci, idx }) => (selections[idx]?.length ?? 0) === ci.quantity);
+
+        function toggleBeer(slotIdx: number, beerId: string, max: number) {
+          setComboBeerPicker(prev => {
+            if (!prev) return null;
+            const current = prev.selections[slotIdx] ?? [];
+            const count = current.filter(id => id === beerId).length;
+            const total = current.length;
+            let next: string[];
+            if (count > 0) {
+              // remove one instance
+              const pos = current.lastIndexOf(beerId);
+              next = current.filter((_, i) => i !== pos);
+            } else if (total < max) {
+              next = [...current, beerId];
+            } else {
+              return prev; // already at max, do nothing
+            }
+            return { ...prev, selections: { ...prev.selections, [slotIdx]: next } };
+          });
+        }
+
         return (
           <div className="overlay" onClick={() => setComboBeerPicker(null)}>
             <div className="combo-beer-picker-modal" onClick={e => e.stopPropagation()}>
@@ -1062,31 +1091,40 @@ export default function Home() {
               <p className="combo-beer-picker-eyebrow">COMBO · {combo.comboTitle}</p>
               <h3 className="combo-beer-picker-title">¿Qué cerveza querés?</h3>
               <div className="combo-beer-picker-slots">
-                {anyBeerSlots.map(({ ci, idx }) => (
-                  <div key={idx} className="combo-beer-slot">
-                    {ci.quantity > 1 && <p className="combo-beer-slot-qty">{ci.quantity} cervezas</p>}
-                    <div className="combo-beer-options">
-                      {beers.map(beer => (
-                        <button
-                          key={beer.id}
-                          className={`combo-beer-option${selections[idx] === beer.id ? " selected" : ""}`}
-                          onClick={() => setComboBeerPicker(prev => prev ? { ...prev, selections: { ...prev.selections, [idx]: beer.id } } : null)}
-                        >
-                          {beer.image && <img src={beer.image} alt={beer.name}/>}
-                          <span>{beer.name}</span>
-                          {selections[idx] === beer.id && <i>✓</i>}
-                        </button>
-                      ))}
+                {anyBeerSlots.map(({ ci, idx }) => {
+                  const chosen = selections[idx] ?? [];
+                  const remaining = ci.quantity - chosen.length;
+                  return (
+                    <div key={idx} className="combo-beer-slot">
+                      <p className="combo-beer-slot-qty">
+                        {remaining > 0 ? `Elegí ${remaining} cerveza${remaining > 1 ? "s" : ""} más` : `✓ ${ci.quantity} cerveza${ci.quantity > 1 ? "s" : ""} elegida${ci.quantity > 1 ? "s" : ""}`}
+                      </p>
+                      <div className="combo-beer-options">
+                        {beers.map(beer => {
+                          const count = chosen.filter(id => id === beer.id).length;
+                          return (
+                            <button
+                              key={beer.id}
+                              className={`combo-beer-option${count > 0 ? " selected" : ""}${remaining === 0 && count === 0 ? " maxed" : ""}`}
+                              onClick={() => toggleBeer(idx, beer.id, ci.quantity)}
+                            >
+                              {beer.image && <img src={beer.image} alt={beer.name}/>}
+                              <span>{beer.name}</span>
+                              {count > 0 && <i>{count > 1 ? `×${count}` : "✓"}</i>}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <button
                 className={`combo-beer-confirm${allSelected ? "" : " disabled"}`}
                 disabled={!allSelected}
                 onClick={() => allSelected && commitComboToCart(combo, selections)}
               >
-                {allSelected ? `Agregar combo · ${displayPrice(combo.comboPrice ?? 0)}` : "Elegí tu cerveza para continuar"}
+                {allSelected ? `Agregar combo · ${displayPrice(combo.comboPrice ?? 0)}` : `Elegí ${anyBeerSlots.reduce((s, { ci, idx }) => s + ci.quantity - (selections[idx]?.length ?? 0), 0)} cerveza${anyBeerSlots.reduce((s, { ci, idx }) => s + ci.quantity - (selections[idx]?.length ?? 0), 0) > 1 ? "s" : ""} más`}
               </button>
             </div>
           </div>
