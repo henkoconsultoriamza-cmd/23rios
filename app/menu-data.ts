@@ -33,13 +33,19 @@ export type Product = {
   removableIngredients?: string[];
 };
 
+export type ComboItem = { productId: string; quantity: number };
+
 export type Promo = {
   id: string;
   targetType: "producto" | "grupo" | "categoria";
   targetValue: string;  // product.id | product.group | product.category
-  type: "precio" | "2x1" | "porcentaje";
+  type: "precio" | "2x1" | "porcentaje" | "combo";
   promoPrice?: number;
   promoPercent?: number;
+  // combo fields
+  comboTitle?: string;
+  comboItems?: ComboItem[];
+  comboPrice?: number;
   days: number[];       // 0=Dom 1=Lun … 6=Sab; vacío = todos los días
   timeStart?: string;   // "18:00"
   timeEnd?: string;     // "23:00"

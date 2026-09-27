@@ -2,7 +2,7 @@
 
 import { CSSProperties, Dispatch, Fragment, FormEvent, SetStateAction, useEffect, useMemo, useRef, useState } from "react";
 import { Language, languageOptions, translate } from "./translations";
-import { AppSettings, DEFAULT_APP_SETTINGS, DEFAULT_MENU_SETTINGS, DEFAULT_PRODUCTS, MenuSettings, Product, Promo, isPromoActive, promoMatchesProduct } from "./menu-data";
+import { AppSettings, DEFAULT_APP_SETTINGS, DEFAULT_MENU_SETTINGS, DEFAULT_PRODUCTS, MenuSettings, Product, Promo, ComboItem, isPromoActive, promoMatchesProduct } from "./menu-data";
 import { trackEvent } from "./analytics";
 import { Banner, DEFAULT_BANNERS } from "./banner-data";
 import { EventItem } from "./event-data";
@@ -21,6 +21,8 @@ type OrderItem = {
   quantity: number;
   removedIngredients?: string[];
   customNote?: string;
+  comboId?: string;
+  isComboDiscount?: boolean;
 };
 type LaunchedOrder = {
   id: string;
@@ -358,9 +360,10 @@ export default function Home() {
   const displayPrice = (value: number) => formatPrice(value, appSettings.currency);
 
   const activePromos = useMemo(() => promos.filter(isPromoActive), [promos]);
+  const activeCombos = useMemo(() => activePromos.filter(p => p.type === "combo" && (p.comboItems?.length ?? 0) > 0 && p.comboPrice != null), [activePromos]);
 
   function getPromoForProduct(product: Product): Promo | undefined {
-    return activePromos.find(p => promoMatchesProduct(p, product));
+    return activePromos.find(p => p.type !== "combo" && promoMatchesProduct(p, product));
   }
 
   function promoPrice(product: Product): number {
@@ -369,6 +372,40 @@ export default function Home() {
     if (promo.type === "precio" && promo.promoPrice != null) return promo.promoPrice;
     if (promo.type === "porcentaje" && promo.promoPercent != null) return Math.round(product.price * (1 - promo.promoPercent / 100));
     return product.price;
+  }
+
+  function addComboToCart(combo: Promo) {
+    if (!combo.comboItems?.length || combo.comboPrice == null) return;
+    const items = combo.comboItems;
+    const normalTotal = items.reduce((sum, ci) => {
+      const prod = catalogProducts.find(p => p.id === ci.productId);
+      return sum + (prod?.price ?? 0) * ci.quantity;
+    }, 0);
+    const discount = combo.comboPrice - normalTotal;
+
+    setOrderItems(prev => {
+      let next = [...prev];
+      for (const ci of items) {
+        const prod = catalogProducts.find(p => p.id === ci.productId);
+        if (!prod) continue;
+        const key = `${prod.id}-combo-${combo.id}`;
+        const existing = next.find(i => i.key === key);
+        if (existing) {
+          next = next.map(i => i.key === key ? { ...i, quantity: i.quantity + ci.quantity } : i);
+        } else {
+          next = [...next, { key, productId: prod.id, name: prod.name, image: prod.image, unitPrice: prod.price, quantity: ci.quantity, comboId: combo.id }];
+        }
+      }
+      // apply combo discount as a negative line
+      const discountKey = `combo-discount-${combo.id}`;
+      const hasDiscount = next.some(i => i.key === discountKey);
+      if (!hasDiscount && discount < 0) {
+        next = [...next, { key: discountKey, productId: "", name: `Descuento combo · ${combo.comboTitle ?? ""}`, unitPrice: discount, quantity: 1, isComboDiscount: true, comboId: combo.id }];
+      }
+      return next;
+    });
+    setOrderStatus("draft");
+    setOrderFeedback(combo.comboTitle ?? "Combo agregado");
   }
 
   const activePool = appSettings.eventModeActive
@@ -399,7 +436,7 @@ export default function Home() {
   const selectedServingOption = selected?.servings?.find((serving) => serving.label === selectedServing);
   const selectedBasePrice = selectedServingOption?.price ?? selected?.price ?? 0;
   const selectedPrice = selected && !selectedServingOption ? promoPrice(selected) : selectedBasePrice;
-  const orderCount = orderItems.reduce((total, item) => total + item.quantity, 0);
+  const orderCount = orderItems.reduce((total, item) => item.isComboDiscount ? total : total + item.quantity, 0);
   const orderTotal = orderItems.reduce((total, item) => total + (item.unitPrice * item.quantity), 0);
   const launchedTotal = launchedOrders.reduce((total, order) => total + order.total, 0);
   const tr = (text: string) => translate(language, text);
@@ -658,6 +695,41 @@ export default function Home() {
         <NovedadesSlider banners={banners.filter((b) => b.visible)} />
       )}
 
+      {activeCombos.length > 0 && (
+        <section className="combos-section">
+          <p className="combos-eyebrow">PROMOS ESPECIALES</p>
+          <div className="combos-grid">
+            {activeCombos.map(combo => {
+              const items = combo.comboItems ?? [];
+              const normalTotal = items.reduce((sum, ci) => {
+                const prod = catalogProducts.find(p => p.id === ci.productId);
+                return sum + (prod?.price ?? 0) * ci.quantity;
+              }, 0);
+              return (
+                <div key={combo.id} className="combo-card">
+                  <div className="combo-card-body">
+                    <p className="combo-tag">COMBO</p>
+                    <h3 className="combo-title">{combo.comboTitle || "Combo especial"}</h3>
+                    <ul className="combo-items-list">
+                      {items.map((ci, idx) => {
+                        const prod = catalogProducts.find(p => p.id === ci.productId);
+                        return <li key={idx}>{ci.quantity > 1 ? `${ci.quantity}×` : ""} {prod?.name ?? ci.productId}</li>;
+                      })}
+                    </ul>
+                    <div className="combo-pricing">
+                      {normalTotal > (combo.comboPrice ?? 0) && <s className="combo-normal-price">{displayPrice(normalTotal)}</s>}
+                      <strong className="combo-price">{displayPrice(combo.comboPrice ?? 0)}</strong>
+                    </div>
+                  </div>
+                  <button className="combo-cta" onClick={() => addComboToCart(combo)}>
+                    + Lo quiero
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section className="menu-section" id="carta">
         <div className="section-heading">
@@ -777,18 +849,25 @@ export default function Home() {
           {orderStatus === "draft" && <div className="cart-open-message"><strong>{tr("El pedido todavía no fue lanzado.")}</strong><span>{tr("Podés seguir agregando productos o cerrar el carrito cuando esté completo.")}</span></div>}
           {orderStatus === "sent" && <div className="order-sent-message"><span><Icon name="receipt" size={23}/></span><div><strong>{tr("Pedido enviado correctamente")}</strong><p>Esta es una simulación. La confirmación real se conectará con el sistema del local y la mesa.</p></div></div>}
           <div className="order-items">
-            {orderItems.map((item) => <article key={item.key}>
-              {item.image ? <img src={item.image} alt=""/> : <span className="order-item-placeholder"/>}
-              <div className="order-item-copy"><strong>{tr(item.name)}</strong>{item.serving && <small>{tr(item.serving)} · {item.volume}</small>}{item.removedIngredients?.length ? <small className="removed-ingredients">Sin: {item.removedIngredients.join(", ")}</small> : null}{item.customNote ? <small className="removed-ingredients">📝 {item.customNote}</small> : null}<b>{displayPrice(item.unitPrice)}</b></div>
-              <div className="order-item-actions">
-                {(() => { const prod = catalogProducts.find(p => p.id === item.productId); const hasCocina = prod?.category === "Cocina"; return hasCocina ? <button className="customize-inline-btn" onClick={() => setCustomizeItemKey(item.key)} disabled={orderStatus === "sent"}>✎</button> : null; })()}
-                <div className="quantity-control" aria-label={`Cantidad de ${item.name}`}>
-                  <button onClick={() => changeOrderQuantity(item.key, -1)} disabled={orderStatus === "sent"} aria-label={`Quitar una unidad de ${item.name}`}>−</button>
-                  <span>{item.quantity}</span>
-                  <button onClick={() => changeOrderQuantity(item.key, 1)} disabled={orderStatus === "sent"} aria-label={`Agregar una unidad de ${item.name}`}>+</button>
+            {orderItems.map((item) => item.isComboDiscount ? (
+              <article key={item.key} className="order-item-combo-discount">
+                <span className="combo-discount-icon">🎁</span>
+                <div className="order-item-copy"><strong>{item.name}</strong><b className="combo-discount-amount">{displayPrice(item.unitPrice)}</b></div>
+              </article>
+            ) : (
+              <article key={item.key}>
+                {item.image ? <img src={item.image} alt=""/> : <span className="order-item-placeholder"/>}
+                <div className="order-item-copy"><strong>{tr(item.name)}</strong>{item.serving && <small>{tr(item.serving)} · {item.volume}</small>}{item.removedIngredients?.length ? <small className="removed-ingredients">Sin: {item.removedIngredients.join(", ")}</small> : null}{item.customNote ? <small className="removed-ingredients">📝 {item.customNote}</small> : null}<b>{displayPrice(item.unitPrice)}</b></div>
+                <div className="order-item-actions">
+                  {(() => { const prod = catalogProducts.find(p => p.id === item.productId); const hasCocina = prod?.category === "Cocina"; return hasCocina && !item.comboId ? <button className="customize-inline-btn" onClick={() => setCustomizeItemKey(item.key)} disabled={orderStatus === "sent"}>✎</button> : null; })()}
+                  <div className="quantity-control" aria-label={`Cantidad de ${item.name}`}>
+                    <button onClick={() => changeOrderQuantity(item.key, -1)} disabled={orderStatus === "sent"} aria-label={`Quitar una unidad de ${item.name}`}>−</button>
+                    <span>{item.quantity}</span>
+                    <button onClick={() => changeOrderQuantity(item.key, 1)} disabled={orderStatus === "sent"} aria-label={`Agregar una unidad de ${item.name}`}>+</button>
+                  </div>
                 </div>
-              </div>
-            </article>)}
+              </article>
+            ))}
           </div>
           <div className="order-total"><span><small>{orderCount} {tr(orderCount === 1 ? "producto" : "productos")}</small><strong>{tr("Total")}</strong></span><b>{displayPrice(orderTotal)}</b></div>
           {orderStatus === "draft" ? (

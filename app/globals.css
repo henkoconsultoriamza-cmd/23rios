@@ -471,6 +471,28 @@ footer img { width: 80px; height: 58px; object-fit: contain; mix-blend-mode: scr
 .save-button { width: 100%; border: 1px solid var(--ink); border-radius: 12px; background: transparent; min-height: 48px; padding: 12px 15px; display: flex; align-items: center; justify-content: center; gap: 9px; font-weight: 700; cursor: pointer; }
 .save-button.active { background: var(--yellow); border-color: var(--yellow); }
 .save-button.active svg { fill: var(--ink); }
+/* ── Combos section ────────────────────────────────────────── */
+.combos-section { padding: 0 20px 4px; }
+.combos-eyebrow { margin: 0 0 12px; color: var(--red, #c0392b); font-size: 11px; font-weight: 800; letter-spacing: .14em; }
+.combos-grid { display: flex; flex-direction: column; gap: 12px; }
+.combo-card { border-radius: 16px; border: 2px solid var(--yellow); background: #fffdf5; overflow: hidden; display: flex; flex-direction: column; }
+.combo-card-body { padding: 16px 16px 12px; }
+.combo-tag { margin: 0 0 4px; font-size: 10px; font-weight: 800; letter-spacing: .14em; color: #a07a10; }
+.combo-title { margin: 0 0 10px; font: 800 18px/1.2 "Manrope"; letter-spacing: -.01em; color: var(--ink); }
+.combo-items-list { margin: 0 0 12px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; }
+.combo-items-list li { font-size: 14px; color: #5a5248; }
+.combo-pricing { display: flex; align-items: baseline; gap: 10px; }
+.combo-normal-price { font-size: 14px; color: #9a8f82; text-decoration: line-through; }
+.combo-price { font: 800 22px/1 "Manrope"; color: #2a9a6e; }
+.combo-cta { width: 100%; padding: 14px; border: 0; border-top: 1px solid #ede5c8; background: var(--yellow); color: var(--ink); font: 800 15px/1 "Manrope"; cursor: pointer; letter-spacing: -.01em; }
+.combo-cta:active { background: #d4a812; }
+/* combo discount line in cart */
+.order-item-combo-discount { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.combo-discount-icon { font-size: 18px; }
+.order-item-combo-discount .order-item-copy { flex: 1; display: flex; justify-content: space-between; align-items: center; }
+.order-item-combo-discount strong { font-size: 13px; color: #5a5248; }
+.combo-discount-amount { font: 800 14px "Manrope"; color: #2a9a6e; }
+/* ── Cross-sell ─────────────────────────────────────────────── */
 .cross-sell { padding: 21px 0 19px; margin: 3px 0 19px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .cross-sell > p { margin: 0 0 5px; color: #2a9a6e; font-size: 11px; font-weight: 800; letter-spacing: .11em; }
 .cross-sell h3 { margin: 0 0 12px; font: 800 19px/1.2 "Manrope"; letter-spacing: -.02em; }
@@ -1137,6 +1159,10 @@ textarea, select { font: inherit; }
 .admin-banner-actions button:hover { background: #f0f0f0; }
 .admin-delete-inline { color: #c0392b !important; border-color: #f5c6c6 !important; }
 .admin-banner-form { padding: 0 16px 16px; }
+.admin-combo-item-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 8px; margin-bottom: 8px; }
+.admin-combo-item-row select { width: 100%; padding: 8px 10px; border: 1px solid #d0c7b9; border-radius: 8px; font-size: 13px; }
+.admin-combo-add-row { width: 100%; padding: 10px; border: 1px dashed #b0a090; border-radius: 10px; background: white; font: 700 13px "Manrope"; color: #6d5c2a; cursor: pointer; margin-top: 4px; }
+.admin-combo-add-row:hover { border-color: #a77d19; color: #a77d19; }
 
 /* ── Admin — Analíticas tab ──────────────────────────────────── */
 .admin-analytics { display: flex; flex-direction: column; gap: 20px; }

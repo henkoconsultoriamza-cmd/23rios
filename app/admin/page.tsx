@@ -934,8 +934,8 @@ export default function AdminPage() {
                   const DAY_LABELS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
                   const scheduleLabel = promo.days.length === 0 ? "Todos los días" : promo.days.map(d => DAY_LABELS[d]).join(", ");
                   const timeLabel = promo.timeStart && promo.timeEnd ? ` · ${promo.timeStart}–${promo.timeEnd}` : "";
-                  const typeLabel = promo.type === "2x1" ? "2×1" : promo.type === "precio" ? `Precio especial $${promo.promoPrice ?? "—"}` : `${promo.promoPercent ?? "—"}% off`;
-                  const targetLabel = promo.targetType === "producto" ? (products.find(p => p.id === promo.targetValue)?.name ?? promo.targetValue) : promo.targetType === "grupo" ? `Grupo: ${promo.targetValue}` : `Categoría: ${promo.targetValue}`;
+                  const typeLabel = promo.type === "2x1" ? "2×1" : promo.type === "precio" ? `Precio especial $${promo.promoPrice ?? "—"}` : promo.type === "combo" ? `Combo · $${promo.comboPrice ?? "—"}` : `${promo.promoPercent ?? "—"}% off`;
+                  const targetLabel = promo.type === "combo" ? (promo.comboTitle || "Combo sin nombre") : promo.targetType === "producto" ? (products.find(p => p.id === promo.targetValue)?.name ?? promo.targetValue) : promo.targetType === "grupo" ? `Grupo: ${promo.targetValue}` : `Categoría: ${promo.targetValue}`;
                   const currentlyOn = isPromoActive(promo);
                   const uniqueGroups = [...new Set(products.map(p => p.group))].sort();
                   return <article key={promo.id} className={`admin-banner-card${promoDraft?.id === promo.id ? " is-editing" : ""}${!promo.active ? " is-hidden" : ""}`}>
@@ -951,25 +951,51 @@ export default function AdminPage() {
                       </div>
                     </header>
                     {promoDraft?.id === promo.id && <div className="admin-form-grid admin-banner-form">
-                      <label className="wide">Aplicar a
-                        <select value={promoDraft.targetType} onChange={(e) => { const t = e.target.value as Promo["targetType"]; const defaultVal = t === "producto" ? (products[0]?.id ?? "") : t === "grupo" ? (uniqueGroups[0] ?? "") : "Cervezas"; updatePromoDraft("targetType", t); updatePromoDraft("targetValue", defaultVal); }}>
-                          <option value="producto">Producto específico</option>
-                          <option value="grupo">Grupo completo (ej. Pizzas)</option>
-                          <option value="categoria">Categoría completa (ej. Cervezas)</option>
-                        </select>
-                      </label>
-                      {promoDraft.targetType === "producto" && <label className="wide">Producto<select value={promoDraft.targetValue} onChange={(e) => updatePromoDraft("targetValue", e.target.value)}>{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>}
-                      {promoDraft.targetType === "grupo" && <label className="wide">Grupo<select value={promoDraft.targetValue} onChange={(e) => updatePromoDraft("targetValue", e.target.value)}>{uniqueGroups.map(g => <option key={g} value={g}>{g}</option>)}</select></label>}
-                      {promoDraft.targetType === "categoria" && <label className="wide">Categoría<select value={promoDraft.targetValue} onChange={(e) => updatePromoDraft("targetValue", e.target.value)}><option value="Cervezas">Cervezas</option><option value="Bebidas">Bebidas</option><option value="Cocina">Comida</option></select></label>}
                       <label className="wide">Tipo de promoción
                         <select value={promoDraft.type} onChange={(e) => updatePromoDraft("type", e.target.value as Promo["type"])}>
                           <option value="2x1">2×1</option>
                           <option value="precio">Precio especial</option>
                           <option value="porcentaje">% Off</option>
+                          <option value="combo">Combo (varios productos)</option>
                         </select>
                       </label>
-                      {promoDraft.type === "precio" && <label>Precio promocional<input type="number" min="0" step="100" value={promoDraft.promoPrice ?? ""} onChange={(e) => updatePromoDraft("promoPrice", Number(e.target.value))} placeholder="0"/></label>}
-                      {promoDraft.type === "porcentaje" && <label>% de descuento<input type="number" min="1" max="99" value={promoDraft.promoPercent ?? ""} onChange={(e) => updatePromoDraft("promoPercent", Number(e.target.value))} placeholder="20"/></label>}
+
+                      {promoDraft.type !== "combo" && <>
+                        <label className="wide">Aplicar a
+                          <select value={promoDraft.targetType} onChange={(e) => { const t = e.target.value as Promo["targetType"]; const defaultVal = t === "producto" ? (products[0]?.id ?? "") : t === "grupo" ? (uniqueGroups[0] ?? "") : "Cervezas"; updatePromoDraft("targetType", t); updatePromoDraft("targetValue", defaultVal); }}>
+                            <option value="producto">Producto específico</option>
+                            <option value="grupo">Grupo completo (ej. Pizzas)</option>
+                            <option value="categoria">Categoría completa (ej. Cervezas)</option>
+                          </select>
+                        </label>
+                        {promoDraft.targetType === "producto" && <label className="wide">Producto<select value={promoDraft.targetValue} onChange={(e) => updatePromoDraft("targetValue", e.target.value)}>{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>}
+                        {promoDraft.targetType === "grupo" && <label className="wide">Grupo<select value={promoDraft.targetValue} onChange={(e) => updatePromoDraft("targetValue", e.target.value)}>{uniqueGroups.map(g => <option key={g} value={g}>{g}</option>)}</select></label>}
+                        {promoDraft.targetType === "categoria" && <label className="wide">Categoría<select value={promoDraft.targetValue} onChange={(e) => updatePromoDraft("targetValue", e.target.value)}><option value="Cervezas">Cervezas</option><option value="Bebidas">Bebidas</option><option value="Cocina">Comida</option></select></label>}
+                        {promoDraft.type === "precio" && <label>Precio promocional<input type="number" min="0" step="100" value={promoDraft.promoPrice ?? ""} onChange={(e) => updatePromoDraft("promoPrice", Number(e.target.value))} placeholder="0"/></label>}
+                        {promoDraft.type === "porcentaje" && <label>% de descuento<input type="number" min="1" max="99" value={promoDraft.promoPercent ?? ""} onChange={(e) => updatePromoDraft("promoPercent", Number(e.target.value))} placeholder="20"/></label>}
+                      </>}
+
+                      {promoDraft.type === "combo" && <>
+                        <label className="wide">Nombre del combo<input value={promoDraft.comboTitle ?? ""} onChange={(e) => updatePromoDraft("comboTitle", e.target.value || undefined)} placeholder="Ej. 1 Pizza + 2 Birras"/></label>
+                        <div className="wide">
+                          <p style={{margin:"0 0 8px", fontWeight:700, fontSize:13}}>Productos del combo</p>
+                          {(promoDraft.comboItems ?? []).map((item, idx) => (
+                            <div key={idx} className="admin-combo-item-row">
+                              <select value={item.productId} onChange={(e) => { const next = [...(promoDraft.comboItems ?? [])]; next[idx] = {...item, productId: e.target.value}; updatePromoDraft("comboItems", next); }}>
+                                {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                              </select>
+                              <label style={{display:"flex", alignItems:"center", gap:6, whiteSpace:"nowrap"}}>
+                                Cant.
+                                <input type="number" min="1" max="20" value={item.quantity} style={{width:60}} onChange={(e) => { const next = [...(promoDraft.comboItems ?? [])]; next[idx] = {...item, quantity: Math.max(1, Number(e.target.value))}; updatePromoDraft("comboItems", next); }}/>
+                              </label>
+                              <button type="button" className="admin-delete-inline" onClick={() => { const next = (promoDraft.comboItems ?? []).filter((_, i) => i !== idx); updatePromoDraft("comboItems", next); }}>×</button>
+                            </div>
+                          ))}
+                          <button type="button" className="admin-combo-add-row" onClick={() => updatePromoDraft("comboItems", [...(promoDraft.comboItems ?? []), { productId: products[0]?.id ?? "", quantity: 1 }])}>＋ Agregar producto al combo</button>
+                        </div>
+                        <label className="wide">Precio del combo<input type="number" min="0" step="100" value={promoDraft.comboPrice ?? ""} onChange={(e) => updatePromoDraft("comboPrice", Number(e.target.value))} placeholder="Ej. 6000"/></label>
+                      </>}
+
                       <label className="wide">Días activos
                         <div className="admin-days-selector">{(["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"] as const).map((label, i) => <button type="button" key={i} className={promoDraft.days.includes(i) ? "active" : ""} onClick={() => updatePromoDraft("days", promoDraft.days.includes(i) ? promoDraft.days.filter(d => d !== i) : [...promoDraft.days, i].sort())}>{label}</button>)}</div>
                         <small>Sin selección = todos los días</small>
