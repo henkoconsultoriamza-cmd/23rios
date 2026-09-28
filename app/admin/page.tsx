@@ -308,7 +308,7 @@ export default function AdminPage() {
   }, [analyticsEvents, dateRange, products]);
 
   const selectableGroups = draft.category === "Cocina" ? settings.foodGroups : settings.drinkGroups;
-  const isCraftBeer = draft.category === "Cervezas" && draft.group === "Cerveza";
+  const isCraftBeer = draft.category === "Cervezas";
 
   function selectProduct(product: Product) {
     setSelectedId(product.id);
@@ -491,7 +491,7 @@ export default function AdminPage() {
 
   function changeProductGroup(group: string) {
     setDraft((current) => {
-      if (current.category === "Cervezas" && group === "Cerveza") {
+      if (current.category === "Cervezas") {
         return {
           ...current,
           group,
@@ -877,9 +877,9 @@ export default function AdminPage() {
                 <div className="admin-form-grid">
                   <label>Color / familia<select value={draft.beerStyle ?? ""} onChange={(event) => updateDraft("beerStyle", event.target.value)}><option value="">Elegir…</option>{settings.beerStyles.map((style) => <option key={style}>{style}</option>)}</select></label>
                   <label>Nombre del estilo<input value={ensureBeerProfile().style} onChange={(event) => updateBeerProfile("style", event.target.value)}/></label>
-                  <label>IBU<input value={ensureBeerProfile().ibu} onChange={(event) => updateBeerProfile("ibu", event.target.value)}/></label>
-                  <label>ABV<input value={ensureBeerProfile().abv} onChange={(event) => updateBeerProfile("abv", event.target.value)} placeholder="Ej. 5%"/></label>
-                  <label>SRM<input value={ensureBeerProfile().srm} onChange={(event) => updateBeerProfile("srm", event.target.value)}/></label>
+                  <label>Amargo IBU<input value={ensureBeerProfile().ibu} onChange={(event) => updateBeerProfile("ibu", event.target.value)} placeholder="Ej. 25"/></label>
+                  <label>Alcohol ABV<input value={ensureBeerProfile().abv} onChange={(event) => updateBeerProfile("abv", event.target.value)} placeholder="Ej. 5,2%"/></label>
+                  <label>Color EBC<input value={ensureBeerProfile().srm} onChange={(event) => updateBeerProfile("srm", event.target.value)} placeholder="Ej. 40"/></label>
                   <label className="wide">Descriptores separados por coma<input value={ensureBeerProfile().descriptors.join(", ")} onChange={(event) => updateBeerProfile("descriptors", event.target.value.split(",").map((item) => item.trim()).filter(Boolean))} placeholder="Ligera, refrescante, equilibrada"/></label>
                 </div>
                 <div className="admin-serving-editor">{(draft.servings ?? [{ label: "Media pinta", volume: "250 cc", price: 0 }, { label: "Pinta", volume: "500 cc", price: 0 }, { label: "Jarra", volume: "1 L", price: 0 }]).map((serving) => <article key={serving.label}><strong>{serving.label}</strong><label>Capacidad<input value={serving.volume} onChange={(event) => updateServing(serving.label, "volume", event.target.value)}/></label><label>Precio<input type="number" min="0" value={serving.price} onChange={(event) => updateServing(serving.label, "price", event.target.value)}/></label></article>)}</div>
