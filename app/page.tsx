@@ -1033,6 +1033,9 @@ export default function Home() {
               if (orderStatus === "sent") {
                 return <button className="order-button locked" disabled><Icon name="receipt" size={19}/><span>{tr("PEDIDO LANZADO")}</span></button>;
               }
+              if (selected.outOfStock) {
+                return <button className="order-button locked" disabled><span>{tr("Sin stock — no disponible ahora")}</span></button>;
+              }
               if (modalItem && modalItem.quantity > 0) {
                 return <>
                   {selected.category === "Cocina" && <button className="customize-modal-btn" onClick={openCustomize}>{tr("Le quiero sacar...")}</button>}
