@@ -999,29 +999,23 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Related products — interactive */}
-                <div className="cross-sell admin-preview-related">
+                {/* Related products — read-only preview */}
+                {draft.relatedIds.length > 0 && <div className="cross-sell admin-preview-related">
                   <p>PARA COMPLETAR TU ELECCIÓN</p>
                   <h3>Se puede acompañar con</h3>
-                  <p className="admin-preview-allergens-hint">Tildá los que querés mostrar</p>
                   <div className="cross-sell-grid">
-                    {products.filter((p) => p.id !== selectedId && p.id !== draft.id).map((p) => {
-                      const selected = draft.relatedIds.includes(p.id);
+                    {draft.relatedIds.map((id) => {
+                      const p = products.find((x) => x.id === id);
+                      if (!p) return null;
                       return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          className={`admin-preview-related-item${selected ? " selected" : ""}`}
-                          onClick={() => toggleDraftList("relatedIds", p.id)}
-                        >
+                        <div key={id} className="admin-preview-related-item selected">
                           {p.image ? <img src={p.image} alt=""/> : <span className="cross-sell-placeholder"/>}
                           <span><strong>{p.name}</strong><small>{p.group}</small></span>
-                          <span className="admin-preview-related-check">{selected ? "✓" : "+"}</span>
-                        </button>
+                        </div>
                       );
                     })}
                   </div>
-                </div>
+                </div>}
               </div>
             </section>
 
