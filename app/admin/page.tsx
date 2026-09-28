@@ -1408,21 +1408,34 @@ export default function AdminPage() {
             <article className="admin-adjustment-card">
               <div className="admin-adjustment-heading"><span>02</span><div><small>PRODUCTOS DEL EVENTO</small><h2>Seleccioná qué aparece</h2><p>Marcá los productos que van a estar disponibles cuando el modo evento esté activo. El resto queda oculto automáticamente.</p></div></div>
               <div className="admin-event-product-list">
-                {["Cocina", "Cervezas"].map((cat) => {
+                {(["Cocina", "Cervezas", "Bebidas"] as const).map((cat) => {
                   const catProducts = products.filter((p) => p.category === cat);
                   if (!catProducts.length) return null;
+                  const groups = [...new Set(catProducts.map((p) => p.group))];
                   return <div key={cat} className="admin-event-category">
                     <p className="admin-event-cat-label">{cat === "Cocina" ? "Comida" : "Bebida"}</p>
-                    {catProducts.map((p) => <label key={p.id} className="admin-event-product-row">
-                      <input type="checkbox" checked={!!p.eventoMenu} onChange={() => {
-                        const next = products.map((prod) => prod.id === p.id ? { ...prod, eventoMenu: !prod.eventoMenu } : prod);
-                        persistProducts(next);
-                        setNotice(`"${p.name}" ${!p.eventoMenu ? "agregado al" : "quitado del"} menú evento.`);
-                      }}/>
-                      {p.image ? <img src={p.image} alt=""/> : <span className="admin-image-placeholder">CN</span>}
-                      <span><strong>{p.name}</strong><small>{p.group}</small></span>
-                      {p.eventoMenu && <span className="admin-event-badge">Evento</span>}
-                    </label>)}
+                    {groups.map((group) => {
+                      const groupProducts = catProducts.filter((p) => p.group === group);
+                      const checkedCount = groupProducts.filter((p) => p.eventoMenu).length;
+                      return (
+                        <details key={group} className="admin-event-group">
+                          <summary className="admin-event-group-header">
+                            <span>{group}</span>
+                            <small>{checkedCount}/{groupProducts.length}</small>
+                          </summary>
+                          {groupProducts.map((p) => <label key={p.id} className="admin-event-product-row">
+                            <input type="checkbox" checked={!!p.eventoMenu} onChange={() => {
+                              const next = products.map((prod) => prod.id === p.id ? { ...prod, eventoMenu: !prod.eventoMenu } : prod);
+                              persistProducts(next);
+                              setNotice(`"${p.name}" ${!p.eventoMenu ? "agregado al" : "quitado del"} menú evento.`);
+                            }}/>
+                            {p.image ? <img src={p.image} alt=""/> : <span className="admin-image-placeholder">CN</span>}
+                            <span><strong>{p.name}</strong></span>
+                            {p.eventoMenu && <span className="admin-event-badge">✓</span>}
+                          </label>)}
+                        </details>
+                      );
+                    })}
                   </div>;
                 })}
               </div>
