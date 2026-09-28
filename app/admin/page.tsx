@@ -926,6 +926,105 @@ export default function AdminPage() {
               {isNew && <div className="admin-editor-actions"><button className="admin-save" onClick={saveProduct}>Crear producto</button></div>}
               {!isNew && <div className="admin-editor-actions"><button className="admin-delete" onClick={deleteProduct}>Eliminar producto</button></div>}
             </section>
+
+            {/* ── Preview panel ───────────────────────────────── */}
+            <section className="admin-product-preview">
+              <div className="admin-preview-header"><span>VISTA DEL CLIENTE</span></div>
+
+              {/* Image */}
+              <div className="admin-preview-image">
+                {draft.image
+                  ? <img src={draft.image} alt=""/>
+                  : <div className="admin-preview-no-image"><span>Sin foto</span></div>}
+              </div>
+
+              <div className="admin-preview-copy">
+                <h2>{draft.name || <em>Sin nombre todavía</em>}</h2>
+
+                {/* Beer profile */}
+                {isCraftBeer && draft.beerProfile && <>
+                  {draft.beerStyle && <p className="beer-style-badge">{draft.beerStyle.toUpperCase()}</p>}
+                  {draft.beerProfile.descriptors.length > 0 && (
+                    <div className="beer-descriptors">
+                      {draft.beerProfile.descriptors.map((d) => <span key={d}>{d}</span>)}
+                    </div>
+                  )}
+                  <div className="beer-metrics">
+                    <div className="beer-metrics-header"><span>DATOS TÉCNICOS</span></div>
+                    <span><span className="beer-metric-info"><em>ALCOHOL %</em><small>Contenido alcohólico por volumen</small></span><strong>{draft.beerProfile.abv || "—"}</strong></span>
+                    <span><span className="beer-metric-info"><em>COLOR EBC</em><small>Escala europea de color — mayor valor, más oscura</small></span><strong>{draft.beerProfile.srm || "—"}</strong></span>
+                    <span><span className="beer-metric-info"><em>AMARGO IBU</em><small>Unidades de amargor — mayor valor, más amarga</small></span><strong>{draft.beerProfile.ibu || "—"}</strong></span>
+                  </div>
+                </>}
+
+                {/* Description */}
+                {draft.description && <p className="admin-preview-desc">{draft.description}</p>}
+
+                {/* Price */}
+                {draft.servings
+                  ? <div className="admin-preview-servings">
+                      {draft.servings.map((s) => (
+                        <div key={s.label} className="admin-preview-serving-row">
+                          <span><strong>{s.label}</strong><small>{s.volume}</small></span>
+                          <b>{s.price > 0 ? `$ ${s.price.toLocaleString("es-AR")}` : "—"}</b>
+                        </div>
+                      ))}
+                    </div>
+                  : <div className="single-price">
+                      <span>Precio</span>
+                      <strong>{draft.price > 0 ? `$ ${draft.price.toLocaleString("es-AR")}` : "—"}</strong>
+                    </div>}
+
+                {/* Allergens — interactive */}
+                <div className="allergen-summary admin-preview-allergens">
+                  <strong>Alérgenos</strong>
+                  <p className="admin-preview-allergens-hint">Tildá los que aplican</p>
+                  <div>
+                    {settings.allergenOptions.map((allergen) => {
+                      const active = draft.allergens.includes(allergen);
+                      const icon = ({ Gluten: "🌾", "Lácteos": "🥛", Huevo: "🥚" } as Record<string,string>)[allergen] ?? "•";
+                      return (
+                        <button
+                          key={allergen}
+                          type="button"
+                          className={`allergen-item admin-preview-allergen-btn${active ? " active" : ""}`}
+                          onClick={() => toggleDraftList("allergens", allergen)}
+                          title={active ? "Quitar" : "Agregar"}
+                        >
+                          <i aria-hidden="true">{icon}</i>
+                          {allergen}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Related products — interactive */}
+                <div className="cross-sell admin-preview-related">
+                  <p>PARA COMPLETAR TU ELECCIÓN</p>
+                  <h3>Se puede acompañar con</h3>
+                  <p className="admin-preview-allergens-hint">Tildá los que querés mostrar</p>
+                  <div className="cross-sell-grid">
+                    {products.filter((p) => p.id !== selectedId && p.id !== draft.id).map((p) => {
+                      const selected = draft.relatedIds.includes(p.id);
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          className={`admin-preview-related-item${selected ? " selected" : ""}`}
+                          onClick={() => toggleDraftList("relatedIds", p.id)}
+                        >
+                          {p.image ? <img src={p.image} alt=""/> : <span className="cross-sell-placeholder"/>}
+                          <span><strong>{p.name}</strong><small>{p.group}</small></span>
+                          <span className="admin-preview-related-check">{selected ? "✓" : "+"}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </section>
+
           </div> : tab === "banners" ? <div className="admin-banners-layout">
 
             <div className="admin-section-block">
