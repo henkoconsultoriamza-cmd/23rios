@@ -1226,35 +1226,52 @@ export default function AdminPage() {
               {/* Promo being edited */}
               {promoDraft && <>
                 <div className="admin-preview-banner-label"><span>{promoDraft.type === "combo" ? "COMBO · CARD EN MENÚ" : "PROMOCIÓN · BADGE EN PRODUCTO"}</span></div>
-                {promoDraft.type === "combo" && promoDraft.comboImageUrl && (
-                  <div className="admin-preview-banner-img">
-                    <img src={promoDraft.comboImageUrl} alt=""/>
-                  </div>
-                )}
-                <div className="admin-preview-copy">
-                  <div className="admin-preview-promo-card">
-                    <div className="admin-preview-promo-badge">
-                      {promoDraft.type === "2x1" ? "2×1"
-                        : promoDraft.type === "porcentaje" ? `-${promoDraft.promoPercent ?? "?"}%`
-                        : promoDraft.type === "combo" ? "COMBO"
-                        : "OFERTA"}
+                {promoDraft.type === "combo"
+                  ? <div className="admin-preview-copy" style={{padding: 16}}>
+                      {/* Combo card — igual que el menú público */}
+                      <article className="product-card combo-product-card" style={{pointerEvents:"none"}}>
+                        <div className="product-visual-wrap">
+                          <div className="product-visual combo-visual">
+                            {promoDraft.comboImageUrl
+                              ? <img src={promoDraft.comboImageUrl} alt=""/>
+                              : <span className="photo-pending combo-no-image"><strong>🎁 COMBO</strong></span>}
+                            <span className="product-tag combo-card-tag">COMBO</span>
+                          </div>
+                        </div>
+                        <div className="product-info">
+                          <div className="product-title"><span><h3>{promoDraft.comboTitle || "Combo especial"}</h3></span></div>
+                          <p className="combo-items-inline">
+                            {(promoDraft.comboItems ?? []).map((ci) => {
+                              const prod = products.find(p => p.id === ci.productId);
+                              return `${ci.quantity > 1 ? ci.quantity + "× " : ""}${prod?.name ?? ci.productId}`;
+                            }).join(" · ") || "Sin productos aún"}
+                          </p>
+                          <div className="product-footer">
+                            <span><strong>{promoDraft.comboPrice ? `$ ${promoDraft.comboPrice.toLocaleString("es-AR")}` : "—"}</strong></span>
+                            <button className="add-to-cart-btn" disabled>Lo quiero</button>
+                          </div>
+                        </div>
+                      </article>
                     </div>
-                    <div className="admin-preview-promo-detail">
-                      {promoDraft.type === "combo"
-                        ? <strong>{promoDraft.comboTitle || "Combo sin nombre"}</strong>
-                        : <strong>{promoDraft.targetType === "producto"
+                  : <div className="admin-preview-copy">
+                      <div className="admin-preview-promo-card">
+                        <div className="admin-preview-promo-badge">
+                          {promoDraft.type === "2x1" ? "2×1"
+                            : promoDraft.type === "porcentaje" ? `-${promoDraft.promoPercent ?? "?"}%`
+                            : "OFERTA"}
+                        </div>
+                        <div className="admin-preview-promo-detail">
+                          <strong>{promoDraft.targetType === "producto"
                             ? products.find(p => p.id === promoDraft.targetValue)?.name ?? promoDraft.targetValue
                             : promoDraft.targetType === "grupo" ? `Grupo: ${promoDraft.targetValue}`
-                            : `Categoría: ${promoDraft.targetValue}`}</strong>}
-                      {promoDraft.type === "combo" && promoDraft.comboPrice
-                        ? <span>$ {promoDraft.comboPrice.toLocaleString("es-AR")}</span>
-                        : promoDraft.type === "precio" && promoDraft.promoPrice
-                        ? <span>$ {promoDraft.promoPrice.toLocaleString("es-AR")}</span>
-                        : null}
-                      <small>{promoDraft.days.length === 0 ? "Todos los días" : ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"].filter((_,i) => promoDraft.days.includes(i)).join(", ")}{promoDraft.timeStart ? ` · ${promoDraft.timeStart}–${promoDraft.timeEnd}` : ""}</small>
-                    </div>
-                  </div>
-                </div>
+                            : `Categoría: ${promoDraft.targetValue}`}</strong>
+                          {promoDraft.type === "precio" && promoDraft.promoPrice
+                            ? <span>$ {promoDraft.promoPrice.toLocaleString("es-AR")}</span>
+                            : null}
+                          <small>{promoDraft.days.length === 0 ? "Todos los días" : ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"].filter((_,i) => promoDraft.days.includes(i)).join(", ")}{promoDraft.timeStart ? ` · ${promoDraft.timeStart}–${promoDraft.timeEnd}` : ""}</small>
+                        </div>
+                      </div>
+                    </div>}
               </>}
 
               {/* Nothing being edited — show active items summary */}
