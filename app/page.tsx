@@ -360,7 +360,7 @@ export default function Home() {
   const heroImageUrl = appSettings.heroImageUrl.trim() || DEFAULT_APP_SETTINGS.heroImageUrl;
   const displayPrice = (value: number) => formatPrice(value, appSettings.currency);
 
-  const activePromos = useMemo(() => promos.filter(isPromoActive), [promos]);
+  const activePromos = useMemo(() => appSettings.eventModeActive ? [] : promos.filter(isPromoActive), [promos, appSettings.eventModeActive]);
   const activeCombos = useMemo(() => activePromos.filter(p => p.type === "combo" && (p.comboItems?.length ?? 0) > 0 && p.comboPrice != null), [activePromos]);
 
   function getPromoForProduct(product: Product): Promo | undefined {
@@ -718,7 +718,7 @@ export default function Home() {
         </div>
       </section>
 
-      {banners.filter((b) => b.visible).length > 0 && (
+      {!appSettings.eventModeActive && banners.filter((b) => b.visible).length > 0 && (
         <NovedadesSlider banners={banners.filter((b) => b.visible)} />
       )}
 
