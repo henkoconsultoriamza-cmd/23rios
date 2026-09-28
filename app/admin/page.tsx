@@ -309,10 +309,12 @@ export default function AdminPage() {
 
   const selectableGroups = draft.category === "Cocina" ? settings.foodGroups : settings.drinkGroups;
   const isCraftBeer = draft.category === "Cervezas" && draft.group.toLowerCase().includes("cerveza");
+  const [descriptorText, setDescriptorText] = React.useState(() => (draft.beerProfile?.descriptors ?? []).join(", "));
 
   function selectProduct(product: Product) {
     setSelectedId(product.id);
     setDraft(structuredClone(product));
+    setDescriptorText((product.beerProfile?.descriptors ?? []).join(", "));
     setIsNew(false);
     setNotice("Editando producto. Guardá para aplicar los cambios.");
   }
@@ -880,7 +882,7 @@ export default function AdminPage() {
                   <label>Amargo IBU<input value={ensureBeerProfile().ibu} onChange={(event) => updateBeerProfile("ibu", event.target.value)} placeholder="Ej. 25"/></label>
                   <label>Alcohol ABV<input value={ensureBeerProfile().abv} onChange={(event) => updateBeerProfile("abv", event.target.value)} placeholder="Ej. 5,2%"/></label>
                   <label>Color EBC<input value={ensureBeerProfile().srm} onChange={(event) => updateBeerProfile("srm", event.target.value)} placeholder="Ej. 40"/></label>
-                  <label className="wide">Descriptores separados por coma<input value={ensureBeerProfile().descriptors.join(", ")} onChange={(event) => updateBeerProfile("descriptors", event.target.value.split(",").map((item) => item.trim()).filter(Boolean))} placeholder="Ligera, refrescante, equilibrada"/></label>
+                  <label className="wide">Descriptores separados por coma<input value={descriptorText} onChange={(e) => setDescriptorText(e.target.value)} onBlur={(e) => updateBeerProfile("descriptors", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} placeholder="Ligera, refrescante, equilibrada"/></label>
                 </div>
                 <div className="admin-serving-editor">{(draft.servings ?? [{ label: "Media pinta", volume: "250 cc", price: 0 }, { label: "Pinta", volume: "500 cc", price: 0 }, { label: "Jarra", volume: "1 L", price: 0 }]).map((serving) => <article key={serving.label}><strong>{serving.label}</strong><label>Capacidad<input value={serving.volume} onChange={(event) => updateServing(serving.label, "volume", event.target.value)}/></label><label>Precio<input type="number" min="0" value={serving.price} onChange={(event) => updateServing(serving.label, "price", event.target.value)}/></label></article>)}</div>
               </div>}
