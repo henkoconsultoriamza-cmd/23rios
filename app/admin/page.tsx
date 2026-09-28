@@ -308,7 +308,7 @@ export default function AdminPage() {
   }, [analyticsEvents, dateRange, products]);
 
   const selectableGroups = draft.category === "Cocina" ? settings.foodGroups : settings.drinkGroups;
-  const isCraftBeer = draft.category === "Cervezas";
+  const isCraftBeer = draft.category === "Cervezas" && draft.group.toLowerCase().includes("cerveza");
 
   function selectProduct(product: Product) {
     setSelectedId(product.id);
@@ -491,7 +491,7 @@ export default function AdminPage() {
 
   function changeProductGroup(group: string) {
     setDraft((current) => {
-      if (current.category === "Cervezas") {
+      if (current.category === "Cervezas" && group.toLowerCase().includes("cerveza")) {
         return {
           ...current,
           group,
