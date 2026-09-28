@@ -1225,7 +1225,12 @@ export default function AdminPage() {
 
               {/* Promo being edited */}
               {promoDraft && <>
-                <div className="admin-preview-banner-label"><span>PROMOCIÓN · BADGE EN PRODUCTO</span></div>
+                <div className="admin-preview-banner-label"><span>{promoDraft.type === "combo" ? "COMBO · CARD EN MENÚ" : "PROMOCIÓN · BADGE EN PRODUCTO"}</span></div>
+                {promoDraft.type === "combo" && promoDraft.comboImageUrl && (
+                  <div className="admin-preview-banner-img">
+                    <img src={promoDraft.comboImageUrl} alt=""/>
+                  </div>
+                )}
                 <div className="admin-preview-copy">
                   <div className="admin-preview-promo-card">
                     <div className="admin-preview-promo-badge">
