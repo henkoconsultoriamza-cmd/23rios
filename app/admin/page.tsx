@@ -309,7 +309,7 @@ export default function AdminPage() {
 
   const selectableGroups = draft.category === "Cocina" ? settings.foodGroups : settings.drinkGroups;
   const isCraftBeer = draft.category === "Cervezas" && draft.group.toLowerCase().includes("cerveza");
-  const [descriptorText, setDescriptorText] = React.useState(() => (draft.beerProfile?.descriptors ?? []).join(", "));
+  const [descriptorText, setDescriptorText] = useState(() => (draft.beerProfile?.descriptors ?? []).join(", "));
 
   function selectProduct(product: Product) {
     setSelectedId(product.id);
