@@ -975,27 +975,16 @@ export default function AdminPage() {
                       <strong>{draft.price > 0 ? `$ ${draft.price.toLocaleString("es-AR")}` : "—"}</strong>
                     </div>}
 
-                {/* Allergens — interactive */}
-                <div className="allergen-summary admin-preview-allergens">
+                {/* Allergens — read-only preview */}
+                <div className="allergen-summary">
                   <strong>Alérgenos</strong>
-                  <p className="admin-preview-allergens-hint">Tildá los que aplican</p>
                   <div>
-                    {settings.allergenOptions.map((allergen) => {
-                      const active = draft.allergens.includes(allergen);
-                      const icon = ({ Gluten: "🌾", "Lácteos": "🥛", Huevo: "🥚" } as Record<string,string>)[allergen] ?? "•";
-                      return (
-                        <button
-                          key={allergen}
-                          type="button"
-                          className={`allergen-item admin-preview-allergen-btn${active ? " active" : ""}`}
-                          onClick={() => toggleDraftList("allergens", allergen)}
-                          title={active ? "Quitar" : "Agregar"}
-                        >
-                          <i aria-hidden="true">{icon}</i>
-                          {allergen}
-                        </button>
-                      );
-                    })}
+                    {draft.allergens.length > 0
+                      ? draft.allergens.map((allergen) => {
+                          const icon = ({ Gluten: "🌾", "Lácteos": "🥛", Huevo: "🥚" } as Record<string,string>)[allergen] ?? "•";
+                          return <span className="allergen-item" key={allergen}><i aria-hidden="true">{icon}</i>{allergen}</span>;
+                        })
+                      : <span className="allergen-item allergen-free"><i aria-hidden="true">✓</i>Sin alérgenos declarados</span>}
                   </div>
                 </div>
 
