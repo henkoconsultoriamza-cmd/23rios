@@ -1010,6 +1010,8 @@ export default function AdminPage() {
 
           </div> : tab === "banners" ? <div className="admin-banners-layout">
 
+            <div className="admin-banners-left">
+
             <div className="admin-section-block">
               <div className="admin-section-block-header"><h3>Promociones programadas</h3><p>Se activan y desactivan solas según el horario. El precio original se restaura automáticamente.</p></div>
               {promos.length === 0 && <div className="admin-empty-notice"><p>Sin promociones todavía. Usá "＋ Nueva promoción" para crear la primera.</p></div>}
@@ -1183,6 +1185,94 @@ export default function AdminPage() {
                 </article>)}
               </div>
             </div>
+
+            </div>{/* end admin-banners-left */}
+
+            {/* ── Banners preview panel ───────────────────────── */}
+            <section className="admin-product-preview admin-banners-preview">
+              <div className="admin-preview-header"><span>VISTA DEL CLIENTE</span></div>
+
+              {/* Banner (novedad) being edited */}
+              {bannerDraft && <>
+                <div className="admin-preview-banner-label"><span>NOVEDAD · SLIDER SUPERIOR</span></div>
+                <div className="admin-preview-banner-img">
+                  {bannerDraft.imageUrl
+                    ? <img src={bannerDraft.imageUrl} alt=""/>
+                    : <div className="admin-preview-no-image"><span>Sin imagen</span></div>}
+                  <span className="novedad-cta-btn">{bannerDraft.ctaLabel || "La quiero →"}</span>
+                </div>
+                {bannerDraft.title && <div className="admin-preview-copy" style={{paddingTop: 14}}>
+                  <strong style={{fontSize: 15}}>{bannerDraft.title}</strong>
+                  {bannerDraft.subtitle && <p className="admin-preview-desc">{bannerDraft.subtitle}</p>}
+                </div>}
+              </>}
+
+              {/* Event being edited */}
+              {eventDraft && <>
+                <div className="admin-preview-banner-label"><span>EVENTO · AGENDA</span></div>
+                <div className="admin-preview-event-card">
+                  {eventDraft.imageUrl
+                    ? <div className="admin-preview-event-img"><img src={eventDraft.imageUrl} alt=""/></div>
+                    : <div className="admin-preview-event-img admin-preview-no-image"><span>Sin imagen</span></div>}
+                  <div className="admin-preview-copy" style={{padding: "14px 0 0"}}>
+                    <h2 style={{fontSize: 22, marginBottom: 8}}>{eventDraft.title || <em>Sin título</em>}</h2>
+                    {(eventDraft.date || eventDraft.time) && <p className="event-date-text" style={{fontSize: 13}}>{eventDraft.date}{eventDraft.date && eventDraft.time ? " · " : ""}{eventDraft.time}</p>}
+                    {eventDraft.subtitle && <p className="admin-preview-desc">{eventDraft.subtitle}</p>}
+                    {eventDraft.ctaLabel && <span className="event-cta" style={{display:"inline-block", marginTop:10}}>{eventDraft.ctaLabel}</span>}
+                  </div>
+                </div>
+              </>}
+
+              {/* Promo being edited */}
+              {promoDraft && <>
+                <div className="admin-preview-banner-label"><span>PROMOCIÓN · BADGE EN PRODUCTO</span></div>
+                <div className="admin-preview-copy">
+                  <div className="admin-preview-promo-card">
+                    <div className="admin-preview-promo-badge">
+                      {promoDraft.type === "2x1" ? "2×1"
+                        : promoDraft.type === "porcentaje" ? `-${promoDraft.promoPercent ?? "?"}%`
+                        : promoDraft.type === "combo" ? "COMBO"
+                        : "OFERTA"}
+                    </div>
+                    <div className="admin-preview-promo-detail">
+                      {promoDraft.type === "combo"
+                        ? <strong>{promoDraft.comboTitle || "Combo sin nombre"}</strong>
+                        : <strong>{promoDraft.targetType === "producto"
+                            ? products.find(p => p.id === promoDraft.targetValue)?.name ?? promoDraft.targetValue
+                            : promoDraft.targetType === "grupo" ? `Grupo: ${promoDraft.targetValue}`
+                            : `Categoría: ${promoDraft.targetValue}`}</strong>}
+                      {promoDraft.type === "combo" && promoDraft.comboPrice
+                        ? <span>$ {promoDraft.comboPrice.toLocaleString("es-AR")}</span>
+                        : promoDraft.type === "precio" && promoDraft.promoPrice
+                        ? <span>$ {promoDraft.promoPrice.toLocaleString("es-AR")}</span>
+                        : null}
+                      <small>{promoDraft.days.length === 0 ? "Todos los días" : ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"].filter((_,i) => promoDraft.days.includes(i)).join(", ")}{promoDraft.timeStart ? ` · ${promoDraft.timeStart}–${promoDraft.timeEnd}` : ""}</small>
+                    </div>
+                  </div>
+                </div>
+              </>}
+
+              {/* Nothing being edited — show active items summary */}
+              {!bannerDraft && !eventDraft && !promoDraft && <div className="admin-preview-copy">
+                <p className="admin-preview-allergens-hint" style={{marginTop: 16}}>Abrí un elemento para ver cómo lo ve el cliente.</p>
+                {banners.filter(b => b.visible).length > 0 && <>
+                  <p style={{fontSize:10, fontWeight:800, letterSpacing:".12em", color:"#2a9a6e", margin:"16px 0 8px"}}>NOVEDADES ACTIVAS</p>
+                  {banners.filter(b => b.visible).map(b => <div key={b.id} className="admin-preview-summary-row"><span>{b.title || "Sin título"}</span></div>)}
+                </>}
+                {events.filter(e => e.active).length > 0 && <>
+                  <p style={{fontSize:10, fontWeight:800, letterSpacing:".12em", color:"#2a9a6e", margin:"16px 0 8px"}}>EVENTOS ACTIVOS</p>
+                  {events.filter(e => e.active).map(e => <div key={e.id} className="admin-preview-summary-row"><span>{e.title || "Sin título"}</span>{e.date && <small>{e.date}</small>}</div>)}
+                </>}
+                {promos.filter(p => p.active).length > 0 && <>
+                  <p style={{fontSize:10, fontWeight:800, letterSpacing:".12em", color:"#2a9a6e", margin:"16px 0 8px"}}>PROMOCIONES ACTIVAS</p>
+                  {promos.filter(p => p.active).map(p => {
+                    const label = p.type === "2x1" ? "2×1" : p.type === "porcentaje" ? `-${p.promoPercent}%` : p.type === "combo" ? "Combo" : "Precio esp.";
+                    const target = p.type === "combo" ? (p.comboTitle || "Combo") : p.targetType === "producto" ? (products.find(x => x.id === p.targetValue)?.name ?? p.targetValue) : p.targetValue;
+                    return <div key={p.id} className="admin-preview-summary-row"><span>{target}</span><small>{label}</small></div>;
+                  })}
+                </>}
+              </div>}
+            </section>
 
           </div> : tab === "analytics" ? <div className="admin-analytics">
             <div className="analytics-filter-bar">
