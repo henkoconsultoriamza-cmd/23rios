@@ -989,6 +989,9 @@ textarea, select { font: inherit; }
 .price-original { color: var(--muted); font-size: 11px; text-decoration: line-through; margin-right: 4px; }
 .promo-badge { display: inline-block; background: #e05a3a; color: white; font: 800 10px/1 "Manrope"; padding: 3px 7px; border-radius: 999px; margin-right: 5px; vertical-align: middle; }
 .promo-badge-image { align-self: end; justify-self: start; margin: 0 0 12px 12px; position: relative; z-index: 4; pointer-events: none; background: #e05a3a; color: white; font: 800 28px/1 "Manrope"; padding: 12px 20px; border-radius: 999px; letter-spacing: .3px; box-shadow: 0 4px 14px rgba(0,0,0,.35); }
+.out-of-stock-badge { align-self: end; justify-self: start; margin: 0 0 12px 12px; position: relative; z-index: 4; pointer-events: none; background: #3d3025; color: #e8e0d0; font: 700 14px/1 "Manrope"; padding: 8px 14px; border-radius: 999px; letter-spacing: .4px; text-transform: uppercase; border: 1.5px solid rgba(255,255,255,.18); box-shadow: 0 2px 8px rgba(0,0,0,.45); }
+.product-card.out-of-stock { opacity: .6; }
+.add-to-cart-btn.out-of-stock-btn { opacity: .45 !important; cursor: not-allowed !important; }
 .admin-section-block { margin-bottom: 32px; }
 .admin-section-block-header { margin-bottom: 14px; }
 .admin-section-block-header h3 { font-size: 15px; font-weight: 800; margin: 0 0 3px; }
@@ -1188,6 +1191,14 @@ textarea, select { font: inherit; }
 .admin-combo-item-row .combo-del-btn:hover { background: #fee2e2; border-color: #c0392b; }
 .admin-combo-add-row { width: 100%; padding: 10px; border: 1px dashed #b0a090; border-radius: 10px; background: white; font: 700 13px "Manrope"; color: #6d5c2a; cursor: pointer; margin-top: 4px; }
 .admin-combo-add-row:hover { border-color: #a77d19; color: #a77d19; }
+.admin-combo-item-wrap { margin-bottom: 10px; }
+.admin-combo-item-wrap .admin-combo-item-row { margin-bottom: 4px; }
+.admin-combo-options-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 6px 10px 8px; background: #f5f1ea; border: 1px solid #e8e0d0; border-top: none; border-radius: 0 0 10px 10px; }
+.admin-combo-options-label { font-size: 11px; font-weight: 700; color: #8a7a60; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+.admin-combo-option-chip { display: flex; align-items: center; gap: 4px; background: white; border: 1px solid #d0c7b9; border-radius: 999px; padding: 3px 8px 3px 10px; font-size: 12px; font-weight: 600; color: #3d2b00; }
+.admin-combo-option-chip button { background: none; border: none; cursor: pointer; color: #c0392b; font-size: 13px; line-height: 1; padding: 0; }
+.admin-combo-options-row select { border: 1px dashed #b0a090; border-radius: 999px; background: white; font: 600 12px "Manrope"; color: #6d5c2a; padding: 3px 10px; cursor: pointer; outline: none; }
+.combo-picker-separator { width: 100%; text-align: center; font-size: 12px; font-weight: 700; color: #8a7a60; margin: 4px 0; letter-spacing: .05em; }
 
 /* ── Admin — Analíticas tab ──────────────────────────────────── */
 .admin-analytics { display: flex; flex-direction: column; gap: 20px; }

@@ -33,7 +33,7 @@ export type Product = {
   removableIngredients?: string[];
 };
 
-export type ComboItem = { productId: string; quantity: number; anyBeer?: boolean };
+export type ComboItem = { productId: string; quantity: number; anyBeer?: boolean; optionIds?: string[] };
 
 export type Promo = {
   id: string;

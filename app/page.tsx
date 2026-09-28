@@ -377,8 +377,8 @@ export default function Home() {
 
   function addComboToCart(combo: Promo) {
     if (!combo.comboItems?.length || combo.comboPrice == null) return;
-    const hasAnyBeer = combo.comboItems.some(ci => ci.anyBeer);
-    if (hasAnyBeer) {
+    const needsPicker = combo.comboItems.some(ci => ci.anyBeer || (ci.optionIds?.length ?? 0) > 0);
+    if (needsPicker) {
       setComboBeerPicker({ combo, selections: {} });
       return;
     }
@@ -393,8 +393,8 @@ export default function Home() {
     const cartEntries: { productId: string; name: string; image?: string; price: number; qty: number }[] = [];
 
     combo.comboItems.forEach((ci, idx) => {
-      if (ci.anyBeer) {
-        // group selected beer IDs by id to merge duplicates
+      if (ci.anyBeer || (ci.optionIds?.length ?? 0) > 0) {
+        // slot with picker: use selections (beers or specific alternatives)
         const chosen = beerSelections[idx] ?? [];
         const counts: Record<string, number> = {};
         chosen.forEach(id => { counts[id] = (counts[id] ?? 0) + 1; });
@@ -787,14 +787,16 @@ export default function Home() {
                 <Fragment key={group}>
                   <div className="product-group-header"><h3>{tr(group)}</h3></div>
                   {groupProducts.map((product) => (
-                    <article className="product-card" key={product.id} data-style={product.beerStyle?.toLowerCase().replace(/\s+/g, "-")}>
+                    <article className={`product-card${product.outOfStock ? " out-of-stock" : ""}`} key={product.id} data-style={product.beerStyle?.toLowerCase().replace(/\s+/g, "-")}>
                       <div className="product-visual-wrap">
                         <button className="product-visual" onClick={() => setSelected(product)} aria-label={`${tr("Ver detalle")} ${tr(product.name)}`}>
                           {product.image ? <img className={product.id === "filet-numa" ? "filet-numa-image" : undefined} src={product.image} alt={`${tr(product.name)} · ${brandName}`} /> : <span className="photo-pending"><Icon name="expand" size={20}/><strong>{tr("Foto real pendiente")}</strong></span>}
                           <span className="product-tag">{product.tag}</span>
                           <span className="expand-label"><Icon name="expand" size={14}/> {tr("Ver detalle")}</span>
                         </button>
-                        {(() => { const p = getPromoForProduct(product); if (!p) return null; const label = p.type === "2x1" ? "2×1" : p.type === "porcentaje" ? `-${p.promoPercent}%` : "Oferta"; return <span className="promo-badge-image">{label}</span>; })()}
+                        {product.outOfStock
+                          ? <span className="out-of-stock-badge">Sin stock</span>
+                          : (() => { const p = getPromoForProduct(product); if (!p) return null; const label = p.type === "2x1" ? "2×1" : p.type === "porcentaje" ? `-${p.promoPercent}%` : "Oferta"; return <span className="promo-badge-image">{label}</span>; })()}
                       </div>
                       <div className="product-info">
 
@@ -806,11 +808,13 @@ export default function Home() {
                           const originalPrice = product.servings ? null : product.price;
                           const hasDiscount = !product.servings && activePromo && cardPrice !== originalPrice;
                           const cartQty = !product.servings ? (orderItems.find(i => i.key === product.id)?.quantity ?? 0) : 0;
-                          const btnLabel = product.servings
-                            ? <>{tr("Ver detalle")} <Icon name="arrow" size={15}/></>
-                            : cartQty > 0
-                              ? <><span className="cart-qty-badge">{cartQty}</span>{tr("en el pedido")}</>
-                              : <>{tr("Añadir al carrito")} <Icon name="plus" size={15}/></>;
+                          const btnLabel = product.outOfStock
+                            ? <>{tr("Sin stock")}</>
+                            : product.servings
+                              ? <>{tr("Ver detalle")} <Icon name="arrow" size={15}/></>
+                              : cartQty > 0
+                                ? <><span className="cart-qty-badge">{cartQty}</span>{tr("en el pedido")}</>
+                                : <>{tr("Añadir al carrito")} <Icon name="plus" size={15}/></>;
                           return (
                             <div className="product-footer">
                               <span>
@@ -818,7 +822,7 @@ export default function Home() {
                                 <small>{product.servings ? tr("Desde") : ""}</small>
                                 <strong>{displayPrice(cardPrice)}</strong>
                               </span>
-                              <button className={cartQty > 0 && !product.servings ? "add-to-cart-btn in-cart" : "add-to-cart-btn"} onClick={(e) => { e.stopPropagation(); if (product.servings) { setSelected(product); } else { const cardUnitPrice = promoPrice(product); setOrderItems(prev => { const key = product.id; const existing = prev.find(i => i.key === key); return existing ? prev.map(i => i.key === key ? {...i, quantity: i.quantity + 1, unitPrice: cardUnitPrice} : i) : [...prev, { key, productId: product.id, name: product.name, image: product.image, unitPrice: cardUnitPrice, quantity: 1 }]; }); setOrderStatus("draft"); } }}>{btnLabel}</button>
+                              <button disabled={product.outOfStock} className={product.outOfStock ? "add-to-cart-btn out-of-stock-btn" : cartQty > 0 && !product.servings ? "add-to-cart-btn in-cart" : "add-to-cart-btn"} onClick={(e) => { e.stopPropagation(); if (product.outOfStock) return; if (product.servings) { setSelected(product); } else { const cardUnitPrice = promoPrice(product); setOrderItems(prev => { const key = product.id; const existing = prev.find(i => i.key === key); return existing ? prev.map(i => i.key === key ? {...i, quantity: i.quantity + 1, unitPrice: cardUnitPrice} : i) : [...prev, { key, productId: product.id, name: product.name, image: product.image, unitPrice: cardUnitPrice, quantity: 1 }]; }); setOrderStatus("draft"); } }}>{btnLabel}</button>
                             </div>
                           );
                         })()}
@@ -1069,7 +1073,7 @@ export default function Home() {
 
       {comboBeerPicker && (() => {
         const { combo, selections } = comboBeerPicker;
-        const anyBeerSlots = (combo.comboItems ?? []).map((ci, idx) => ci.anyBeer ? { ci, idx } : null).filter(Boolean) as { ci: ComboItem; idx: number }[];
+        const anyBeerSlots = (combo.comboItems ?? []).map((ci, idx) => (ci.anyBeer || (ci.optionIds?.length ?? 0) > 0) ? { ci, idx } : null).filter(Boolean) as { ci: ComboItem; idx: number }[];
         const beers = catalogProducts.filter(p => p.category === "Cervezas" && !p.outOfStock);
         const allSelected = anyBeerSlots.every(({ ci, idx }) => (selections[idx]?.length ?? 0) === ci.quantity);
 
@@ -1098,27 +1102,35 @@ export default function Home() {
             <div className="combo-beer-picker-modal" onClick={e => e.stopPropagation()}>
               <button className="modal-close" onClick={() => setComboBeerPicker(null)}>✕</button>
               <p className="combo-beer-picker-eyebrow">COMBO · {combo.comboTitle}</p>
-              <h3 className="combo-beer-picker-title">¿Qué cerveza querés?</h3>
+              <h3 className="combo-beer-picker-title">{anyBeerSlots.some(({ ci }) => ci.anyBeer) ? "¿Qué bebida querés?" : "¿Qué querés incluir?"}</h3>
               <div className="combo-beer-picker-slots">
                 {anyBeerSlots.map(({ ci, idx }) => {
                   const chosen = selections[idx] ?? [];
                   const remaining = ci.quantity - chosen.length;
+                  const optionProds = (ci.optionIds ?? []).map(id => catalogProducts.find(p => p.id === id)).filter(Boolean) as typeof catalogProducts;
                   return (
                     <div key={idx} className="combo-beer-slot">
                       <p className="combo-beer-slot-qty">
-                        {remaining > 0 ? `Elegí ${remaining} cerveza${remaining > 1 ? "s" : ""} más` : `✓ ${ci.quantity} cerveza${ci.quantity > 1 ? "s" : ""} elegida${ci.quantity > 1 ? "s" : ""}`}
+                        {remaining > 0 ? `Elegí ${remaining} opción${remaining > 1 ? "es" : ""} más` : `✓ ${ci.quantity} opción${ci.quantity > 1 ? "es" : ""} elegida${ci.quantity > 1 ? "s" : ""}`}
                       </p>
                       <div className="combo-beer-options">
-                        {beers.map(beer => {
+                        {ci.anyBeer && beers.map(beer => {
                           const count = chosen.filter(id => id === beer.id).length;
                           return (
-                            <button
-                              key={beer.id}
-                              className={`combo-beer-option${count > 0 ? " selected" : ""}${remaining === 0 && count === 0 ? " maxed" : ""}`}
-                              onClick={() => toggleBeer(idx, beer.id, ci.quantity)}
-                            >
+                            <button key={beer.id} className={`combo-beer-option${count > 0 ? " selected" : ""}${remaining === 0 && count === 0 ? " maxed" : ""}`} onClick={() => toggleBeer(idx, beer.id, ci.quantity)}>
                               {beer.image && <img src={beer.image} alt={beer.name}/>}
                               <span>{beer.name}</span>
+                              {count > 0 && <i>{count > 1 ? `×${count}` : "✓"}</i>}
+                            </button>
+                          );
+                        })}
+                        {ci.anyBeer && optionProds.length > 0 && <p className="combo-picker-separator">— o también —</p>}
+                        {optionProds.map(prod => {
+                          const count = chosen.filter(id => id === prod.id).length;
+                          return (
+                            <button key={prod.id} className={`combo-beer-option${count > 0 ? " selected" : ""}${remaining === 0 && count === 0 ? " maxed" : ""}`} onClick={() => toggleBeer(idx, prod.id, ci.quantity)}>
+                              {prod.image && <img src={prod.image} alt={prod.name}/>}
+                              <span>{prod.name}</span>
                               {count > 0 && <i>{count > 1 ? `×${count}` : "✓"}</i>}
                             </button>
                           );

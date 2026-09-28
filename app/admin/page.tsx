@@ -986,17 +986,35 @@ export default function AdminPage() {
                         <div className="wide">
                           <p style={{margin:"0 0 8px", fontWeight:700, fontSize:13}}>Productos del combo</p>
                           {(promoDraft.comboItems ?? []).map((item, idx) => (
-                            <div key={idx} className="admin-combo-item-row">
-                              <select value={item.anyBeer ? "__any_beer__" : item.productId} onChange={(e) => { const next = [...(promoDraft.comboItems ?? [])]; const anyBeer = e.target.value === "__any_beer__"; next[idx] = {...item, productId: anyBeer ? "" : e.target.value, anyBeer: anyBeer || undefined}; updatePromoDraft("comboItems", next); }}>
-                                <option value="__any_beer__">🍺 Cualquier cerveza (el cliente elige)</option>
-                                <option disabled>──────────────────</option>
-                                {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                              </select>
-                              <div className="qty-badge">
-                                <span>Cant.</span>
-                                <input type="number" min="1" max="20" value={item.quantity} onChange={(e) => { const next = [...(promoDraft.comboItems ?? [])]; next[idx] = {...item, quantity: Math.max(1, Number(e.target.value))}; updatePromoDraft("comboItems", next); }}/>
+                            <div key={idx} className="admin-combo-item-wrap">
+                              <div className="admin-combo-item-row">
+                                <select value={item.anyBeer ? "__any_beer__" : item.productId} onChange={(e) => { const next = [...(promoDraft.comboItems ?? [])]; const anyBeer = e.target.value === "__any_beer__"; next[idx] = {...item, productId: anyBeer ? "" : e.target.value, anyBeer: anyBeer || undefined}; updatePromoDraft("comboItems", next); }}>
+                                  <option value="__any_beer__">🍺 Cualquier cerveza (el cliente elige)</option>
+                                  <option disabled>──────────────────</option>
+                                  {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                </select>
+                                <div className="qty-badge">
+                                  <span>Cant.</span>
+                                  <input type="number" min="1" max="20" value={item.quantity} onChange={(e) => { const next = [...(promoDraft.comboItems ?? [])]; next[idx] = {...item, quantity: Math.max(1, Number(e.target.value))}; updatePromoDraft("comboItems", next); }}/>
+                                </div>
+                                <button type="button" className="combo-del-btn" onClick={() => { const next = (promoDraft.comboItems ?? []).filter((_, i) => i !== idx); updatePromoDraft("comboItems", next); }}>×</button>
                               </div>
-                              <button type="button" className="combo-del-btn" onClick={() => { const next = (promoDraft.comboItems ?? []).filter((_, i) => i !== idx); updatePromoDraft("comboItems", next); }}>×</button>
+                              <div className="admin-combo-options-row">
+                                <span className="admin-combo-options-label">O también:</span>
+                                {(item.optionIds ?? []).map(optId => {
+                                  const optProd = products.find(p => p.id === optId);
+                                  return optProd ? (
+                                    <span key={optId} className="admin-combo-option-chip">
+                                      {optProd.name}
+                                      <button type="button" onClick={() => { const next = [...(promoDraft.comboItems ?? [])]; next[idx] = {...item, optionIds: (item.optionIds ?? []).filter(id => id !== optId)}; updatePromoDraft("comboItems", next); }}>×</button>
+                                    </span>
+                                  ) : null;
+                                })}
+                                <select value="" onChange={(e) => { if (!e.target.value) return; const next = [...(promoDraft.comboItems ?? [])]; const already = item.optionIds ?? []; if (!already.includes(e.target.value)) next[idx] = {...item, optionIds: [...already, e.target.value]}; updatePromoDraft("comboItems", next); e.target.value = ""; }}>
+                                  <option value="">＋ Agregar alternativa</option>
+                                  {products.filter(p => !(item.optionIds ?? []).includes(p.id)).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                </select>
+                              </div>
                             </div>
                           ))}
                           <button type="button" className="admin-combo-add-row" onClick={() => updatePromoDraft("comboItems", [...(promoDraft.comboItems ?? []), { productId: products[0]?.id ?? "", quantity: 1 }])}>＋ Agregar producto al combo</button>

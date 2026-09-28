@@ -109,6 +109,118 @@ export async function clearAnalyticsEvents(): Promise<void> {
   await supabase.from("analytics_events").delete().neq("id", "");
 }
 
+// ── Fudo config (dentro de restaurant_config) ───────────────────
+export interface FudoConfig {
+  fudoEnabled: boolean;
+  catalogRevision: string;
+  sessionTimeoutHours: number;
+  restaurantToken?: string; // Token general para Modo A (un QR para todo el local)
+}
+
+export const getFudoConfig = () => getConfig<FudoConfig>("fudo_config");
+export const saveFudoConfig = (v: FudoConfig) => setConfig("fudo_config", v);
+
+// ── Fudo tables — mesas del local ────────────────────────────────
+export interface FudoTable {
+  id: string;
+  restaurant_id: string;
+  mesa_numero: string;
+  fudo_table_id: string;
+  qr_token: string;
+  active: boolean;
+}
+
+export async function getFudoTables(): Promise<FudoTable[]> {
+  const { data, error } = await supabase
+    .from("fudo_tables")
+    .select("*")
+    .eq("active", true)
+    .order("mesa_numero");
+  if (error || !data) return [];
+  return data as FudoTable[];
+}
+
+export async function saveFudoTable(table: Omit<FudoTable, "id" | "restaurant_id">): Promise<void> {
+  await supabase.from("fudo_tables").upsert(table, { onConflict: "qr_token" });
+}
+
+// ── Table sessions ───────────────────────────────────────────────
+export type SessionState = "READY" | "OPENING" | "OPEN_UNKNOWN" | "OPEN" | "CHECKOUT" | "CLOSED";
+
+export interface TableSession {
+  id: string;
+  restaurant_id: string;
+  fudo_table_id: string;
+  fudo_sale_id: string | null;
+  people: number;
+  session_state: SessionState;
+  opening_body: object | null;
+  created_at: string;
+  closed_at: string | null;
+}
+
+export async function getActiveSession(fudoTableId: string): Promise<TableSession | null> {
+  const { data, error } = await supabase
+    .from("table_sessions")
+    .select("*")
+    .eq("fudo_table_id", fudoTableId)
+    .neq("session_state", "CLOSED")
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as TableSession;
+}
+
+// ── Orders ───────────────────────────────────────────────────────
+export type OrderStatus = "RECEIVED" | "PROCESSING" | "REGISTERED" | "REQUIRES_REVIEW";
+
+export interface FudoOrder {
+  id: string;
+  restaurant_id: string;
+  table_session_id: string;
+  idempotency_key: string;
+  catalog_revision: string;
+  body_hash: string;
+  status: OrderStatus;
+  created_at: string;
+}
+
+export async function getOrderById(orderId: string): Promise<FudoOrder | null> {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as FudoOrder;
+}
+
+// ── Order lines ──────────────────────────────────────────────────
+export type LineStatus = "PENDING" | "SENDING" | "ACKNOWLEDGED" | "VERIFIED" | "REJECTED" | "UNKNOWN";
+
+export interface OrderLine {
+  id: string;
+  order_id: string;
+  line_id: string;
+  product_id: string;
+  fudo_product_id: string;
+  serving: string | null;
+  quantity: number;
+  unit_price_minor: number;
+  comment: string | null;
+  fudo_item_id: string | null;
+  status: LineStatus;
+}
+
+export async function getOrderLines(orderId: string): Promise<OrderLine[]> {
+  const { data, error } = await supabase
+    .from("order_lines")
+    .select("*")
+    .eq("order_id", orderId)
+    .order("created_at");
+  if (error || !data) return [];
+  return data as OrderLine[];
+}
+
 // ── Storage: subir imagen vía endpoint seguro del servidor ────────
 export async function uploadImage(file: File, folder: string): Promise<string> {
   const form = new FormData();
