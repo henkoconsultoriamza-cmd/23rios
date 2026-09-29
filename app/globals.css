@@ -949,6 +949,18 @@ textarea, select { font: inherit; }
 .admin-stock-toggle i::after { content: ""; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: white; box-shadow: 0 2px 5px rgba(0,0,0,.18); transition: .2s; }
 .admin-stock-toggle input:checked + span + i, .admin-stock-toggle input:checked ~ i { background: #e05a3a; }
 .admin-stock-toggle input:checked + span + i::after, .admin-stock-toggle input:checked ~ i::after { transform: translateX(18px); }
+
+/* Fudo section */
+.admin-fudo-section { border: 1.5px solid #e8c97a; border-radius: 14px; background: #fffdf5; }
+.admin-fudo-hint { font-size: 11px; color: var(--muted); margin: 0 0 10px; }
+.admin-fudo-servings { display: flex; flex-direction: column; gap: 8px; }
+.admin-fudo-row { display: flex; align-items: center; gap: 10px; }
+.admin-fudo-label { font: 700 11px "Manrope"; color: var(--muted); width: 110px; flex-shrink: 0; text-transform: uppercase; letter-spacing: .4px; }
+.admin-fudo-input { flex: 1; height: 36px; border: 1.5px solid var(--line); border-radius: 8px; padding: 0 10px; font: 600 13px "Manrope"; background: white; }
+.admin-fudo-input:focus { outline: none; border-color: #e8c97a; }
+.admin-fudo-badge { font: 700 10px "Manrope"; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+.admin-fudo-badge.ok { background: #d4f0d4; color: #2a7a2a; }
+.admin-fudo-badge.missing { background: #f0e0d4; color: #a04020; }
 .admin-promo-type { border: 1px solid var(--line); border-radius: 13px; padding: 14px; }
 .admin-promo-type legend { padding: 0 6px; font: 800 11px "Manrope"; color: var(--muted); }
 .admin-promo-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }

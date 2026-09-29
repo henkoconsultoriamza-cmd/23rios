@@ -31,6 +31,11 @@ export type Product = {
   eventoMenu?: boolean;
   outOfStock?: boolean;
   removableIngredients?: string[];
+  fudoData?: {
+    productId?: string;               // ID numérico en Fudo (ej: "1476") — productos sin servings
+    servingIds?: Record<string, string>; // Para cervezas: { "Pinta": "22", "Lata": "516", ... }
+    modifierGroupId?: string;         // Para combos con grupos modificadores en Fudo
+  };
 };
 
 export type ComboItem = { productId: string; quantity: number; anyBeer?: boolean; optionIds?: string[] };

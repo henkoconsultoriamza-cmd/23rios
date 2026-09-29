@@ -923,6 +923,91 @@ export default function AdminPage() {
                 </div>
               </div>
 
+              {/* ── Datos de Fudo ─────────────────────────────── */}
+              <div className="admin-form-section admin-fudo-section">
+                <div className="admin-section-title">
+                  <span>🔗</span>
+                  <div>
+                    <h3>Datos de Fudo</h3>
+                    <p>ID del producto en el POS. Sin este dato el pedido no llega a Fudo.</p>
+                  </div>
+                </div>
+
+                {/* Producto sin servings: un solo ID */}
+                {!(draft.servings && draft.servings.length > 0) && (
+                  <div className="admin-fudo-row">
+                    <label className="admin-fudo-label">ID Fudo</label>
+                    <input
+                      className="admin-fudo-input"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Ej: 1476"
+                      value={draft.fudoData?.productId ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "");
+                        setDraft((d) => ({ ...d, fudoData: { ...d.fudoData, productId: val } }));
+                      }}
+                    />
+                    {draft.fudoData?.productId
+                      ? <span className="admin-fudo-badge ok">✓ mapeado</span>
+                      : <span className="admin-fudo-badge missing">sin mapear</span>}
+                  </div>
+                )}
+
+                {/* Producto con servings (cervezas): un ID por tamaño */}
+                {draft.servings && draft.servings.length > 0 && (
+                  <div className="admin-fudo-servings">
+                    <p className="admin-fudo-hint">Cada tamaño es un producto distinto en Fudo. Completar el ID de cada uno.</p>
+                    {draft.servings.map((s) => (
+                      <div key={s.label} className="admin-fudo-row">
+                        <label className="admin-fudo-label">{s.label}</label>
+                        <input
+                          className="admin-fudo-input"
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="ID Fudo"
+                          value={draft.fudoData?.servingIds?.[s.label] ?? ""}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, "");
+                            setDraft((d) => ({
+                              ...d,
+                              fudoData: {
+                                ...d.fudoData,
+                                servingIds: { ...(d.fudoData?.servingIds ?? {}), [s.label]: val },
+                              },
+                            }));
+                          }}
+                        />
+                        {draft.fudoData?.servingIds?.[s.label]
+                          ? <span className="admin-fudo-badge ok">✓</span>
+                          : <span className="admin-fudo-badge missing">—</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Combo: también ID de grupo modificador */}
+                {draft.group === "Combos" && (
+                  <div className="admin-fudo-row" style={{ marginTop: 8 }}>
+                    <label className="admin-fudo-label">ID grupo modificador</label>
+                    <input
+                      className="admin-fudo-input"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Ej: 47"
+                      value={draft.fudoData?.modifierGroupId ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "");
+                        setDraft((d) => ({ ...d, fudoData: { ...d.fudoData, modifierGroupId: val } }));
+                      }}
+                    />
+                    {draft.fudoData?.modifierGroupId
+                      ? <span className="admin-fudo-badge ok">✓</span>
+                      : <span className="admin-fudo-badge missing">—</span>}
+                  </div>
+                )}
+              </div>
+
               {isNew && <div className="admin-editor-actions"><button className="admin-save" onClick={saveProduct}>Crear producto</button></div>}
               {!isNew && <div className="admin-editor-actions"><button className="admin-delete" onClick={deleteProduct}>Eliminar producto</button></div>}
             </section>
