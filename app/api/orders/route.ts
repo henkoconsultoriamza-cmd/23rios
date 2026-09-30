@@ -13,6 +13,7 @@ interface OrderLinePayload {
 interface CreateOrderPayload {
   idempotencyKey: string;
   mesaNumero: string;
+  people?: number;
   catalogRevision?: string;
   lines: OrderLinePayload[];
 }
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { idempotencyKey, mesaNumero, catalogRevision, lines } = body;
+  const { idempotencyKey, mesaNumero, people, catalogRevision, lines } = body;
 
   if (!idempotencyKey || !mesaNumero || !Array.isArray(lines) || lines.length === 0) {
     return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 });
@@ -71,8 +72,9 @@ export async function POST(req: Request) {
       .from("table_sessions")
       .insert({
         mesa_numero: mesaNumero,
-        fudo_table_id: "pending", // el worker lo resuelve
+        fudo_table_id: "pending",
         session_state: "READY",
+        people: people ?? 1,
       })
       .select("id")
       .single();

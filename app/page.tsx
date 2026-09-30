@@ -589,6 +589,7 @@ export default function Home() {
       body: JSON.stringify({
         idempotencyKey,
         mesaNumero: confirmedTable,
+        people: record.guestCount ?? 1,
         lines,
       }),
     }).catch(() => { /* fallo silencioso — el pedido ya quedó en localStorage */ });
