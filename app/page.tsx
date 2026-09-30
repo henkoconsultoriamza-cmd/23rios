@@ -559,6 +559,7 @@ export default function Home() {
     setOrderFeedback("");
 
     // Persistir en Supabase para métricas y envío a Fudo (fire-and-forget)
+    console.log("[orders] iniciando fetch, items:", record.items.length);
     const idempotencyKey = crypto.randomUUID();
     const lines = record.items
       .filter((item) => !item.isComboDiscount)
@@ -574,6 +575,7 @@ export default function Home() {
         ].filter(Boolean).join(", ") || undefined,
       }));
 
+    console.log("[orders] llamando /api/orders con", lines.length, "líneas");
     fetch("/api/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -582,7 +584,8 @@ export default function Home() {
         mesaNumero: confirmedTable,
         lines,
       }),
-    }).catch(() => { /* fallo silencioso — el pedido ya quedó en localStorage */ });
+    }).then((r) => console.log("[orders] respuesta:", r.status))
+      .catch((e) => console.error("[orders] error:", e));
   }
 
   function requestBill() {
