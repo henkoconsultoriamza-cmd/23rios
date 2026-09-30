@@ -13,6 +13,7 @@ type OrderStatus = "idle" | "draft" | "sent";
 type OrderItem = {
   key: string;
   productId: string;
+  fudoProductId?: string;
   name: string;
   image?: string;
   serving?: string;
@@ -556,6 +557,32 @@ export default function Home() {
     setTablePromptOpen(false);
     setOrderOpen(false);
     setOrderFeedback("");
+
+    // Persistir en Supabase para métricas y envío a Fudo (fire-and-forget)
+    const idempotencyKey = crypto.randomUUID();
+    const lines = record.items
+      .filter((item) => !item.isComboDiscount)
+      .map((item) => ({
+        lineId: item.key,
+        productId: item.productId,
+        fudoProductId: item.fudoProductId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        comment: [
+          ...(item.removedIngredients ?? []).map((r) => `Sin ${r}`),
+          item.customNote ?? "",
+        ].filter(Boolean).join(", ") || undefined,
+      }));
+
+    fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        idempotencyKey,
+        mesaNumero: confirmedTable,
+        lines,
+      }),
+    }).catch(() => { /* fallo silencioso — el pedido ya quedó en localStorage */ });
   }
 
   function requestBill() {
@@ -822,7 +849,7 @@ export default function Home() {
                                 <small>{product.servings ? tr("Desde") : ""}</small>
                                 <strong>{displayPrice(cardPrice)}</strong>
                               </span>
-                              <button disabled={product.outOfStock} className={product.outOfStock ? "add-to-cart-btn out-of-stock-btn" : cartQty > 0 && !product.servings ? "add-to-cart-btn in-cart" : "add-to-cart-btn"} onClick={(e) => { e.stopPropagation(); if (product.outOfStock) return; if (product.servings) { setSelected(product); } else { const cardUnitPrice = promoPrice(product); setOrderItems(prev => { const key = product.id; const existing = prev.find(i => i.key === key); return existing ? prev.map(i => i.key === key ? {...i, quantity: i.quantity + 1, unitPrice: cardUnitPrice} : i) : [...prev, { key, productId: product.id, name: product.name, image: product.image, unitPrice: cardUnitPrice, quantity: 1 }]; }); setOrderStatus("draft"); } }}>{btnLabel}</button>
+                              <button disabled={product.outOfStock} className={product.outOfStock ? "add-to-cart-btn out-of-stock-btn" : cartQty > 0 && !product.servings ? "add-to-cart-btn in-cart" : "add-to-cart-btn"} onClick={(e) => { e.stopPropagation(); if (product.outOfStock) return; if (product.servings) { setSelected(product); } else { const cardUnitPrice = promoPrice(product); setOrderItems(prev => { const key = product.id; const existing = prev.find(i => i.key === key); return existing ? prev.map(i => i.key === key ? {...i, quantity: i.quantity + 1, unitPrice: cardUnitPrice} : i) : [...prev, { key, productId: product.id, fudoProductId: product.fudoData?.productId, name: product.name, image: product.image, unitPrice: cardUnitPrice, quantity: 1 }]; }); setOrderStatus("draft"); } }}>{btnLabel}</button>
                             </div>
                           );
                         })()}
@@ -1025,7 +1052,7 @@ export default function Home() {
               const modalItem = orderItems.find(i => i.key === modalKey);
               const openCustomize = () => {
                 if (!modalItem) {
-                  setOrderItems(prev => [...prev, { key: modalKey, productId: selected.id, name: selected.name, image: selected.image, unitPrice: selectedPrice, quantity: 1 }]);
+                  setOrderItems(prev => [...prev, { key: modalKey, productId: selected.id, fudoProductId: selectedServingOption ? selected.fudoData?.servingIds?.[selectedServingOption.label] : selected.fudoData?.productId, name: selected.name, image: selected.image, serving: selectedServingOption?.label, unitPrice: selectedPrice, quantity: 1 }]);
                   setOrderStatus("draft");
                 }
                 setCustomizeItemKey(modalKey);
