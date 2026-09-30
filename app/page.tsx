@@ -526,6 +526,12 @@ export default function Home() {
 
   function launchOrder() {
     if (!orderItems.length || orderStatus !== "draft") return;
+    // Si ya hay pedidos lanzados, reusar los datos existentes sin mostrar el prompt
+    if (launchedOrders.length > 0 && tableNumber) {
+      const prev = launchedOrders[0];
+      doLaunchOrder(tableNumber, prev.guestName ?? "", prev.guestCount ? String(prev.guestCount) : "");
+      return;
+    }
     setTableDraft(tableNumber);
     setGuestNameDraft("");
     setGuestCountDraft("");
@@ -534,8 +540,11 @@ export default function Home() {
 
   function confirmLaunchOrder(event: FormEvent) {
     event.preventDefault();
+    doLaunchOrder(tableDraft.trim(), guestNameDraft.trim(), guestCountDraft);
+  }
+
+  function doLaunchOrder(confirmedTable: string, guestName: string, guestCount: string) {
     trackEvent("cart_send");
-    const confirmedTable = tableDraft.trim();
     if (!/^\d{1,3}$/.test(confirmedTable)) return;
     const id = `R${Date.now().toString().slice(-6)}`;
     const record: LaunchedOrder = {
@@ -544,8 +553,8 @@ export default function Home() {
       items: orderItems,
       total: orderTotal,
       tableNumber: confirmedTable,
-      guestName: guestNameDraft.trim() || undefined,
-      guestCount: guestCountDraft ? Number(guestCountDraft) : undefined,
+      guestName: guestName || undefined,
+      guestCount: guestCount ? Number(guestCount) : undefined,
       status: "En preparación",
     };
     setLaunchedOrders((current) => [record, ...current].slice(0, 30));
