@@ -1,6 +1,43 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
+// ─── Rate limiting simple en memoria ─────────────────────────────────────────
+// Para producción con múltiples instancias usar Upstash Redis.
+// Para un restaurante con tráfico moderado esto es suficiente.
+const ipRequestMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 20;       // requests por ventana
+const RATE_WINDOW_MS = 60_000; // 1 minuto
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = ipRequestMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    ipRequestMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+
+// ─── Validación de inputs ─────────────────────────────────────────────────────
+
+function isValidUUID(value: unknown): value is string {
+  return typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value);
+}
+
+function isValidMesa(value: unknown): value is string {
+  return typeof value === "string" && /^\d{1,3}$/.test(value);
+}
+
+function sanitizeComment(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  // Eliminar caracteres potencialmente peligrosos
+  const clean = value.replace(/[<>"'&;]/g, "").trim().slice(0, 500);
+  return clean || undefined;
+}
+
 interface OrderLinePayload {
   lineId: string;
   productId: string;
@@ -18,6 +55,52 @@ interface CreateOrderPayload {
   lines: OrderLinePayload[];
 }
 
+function validatePayload(body: unknown): { valid: true; data: CreateOrderPayload } | { valid: false; error: string } {
+  if (!body || typeof body !== "object") return { valid: false, error: "Body inválido" };
+  const b = body as Record<string, unknown>;
+
+  if (!isValidUUID(b.idempotencyKey)) return { valid: false, error: "idempotencyKey inválido" };
+  if (!isValidMesa(b.mesaNumero)) return { valid: false, error: "mesaNumero inválido" };
+  if (!Array.isArray(b.lines) || b.lines.length === 0) return { valid: false, error: "lines vacío" };
+  if (b.lines.length > 50) return { valid: false, error: "Demasiadas líneas" };
+
+  const people = b.people;
+  if (people !== undefined && (typeof people !== "number" || people < 1 || people > 100)) {
+    return { valid: false, error: "people inválido" };
+  }
+
+  for (const line of b.lines as unknown[]) {
+    if (!line || typeof line !== "object") return { valid: false, error: "Línea inválida" };
+    const l = line as Record<string, unknown>;
+    if (typeof l.lineId !== "string" || !l.lineId) return { valid: false, error: "lineId inválido" };
+    if (typeof l.productId !== "string" || !l.productId) return { valid: false, error: "productId inválido" };
+    if (typeof l.quantity !== "number" || !Number.isInteger(l.quantity) || l.quantity < 1 || l.quantity > 99) {
+      return { valid: false, error: "quantity inválido" };
+    }
+    if (typeof l.unitPrice !== "number" || l.unitPrice < 0 || l.unitPrice > 10_000_000) {
+      return { valid: false, error: "unitPrice inválido" };
+    }
+  }
+
+  return {
+    valid: true,
+    data: {
+      idempotencyKey: b.idempotencyKey as string,
+      mesaNumero: b.mesaNumero as string,
+      people: typeof people === "number" ? people : undefined,
+      catalogRevision: typeof b.catalogRevision === "string" ? b.catalogRevision : undefined,
+      lines: (b.lines as Record<string, unknown>[]).map((l) => ({
+        lineId: l.lineId as string,
+        productId: l.productId as string,
+        fudoProductId: typeof l.fudoProductId === "string" ? l.fudoProductId : undefined,
+        quantity: l.quantity as number,
+        unitPrice: l.unitPrice as number,
+        comment: sanitizeComment(l.comment),
+      })),
+    },
+  };
+}
+
 function supabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,25 +109,31 @@ function supabase() {
 }
 
 export async function POST(req: Request) {
-  let body: CreateOrderPayload;
+  // Rate limiting por IP
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
+  if (!checkRateLimit(ip)) {
+    return NextResponse.json({ error: "Demasiadas solicitudes" }, { status: 429 });
+  }
+
+  let rawBody: unknown;
   try {
-    body = await req.json();
+    rawBody = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
 
-  const { idempotencyKey, mesaNumero, people, catalogRevision, lines } = body;
-
-  if (!idempotencyKey || !mesaNumero || !Array.isArray(lines) || lines.length === 0) {
-    return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 });
+  const validation = validatePayload(rawBody);
+  if (!validation.valid) {
+    return NextResponse.json({ error: validation.error }, { status: 400 });
   }
 
+  const { idempotencyKey, mesaNumero, people, catalogRevision, lines } = validation.data;
   const sb = supabase();
 
-  // Idempotencia: si ya existe este key devolver el mismo resultado
+  // Idempotencia
   const { data: existing } = await sb
     .from("orders")
-    .select("id, status, table_session_id")
+    .select("id, status")
     .eq("idempotency_key", idempotencyKey)
     .single();
 
@@ -67,7 +156,6 @@ export async function POST(req: Request) {
   if (activeSession) {
     sessionId = activeSession.id;
   } else {
-    // Crear nueva sesión — fudo_table_id se resuelve luego en el worker con GET /tables
     const { data: newSession, error: sessionErr } = await sb
       .from("table_sessions")
       .insert({
@@ -80,8 +168,8 @@ export async function POST(req: Request) {
       .single();
 
     if (sessionErr || !newSession) {
-      console.error("Error creando sesión:", sessionErr);
-      return NextResponse.json({ error: "Error creando sesión" }, { status: 500 });
+      console.error("Error creando sesión");
+      return NextResponse.json({ error: "Error guardando pedido" }, { status: 500 });
     }
     sessionId = newSession.id;
   }
@@ -99,7 +187,7 @@ export async function POST(req: Request) {
     .single();
 
   if (orderErr || !order) {
-    console.error("Error creando order:", orderErr);
+    console.error("Error creando order");
     return NextResponse.json({ error: "Error guardando pedido" }, { status: 500 });
   }
 
@@ -116,22 +204,13 @@ export async function POST(req: Request) {
   }));
 
   const { error: linesErr } = await sb.from("order_lines").insert(lineRows);
-
   if (linesErr) {
-    console.error("Error creando líneas:", linesErr);
-    return NextResponse.json({ error: "Error guardando líneas" }, { status: 500 });
+    console.error("Error creando líneas");
+    return NextResponse.json({ error: "Error guardando pedido" }, { status: 500 });
   }
 
-  // Insertar en outbox para que el worker lo procese
-  const { error: outboxErr } = await sb.from("order_outbox").insert({
-    order_id: order.id,
-    status: "PENDING",
-  });
-
-  if (outboxErr) {
-    console.error("Error creando outbox:", outboxErr);
-    // No es fatal — el pedido quedó guardado, el worker puede reintentar
-  }
+  // Insertar en outbox
+  await sb.from("order_outbox").insert({ order_id: order.id, status: "PENDING" });
 
   return NextResponse.json({ orderId: order.id, status: "RECEIVED" }, { status: 202 });
 }

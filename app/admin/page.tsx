@@ -167,7 +167,8 @@ export default function AdminPage() {
   const [dateRange, setDateRange] = useState<DateRange>("7d");
 
   useEffect(() => {
-    setAuthenticated(window.sessionStorage.getItem(ADMIN_SESSION_KEY) === "active");
+    // Verificar sesión server-side via cookie httpOnly
+    fetch("/api/admin-auth/check").then((r) => setAuthenticated(r.ok));
 
     Promise.all([
       getProducts(),
@@ -629,23 +630,23 @@ export default function AdminPage() {
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoginError("");
-    const credentials = await getAdminCredentials();
-    const expectedUsername = credentials?.username ?? DEFAULT_ADMIN_USERNAME;
-    const expectedHash = credentials?.password_hash ?? await hashPassword(DEFAULT_ADMIN_PASSWORD);
-    const suppliedHash = await hashPassword(loginPassword);
-    if (loginUsername.trim() !== expectedUsername || suppliedHash !== expectedHash) {
-      setLoginError("El usuario o la contrasena no son correctos.");
+    const res = await fetch("/api/admin-auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: loginUsername.trim(), password: loginPassword }),
+    });
+    if (!res.ok) {
+      setLoginError("El usuario o la contraseña no son correctos.");
       return;
     }
-    window.sessionStorage.setItem(ADMIN_SESSION_KEY, "active");
     setAuthenticated(true);
-    setSecurityUsername(expectedUsername);
+    setSecurityUsername(loginUsername.trim());
     setLoginPassword("");
-    setNotice("Sesion iniciada correctamente.");
+    setNotice("Sesión iniciada correctamente.");
   }
 
-  function logout() {
-    window.sessionStorage.removeItem(ADMIN_SESSION_KEY);
+  async function logout() {
+    await fetch("/api/admin-auth", { method: "DELETE" });
     setAuthenticated(false);
     setLoginPassword("");
     setCurrentPassword("");
