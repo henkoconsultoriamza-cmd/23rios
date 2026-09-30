@@ -244,5 +244,38 @@ async function processOrder(
       .eq("id", line.id);
   }
 
+  // Si alguna línea quedó UNKNOWN, volver a encolar para reintento
+  const { data: unknownLines } = await sb
+    .from("order_lines")
+    .select("id")
+    .eq("order_id", orderId)
+    .eq("status", "UNKNOWN");
+
+  if (unknownLines && unknownLines.length > 0) {
+    // Resetear las líneas UNKNOWN a PENDING para el próximo intento
+    await sb.from("order_lines")
+      .update({ status: "PENDING" })
+      .eq("order_id", orderId)
+      .eq("status", "UNKNOWN");
+
+    // Reinsertar en outbox solo si no superó los 3 intentos
+    const { data: outboxRow } = await sb
+      .from("order_outbox")
+      .select("attempts")
+      .eq("order_id", orderId)
+      .single();
+
+    if (outboxRow && outboxRow.attempts < 3) {
+      await sb.from("order_outbox").insert({
+        order_id: orderId,
+        status: "PENDING",
+        attempts: outboxRow.attempts,
+      });
+    } else {
+      await sb.from("orders").update({ status: "REQUIRES_REVIEW" }).eq("id", orderId);
+    }
+    return;
+  }
+
   await sb.from("orders").update({ status: "REGISTERED" }).eq("id", orderId);
 }
