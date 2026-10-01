@@ -1278,6 +1278,7 @@ export default function AdminPage() {
                           <button type="button" className="admin-combo-add-row" onClick={() => updatePromoDraft("comboItems", [...(promoDraft.comboItems ?? []), { productId: products[0]?.id ?? "", quantity: 1 }])}>＋ Agregar producto al combo</button>
                         </div>
                         <label className="wide">Precio del combo<input type="number" min="0" step="100" value={promoDraft.comboPrice ?? ""} onChange={(e) => updatePromoDraft("comboPrice", Number(e.target.value))} placeholder="Ej. 6000"/></label>
+                        <label className="wide">ID producto en Fudo<input type="text" inputMode="numeric" value={promoDraft.fudoProductId ?? ""} onChange={(e) => updatePromoDraft("fudoProductId", e.target.value.replace(/\D/g, "") || undefined)} placeholder="Ej. 1234 (ID del combo en Fudo)"/></label>
                       </>}
 
                       <label className="wide">Días activos

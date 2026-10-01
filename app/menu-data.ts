@@ -55,6 +55,7 @@ export type Promo = {
   comboItems?: ComboItem[];
   comboPrice?: number;
   comboImageUrl?: string;
+  fudoProductId?: string;  // ID del producto combo en Fudo (para enviar como item padre)
   days: number[];       // 0=Dom 1=Lun … 6=Sab; vacío = todos los días
   timeStart?: string;   // "18:00"
   timeEnd?: string;     // "23:00"

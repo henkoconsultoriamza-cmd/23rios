@@ -22,8 +22,6 @@ type OrderItem = {
   quantity: number;
   removedIngredients?: string[];
   customNote?: string;
-  comboId?: string;
-  isComboDiscount?: boolean;
   modifiers?: Array<{ name: string; fudoProductId: string }>;
 };
 type LaunchedOrder = {
@@ -392,38 +390,36 @@ export default function Home() {
     if (!combo.comboItems?.length || combo.comboPrice == null) return;
     const stamp = Date.now();
 
-    // Build flat list of cart entries from combo items
-    const cartEntries: { productId: string; name: string; image?: string; price: number; qty: number }[] = [];
+    // Armar modificadores: 1 entrada por cada producto elegido del combo
+    const modifiers: Array<{ name: string; fudoProductId: string }> = [];
 
     combo.comboItems.forEach((ci, idx) => {
       if (ci.anyBeer || (ci.optionIds?.length ?? 0) > 0) {
-        // slot with picker: use selections (beers or specific alternatives)
         const chosen = beerSelections[idx] ?? [];
-        const counts: Record<string, number> = {};
-        chosen.forEach(id => { counts[id] = (counts[id] ?? 0) + 1; });
-        Object.entries(counts).forEach(([id, qty]) => {
+        chosen.forEach(id => {
           const prod = catalogProducts.find(p => p.id === id);
-          if (prod) cartEntries.push({ productId: prod.id, name: prod.name, image: prod.image, price: prod.price, qty });
+          if (prod) modifiers.push({ name: prod.name, fudoProductId: prod.fudoData?.productId ?? "" });
         });
       } else {
         const prod = catalogProducts.find(p => p.id === ci.productId);
-        if (prod) cartEntries.push({ productId: prod.id, name: prod.name, image: prod.image, price: prod.price, qty: ci.quantity });
+        if (prod) {
+          for (let i = 0; i < ci.quantity; i++) {
+            modifiers.push({ name: prod.name, fudoProductId: prod.fudoData?.productId ?? "" });
+          }
+        }
       }
     });
 
-    const normalTotal = cartEntries.reduce((sum, e) => sum + e.price * e.qty, 0);
-    const discount = combo.comboPrice - normalTotal;
-
-    setOrderItems(prev => {
-      let next = [...prev];
-      cartEntries.forEach((e, i) => {
-        next = [...next, { key: `${e.productId}-combo-${combo.id}-${stamp}-${i}`, productId: e.productId, name: e.name, image: e.image, unitPrice: e.price, quantity: e.qty, comboId: combo.id }];
-      });
-      if (discount < 0) {
-        next = [...next, { key: `combo-discount-${combo.id}-${stamp}`, productId: "", name: `Descuento combo · ${combo.comboTitle ?? ""}`, unitPrice: discount, quantity: 1, isComboDiscount: true, comboId: combo.id }];
-      }
-      return next;
-    });
+    setOrderItems(prev => [...prev, {
+      key: `combo-${combo.id}-${stamp}`,
+      productId: combo.id,
+      fudoProductId: combo.fudoProductId,
+      name: combo.comboTitle ?? "Combo",
+      image: combo.comboImageUrl,
+      unitPrice: combo.comboPrice!,
+      quantity: 1,
+      modifiers: modifiers.length > 0 ? modifiers : undefined,
+    }]);
     setOrderStatus("draft");
     setOrderFeedback(combo.comboTitle ?? "Combo agregado");
     setComboBeerPicker(null);
@@ -460,7 +456,7 @@ export default function Home() {
   const selectedServingOption = selected?.servings?.find((serving) => serving.label === selectedServing);
   const selectedBasePrice = selectedServingOption?.price ?? selected?.price ?? 0;
   const selectedPrice = selected && !selectedServingOption ? promoPrice(selected) : selectedBasePrice;
-  const orderCount = orderItems.reduce((total, item) => item.isComboDiscount ? total : total + item.quantity, 0);
+  const orderCount = orderItems.reduce((total, item) => total + item.quantity, 0);
   const orderTotal = orderItems.reduce((total, item) => total + (item.unitPrice * item.quantity), 0);
   const launchedTotal = launchedOrders.reduce((total, order) => total + order.total, 0);
   const tr = (text: string) => translate(language, text);
@@ -529,12 +525,6 @@ export default function Home() {
       const updated = current
         .map((item) => item.key === key ? { ...item, quantity: item.quantity + change } : item)
         .filter((item) => item.quantity > 0);
-      // remove combo discount if no products of that combo remain
-      const removedItem = current.find(i => i.key === key);
-      if (removedItem?.comboId) {
-        const comboStillHasProducts = updated.some(i => i.comboId === removedItem.comboId && !i.isComboDiscount);
-        if (!comboStillHasProducts) return updated.filter(i => i.comboId !== removedItem.comboId);
-      }
       return updated;
     });
   }
@@ -587,7 +577,6 @@ export default function Home() {
     // Persistir en Supabase para métricas y envío a Fudo (fire-and-forget)
     const idempotencyKey = crypto.randomUUID();
     const lines = record.items
-      .filter((item) => !item.isComboDiscount)
       .map((item) => ({
         lineId: item.key,
         productId: item.productId,
@@ -941,17 +930,19 @@ export default function Home() {
           {orderStatus === "draft" && <div className="cart-open-message"><strong>{tr("El pedido todavía no fue lanzado.")}</strong><span>{tr("Podés seguir agregando productos o cerrar el carrito cuando esté completo.")}</span></div>}
           {orderStatus === "sent" && <div className="order-sent-message"><span><Icon name="receipt" size={23}/></span><div><strong>{tr("Pedido enviado correctamente")}</strong><p>Esta es una simulación. La confirmación real se conectará con el sistema del local y la mesa.</p></div></div>}
           <div className="order-items">
-            {orderItems.map((item) => item.isComboDiscount ? (
-              <article key={item.key} className="order-item-combo-discount">
-                <span className="combo-discount-icon">🎁</span>
-                <div className="order-item-copy"><strong>{item.name}</strong><b className="combo-discount-amount">{displayPrice(item.unitPrice)}</b></div>
-              </article>
-            ) : (
+            {orderItems.map((item) => (
               <article key={item.key}>
                 {item.image ? <img src={item.image} alt=""/> : <span className="order-item-placeholder"/>}
-                <div className="order-item-copy"><strong>{tr(item.name)}</strong>{item.serving && <small>{tr(item.serving)} · {item.volume}</small>}{item.removedIngredients?.length ? <small className="removed-ingredients">Sin: {item.removedIngredients.join(", ")}</small> : null}{item.customNote ? <small className="removed-ingredients">📝 {item.customNote}</small> : null}<b>{displayPrice(item.unitPrice)}</b></div>
+                <div className="order-item-copy">
+                  <strong>{tr(item.name)}</strong>
+                  {item.serving && <small>{tr(item.serving)} · {item.volume}</small>}
+                  {item.modifiers?.length ? <small className="removed-ingredients">{item.modifiers.map(m => m.name).join(", ")}</small> : null}
+                  {item.removedIngredients?.length ? <small className="removed-ingredients">Sin: {item.removedIngredients.join(", ")}</small> : null}
+                  {item.customNote ? <small className="removed-ingredients">📝 {item.customNote}</small> : null}
+                  <b>{displayPrice(item.unitPrice)}</b>
+                </div>
                 <div className="order-item-actions">
-                  {(() => { const prod = catalogProducts.find(p => p.id === item.productId); const hasCocina = prod?.category === "Cocina"; return hasCocina && !item.comboId ? <button className="customize-inline-btn" onClick={() => setCustomizeItemKey(item.key)} disabled={orderStatus === "sent"}>✎</button> : null; })()}
+                  {(() => { const prod = catalogProducts.find(p => p.id === item.productId); const hasCocina = prod?.category === "Cocina"; return hasCocina ? <button className="customize-inline-btn" onClick={() => setCustomizeItemKey(item.key)} disabled={orderStatus === "sent"}>✎</button> : null; })()}
                   <div className="quantity-control" aria-label={`Cantidad de ${item.name}`}>
                     <button onClick={() => changeOrderQuantity(item.key, -1)} disabled={orderStatus === "sent"} aria-label={`Quitar una unidad de ${item.name}`}>−</button>
                     <span>{item.quantity}</span>
