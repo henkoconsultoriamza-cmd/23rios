@@ -90,6 +90,7 @@ export interface CreateItemBody {
     relationships: {
       product: { data: { type: "Product"; id: string } };
       sale: { data: { type: "Sale"; id: string } };
+      parentItem?: { data: { type: "Item"; id: string } }; // Para modificadores de combos
     };
   };
 }

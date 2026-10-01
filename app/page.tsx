@@ -24,6 +24,7 @@ type OrderItem = {
   customNote?: string;
   comboId?: string;
   isComboDiscount?: boolean;
+  modifiers?: Array<{ name: string; fudoProductId: string }>;
 };
 type LaunchedOrder = {
   id: string;
@@ -219,6 +220,7 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Product | null>(null);
   const [selectedServing, setSelectedServing] = useState("Pinta");
+  const [selectedModifiers, setSelectedModifiers] = useState<string[]>([]); // fudoProductIds elegidos
   const [orderFeedback, setOrderFeedback] = useState("");
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [orderStatus, setOrderStatus] = useState<OrderStatus>("idle");
@@ -452,6 +454,9 @@ export default function Home() {
         .filter((product): product is Product => Boolean(product))
     : [];
 
+  // Resetear modificadores elegidos cada vez que se abre un nuevo producto
+  useEffect(() => { setSelectedModifiers([]); }, [selected]);
+
   const selectedServingOption = selected?.servings?.find((serving) => serving.label === selectedServing);
   const selectedBasePrice = selectedServingOption?.price ?? selected?.price ?? 0;
   const selectedPrice = selected && !selectedServingOption ? promoPrice(selected) : selectedBasePrice;
@@ -487,19 +492,31 @@ export default function Home() {
   function addSelectedToOrder() {
     if (!selected || orderStatus === "sent") return;
     trackEvent("cart_add", { productId: selected.id });
-    const key = selectedServingOption ? `${selected.id}:${selectedServingOption.label}` : selected.id;
+
+    // Para combos con modificadores, la key incluye las opciones elegidas para permitir distintas selecciones
+    const modOptions = selected.fudoData?.modifierOptions ?? [];
+    const chosenMods = modOptions.filter((o) => selectedModifiers.includes(o.fudoProductId));
+    const modKey = chosenMods.length > 0 ? `:mods:${chosenMods.map((m) => m.fudoProductId).join(",")}` : "";
+    const key = selectedServingOption
+      ? `${selected.id}:${selectedServingOption.label}`
+      : `${selected.id}${modKey}`;
+
     setOrderItems((current) => {
       const existing = current.find((item) => item.key === key);
       if (existing) return current.map((item) => item.key === key ? { ...item, quantity: item.quantity + 1 } : item);
       return [...current, {
         key,
         productId: selected.id,
+        fudoProductId: selectedServingOption
+          ? selected.fudoData?.servingIds?.[selectedServingOption.label]
+          : selected.fudoData?.productId,
         name: selected.name,
         image: selected.image,
         serving: selectedServingOption?.label,
         volume: selectedServingOption?.volume,
         unitPrice: selectedPrice,
         quantity: 1,
+        modifiers: chosenMods.length > 0 ? chosenMods : undefined,
       }];
     });
     setOrderStatus("draft");
@@ -581,6 +598,7 @@ export default function Home() {
           ...(item.removedIngredients ?? []).map((r) => `Sin ${r}`),
           item.customNote ?? "",
         ].filter(Boolean).join(", ") || undefined,
+        modifiers: item.modifiers,
       }));
 
     fetch("/api/orders", {
@@ -1058,8 +1076,17 @@ export default function Home() {
               <div className="allergen-summary"><strong>{tr("Alérgenos")}</strong><div>{selected.allergens.length ? selected.allergens.map((allergen) => <span className="allergen-item" key={allergen}><i aria-hidden="true">{allergenIcons[allergen] ?? "•"}</i>{tr(allergen)}</span>) : <span className="allergen-item allergen-free"><i aria-hidden="true">✓</i>Sin alérgenos declarados</span>}</div></div>
             </section>
             {(() => {
-              const modalKey = selectedServingOption ? `${selected.id}:${selectedServingOption.label}` : selected.id;
+              const modOptions = selected.fudoData?.modifierOptions ?? [];
+              const modMin = selected.fudoData?.modifierMin ?? (modOptions.length > 0 ? 1 : 0);
+              const modMax = selected.fudoData?.modifierMax ?? (modOptions.length > 0 ? 1 : 0);
+              const chosenMods = modOptions.filter((o) => selectedModifiers.includes(o.fudoProductId));
+              const modKey = chosenMods.length > 0 ? `:mods:${chosenMods.map((m) => m.fudoProductId).join(",")}` : "";
+              const modalKey = selectedServingOption
+                ? `${selected.id}:${selectedServingOption.label}`
+                : `${selected.id}${modKey}`;
               const modalItem = orderItems.find(i => i.key === modalKey);
+              const modSelectionComplete = modOptions.length === 0 || chosenMods.length >= modMin;
+
               const openCustomize = () => {
                 if (!modalItem) {
                   setOrderItems(prev => [...prev, { key: modalKey, productId: selected.id, fudoProductId: selectedServingOption ? selected.fudoData?.servingIds?.[selectedServingOption.label] : selected.fudoData?.productId, name: selected.name, image: selected.image, serving: selectedServingOption?.label, unitPrice: selectedPrice, quantity: 1 }]);
@@ -1067,20 +1094,67 @@ export default function Home() {
                 }
                 setCustomizeItemKey(modalKey);
               };
+
               if (orderStatus === "sent") {
                 return <button className="order-button locked" disabled><Icon name="receipt" size={19}/><span>{tr("PEDIDO LANZADO")}</span></button>;
               }
               if (selected.outOfStock) {
                 return <button className="order-button locked" disabled><span>{tr("Sin stock — no disponible ahora")}</span></button>;
               }
-              if (modalItem && modalItem.quantity > 0) {
-                return <>
-                  {selected.category === "Cocina" && <button className="customize-modal-btn" onClick={openCustomize}>{tr("Le quiero sacar...")}</button>}
-                  <div className="modal-quantity-control"><button onClick={() => changeOrderQuantity(modalKey, -1)} aria-label="Quitar uno">−</button><span>{modalItem.quantity} en el pedido</span><button onClick={() => changeOrderQuantity(modalKey, 1)} aria-label="Agregar uno">+</button></div>
-                </>;
-              }
+
               return <>
-                <button className="order-button" onClick={addSelectedToOrder}><Icon name="plus" size={19}/><span>{tr("Agregar al carrito")} · {displayPrice(selectedPrice)}</span></button>
+                {/* Selector de modificadores (combos/promos con grupos en Fudo) */}
+                {modOptions.length > 0 && !modalItem && (
+                  <div className="modifier-selector">
+                    <p className="modifier-selector-title">
+                      {tr("Elegí")} {modMin === modMax ? modMin : `${modMin}–${modMax}`} {modMin === 1 && modMax === 1 ? tr("opción") : tr("opciones")}
+                      {chosenMods.length > 0 && <span className="modifier-count"> ({chosenMods.length}/{modMax})</span>}
+                    </p>
+                    <div className="modifier-options">
+                      {modOptions.map((opt) => {
+                        const chosen = selectedModifiers.includes(opt.fudoProductId);
+                        const atMax = chosenMods.length >= modMax && !chosen;
+                        return (
+                          <button
+                            key={opt.fudoProductId}
+                            className={`modifier-option${chosen ? " chosen" : ""}${atMax ? " disabled" : ""}`}
+                            disabled={atMax}
+                            onClick={() => {
+                              if (chosen) {
+                                setSelectedModifiers((prev) => prev.filter((id) => id !== opt.fudoProductId));
+                              } else if (!atMax) {
+                                if (modMax === 1) {
+                                  setSelectedModifiers([opt.fudoProductId]);
+                                } else {
+                                  setSelectedModifiers((prev) => [...prev, opt.fudoProductId]);
+                                }
+                              }
+                            }}
+                          >
+                            {chosen && <span className="modifier-check">✓ </span>}
+                            {opt.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {modalItem && modalItem.quantity > 0
+                  ? <>
+                      {selected.category === "Cocina" && <button className="customize-modal-btn" onClick={openCustomize}>{tr("Le quiero sacar...")}</button>}
+                      <div className="modal-quantity-control"><button onClick={() => changeOrderQuantity(modalKey, -1)} aria-label="Quitar uno">−</button><span>{modalItem.quantity} en el pedido</span><button onClick={() => changeOrderQuantity(modalKey, 1)} aria-label="Agregar uno">+</button></div>
+                    </>
+                  : <button
+                      className="order-button"
+                      onClick={addSelectedToOrder}
+                      disabled={!modSelectionComplete}
+                      style={!modSelectionComplete ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
+                    >
+                      <Icon name="plus" size={19}/>
+                      <span>{tr("Agregar al carrito")} · {displayPrice(selectedPrice)}</span>
+                    </button>
+                }
               </>;
             })()}
             <section className="cross-sell" aria-labelledby="cross-sell-title">

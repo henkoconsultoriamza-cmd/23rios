@@ -32,9 +32,12 @@ export type Product = {
   outOfStock?: boolean;
   removableIngredients?: string[];
   fudoData?: {
-    productId?: string;               // ID numérico en Fudo (ej: "1476") — productos sin servings
+    productId?: string;                  // ID numérico en Fudo (ej: "1476") — productos sin servings
     servingIds?: Record<string, string>; // Para cervezas: { "Pinta": "22", "Lata": "516", ... }
-    modifierGroupId?: string;         // Para combos con grupos modificadores en Fudo
+    modifierGroupId?: string;            // ID del grupo modificador en Fudo (ej: "47")
+    modifierOptions?: Array<{ name: string; fudoProductId: string }>; // Opciones seleccionables del grupo
+    modifierMin?: number;                // Cantidad mínima de opciones a elegir (default: 1)
+    modifierMax?: number;                // Cantidad máxima de opciones a elegir (default: 1)
   };
 };
 

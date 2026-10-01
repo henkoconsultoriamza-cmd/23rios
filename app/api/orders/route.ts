@@ -38,6 +38,11 @@ function sanitizeComment(value: unknown): string | undefined {
   return clean || undefined;
 }
 
+interface ModifierPayload {
+  name: string;
+  fudoProductId: string;
+}
+
 interface OrderLinePayload {
   lineId: string;
   productId: string;
@@ -45,6 +50,7 @@ interface OrderLinePayload {
   quantity: number;
   unitPrice: number;
   comment?: string;
+  modifiers?: ModifierPayload[]; // opciones elegidas de grupos modificadores
 }
 
 interface CreateOrderPayload {
@@ -96,6 +102,12 @@ function validatePayload(body: unknown): { valid: true; data: CreateOrderPayload
         quantity: l.quantity as number,
         unitPrice: l.unitPrice as number,
         comment: sanitizeComment(l.comment),
+        modifiers: Array.isArray(l.modifiers)
+          ? (l.modifiers as Record<string, unknown>[])
+              .filter((m) => typeof m.name === "string" && typeof m.fudoProductId === "string")
+              .slice(0, 10)
+              .map((m) => ({ name: String(m.name).slice(0, 100), fudoProductId: String(m.fudoProductId).replace(/\D/g, "").slice(0, 20) }))
+          : undefined,
       })),
     },
   };
@@ -191,17 +203,34 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Error guardando pedido" }, { status: 500 });
   }
 
-  // Insertar líneas
-  const lineRows = lines.map((l) => ({
-    order_id: order.id,
-    line_id: l.lineId,
-    product_id: l.productId,
-    fudo_product_id: l.fudoProductId ?? null,
-    quantity: l.quantity,
-    unit_price: l.unitPrice,
-    comment: l.comment ?? null,
-    status: "PENDING",
-  }));
+  // Insertar líneas — cada modificador se expande como línea hija con parent_line_id
+  const lineRows: Record<string, unknown>[] = [];
+  for (const l of lines) {
+    lineRows.push({
+      order_id: order.id,
+      line_id: l.lineId,
+      product_id: l.productId,
+      fudo_product_id: l.fudoProductId ?? null,
+      quantity: l.quantity,
+      unit_price: l.unitPrice,
+      comment: l.comment ?? null,
+      status: "PENDING",
+      parent_line_id: null,
+    });
+    for (const mod of l.modifiers ?? []) {
+      lineRows.push({
+        order_id: order.id,
+        line_id: `${l.lineId}:mod:${mod.fudoProductId}`,
+        product_id: l.productId,
+        fudo_product_id: mod.fudoProductId,
+        quantity: 1,
+        unit_price: 0,
+        comment: mod.name,
+        status: "PENDING",
+        parent_line_id: l.lineId,
+      });
+    }
+  }
 
   const { error: linesErr } = await sb.from("order_lines").insert(lineRows);
   if (linesErr) {

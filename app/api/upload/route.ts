@@ -1,5 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { verifyAdminSession } from "@/lib/admin-auth";
+
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -7,6 +10,12 @@ const supabaseAdmin = createClient(
 );
 
 export async function POST(req: NextRequest) {
+  // Solo el admin autenticado puede subir imágenes
+  const authorized = await verifyAdminSession();
+  if (!authorized) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
   try {
     const form = await req.formData();
     const file = form.get("file") as File | null;
@@ -14,9 +23,14 @@ export async function POST(req: NextRequest) {
 
     if (!file) return NextResponse.json({ error: "No se recibió ningún archivo." }, { status: 400 });
     if (file.size > 3_000_000) return NextResponse.json({ error: "La imagen debe pesar menos de 3 MB." }, { status: 400 });
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return NextResponse.json({ error: "Tipo de archivo no permitido." }, { status: 400 });
+    }
 
+    // Sanitizar nombre de carpeta para evitar path traversal
+    const safeFolder = folder.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 50) || "misc";
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-    const path = `${folder}/${Date.now()}.${ext}`;
+    const path = `${safeFolder}/${Date.now()}.${ext}`;
     const bytes = await file.arrayBuffer();
 
     const { error } = await supabaseAdmin.storage

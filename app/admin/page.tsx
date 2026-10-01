@@ -987,25 +987,111 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                {/* Combo: también ID de grupo modificador */}
+                {/* Combo: también ID de grupo modificador + opciones */}
                 {draft.group === "Combos" && (
-                  <div className="admin-fudo-row" style={{ marginTop: 8 }}>
-                    <label className="admin-fudo-label">ID grupo modificador</label>
-                    <input
-                      className="admin-fudo-input"
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="Ej: 47"
-                      value={draft.fudoData?.modifierGroupId ?? ""}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, "");
-                        setDraft((d) => ({ ...d, fudoData: { ...d.fudoData, modifierGroupId: val } }));
-                      }}
-                    />
-                    {draft.fudoData?.modifierGroupId
-                      ? <span className="admin-fudo-badge ok">✓</span>
-                      : <span className="admin-fudo-badge missing">—</span>}
-                  </div>
+                  <>
+                    <div className="admin-fudo-row" style={{ marginTop: 8 }}>
+                      <label className="admin-fudo-label">ID grupo modificador</label>
+                      <input
+                        className="admin-fudo-input"
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="Ej: 47"
+                        value={draft.fudoData?.modifierGroupId ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "");
+                          setDraft((d) => ({ ...d, fudoData: { ...d.fudoData, modifierGroupId: val } }));
+                        }}
+                      />
+                      {draft.fudoData?.modifierGroupId
+                        ? <span className="admin-fudo-badge ok">✓</span>
+                        : <span className="admin-fudo-badge missing">—</span>}
+                    </div>
+
+                    {/* Cant. mínima / máxima de opciones */}
+                    <div className="admin-fudo-row" style={{ gap: 8 }}>
+                      <label className="admin-fudo-label">Mín. opciones</label>
+                      <input
+                        className="admin-fudo-input"
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="1"
+                        style={{ width: 60 }}
+                        value={draft.fudoData?.modifierMin ?? ""}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value.replace(/\D/g, "") || "0");
+                          setDraft((d) => ({ ...d, fudoData: { ...d.fudoData, modifierMin: val || undefined } }));
+                        }}
+                      />
+                      <label className="admin-fudo-label" style={{ marginLeft: 8 }}>Máx. opciones</label>
+                      <input
+                        className="admin-fudo-input"
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="1"
+                        style={{ width: 60 }}
+                        value={draft.fudoData?.modifierMax ?? ""}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value.replace(/\D/g, "") || "0");
+                          setDraft((d) => ({ ...d, fudoData: { ...d.fudoData, modifierMax: val || undefined } }));
+                        }}
+                      />
+                    </div>
+
+                    {/* Opciones del grupo modificador */}
+                    <div style={{ marginTop: 8 }}>
+                      <label className="admin-fudo-label" style={{ marginBottom: 6, display: "block" }}>
+                        Opciones del grupo ({(draft.fudoData?.modifierOptions ?? []).length} cargadas)
+                      </label>
+                      {(draft.fudoData?.modifierOptions ?? []).map((opt, idx) => (
+                        <div key={idx} className="admin-fudo-row" style={{ marginBottom: 4 }}>
+                          <input
+                            className="admin-fudo-input"
+                            type="text"
+                            placeholder="Nombre opción"
+                            style={{ flex: 2 }}
+                            value={opt.name}
+                            onChange={(e) => {
+                              const options = [...(draft.fudoData?.modifierOptions ?? [])];
+                              options[idx] = { ...options[idx], name: e.target.value };
+                              setDraft((d) => ({ ...d, fudoData: { ...d.fudoData, modifierOptions: options } }));
+                            }}
+                          />
+                          <input
+                            className="admin-fudo-input"
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="ID Fudo"
+                            style={{ flex: 1 }}
+                            value={opt.fudoProductId}
+                            onChange={(e) => {
+                              const options = [...(draft.fudoData?.modifierOptions ?? [])];
+                              options[idx] = { ...options[idx], fudoProductId: e.target.value.replace(/\D/g, "") };
+                              setDraft((d) => ({ ...d, fudoData: { ...d.fudoData, modifierOptions: options } }));
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const options = (draft.fudoData?.modifierOptions ?? []).filter((_, i) => i !== idx);
+                              setDraft((d) => ({ ...d, fudoData: { ...d.fudoData, modifierOptions: options } }));
+                            }}
+                            style={{ background: "none", border: "none", cursor: "pointer", color: "#999", fontSize: 18, padding: "0 4px" }}
+                          >×</button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        className="admin-fudo-add-option"
+                        onClick={() => {
+                          const options = [...(draft.fudoData?.modifierOptions ?? []), { name: "", fudoProductId: "" }];
+                          setDraft((d) => ({ ...d, fudoData: { ...d.fudoData, modifierOptions: options } }));
+                        }}
+                      >
+                        + Agregar opción
+                      </button>
+                    </div>
+                  </>
                 )}
               </div>
 

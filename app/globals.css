@@ -939,6 +939,16 @@ textarea, select { font: inherit; }
 .modal-quantity-control button { width: 40px; height: 40px; border: 0; border-radius: 10px; background: white; font-size: 22px; font-weight: 700; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
 .modal-quantity-control span { flex: 1; text-align: center; font: 800 14px/1 "Manrope"; }
 
+/* ── Selector de modificadores (combos/grupos Fudo) ── */
+.modifier-selector { margin-bottom: 14px; }
+.modifier-selector-title { margin: 0 0 10px; font: 700 13px/1.3 "Manrope"; color: #555; }
+.modifier-count { color: var(--yellow); margin-left: 4px; }
+.modifier-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.modifier-option { padding: 8px 14px; border-radius: 20px; border: 2px solid #ddd; background: white; font: 600 13px/1 "Manrope"; cursor: pointer; transition: border-color .15s, background .15s; }
+.modifier-option.chosen { border-color: var(--yellow); background: #fff8ee; color: #c26a00; }
+.modifier-option.disabled { opacity: .4; cursor: not-allowed; }
+.modifier-check { font-size: 11px; }
+
 .admin-promo-stock { display: flex; flex-direction: column; gap: 18px; }
 .admin-stock-toggle { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 13px; background: #f5f0e8; cursor: pointer; }
 .admin-stock-toggle input { position: absolute; opacity: 0; }
@@ -961,6 +971,8 @@ textarea, select { font: inherit; }
 .admin-fudo-badge { font: 700 10px "Manrope"; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
 .admin-fudo-badge.ok { background: #d4f0d4; color: #2a7a2a; }
 .admin-fudo-badge.missing { background: #f0e0d4; color: #a04020; }
+.admin-fudo-add-option { margin-top: 6px; padding: 6px 12px; border: 1.5px dashed var(--line); border-radius: 8px; background: none; font: 600 12px "Manrope"; color: var(--muted); cursor: pointer; }
+.admin-fudo-add-option:hover { border-color: #e8c97a; color: var(--ink); }
 .admin-promo-type { border: 1px solid var(--line); border-radius: 13px; padding: 14px; }
 .admin-promo-type legend { padding: 0 6px; font: 800 11px "Manrope"; color: var(--muted); }
 .admin-promo-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }

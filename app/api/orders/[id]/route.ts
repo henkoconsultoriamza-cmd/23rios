@@ -8,17 +8,30 @@ function supabase() {
   );
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const sb = supabase();
+  if (!UUID_RE.test(id)) {
+    return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+  }
 
+  // El cliente debe probar que creó este pedido enviando su idempotency key
+  const url = new URL(req.url);
+  const key = url.searchParams.get("key");
+  if (!key || !UUID_RE.test(key)) {
+    return NextResponse.json({ error: "key requerida" }, { status: 400 });
+  }
+
+  const sb = supabase();
   const { data: order, error } = await sb
     .from("orders")
-    .select("id, status, created_at, table_session_id")
+    .select("id, status, created_at, idempotency_key")
     .eq("id", id)
+    .eq("idempotency_key", key)
     .single();
 
   if (error || !order) {

@@ -59,6 +59,13 @@ async function resolveFudoTableId(mesaNumero: string): Promise<string> {
 // ─── Handler principal ────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
+  // Validar que la llamada viene del trigger de Supabase (service_role_key)
+  const authHeader = req.headers.get("authorization");
+  const expectedToken = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!authHeader || !expectedToken || authHeader !== `Bearer ${expectedToken}`) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
   try {
     const payload = await req.json();
     const outboxId: string = payload.record?.id ?? payload.outbox_id;
@@ -143,7 +150,7 @@ async function processOrder(
 
   const { data: lines } = await sb
     .from("order_lines")
-    .select("id, fudo_product_id, quantity, unit_price, comment, status")
+    .select("id, line_id, fudo_product_id, quantity, unit_price, comment, status, parent_line_id")
     .eq("order_id", orderId)
     .eq("status", "PENDING");
 
@@ -197,10 +204,16 @@ async function processOrder(
     throw new Error(`Sale ${fudoSaleId} no está IN-COURSE (estado: ${saleState})`);
   }
 
-  // Enviar cada línea a Fudo
-  for (const line of lines) {
+  // Separar líneas padre de modificadores
+  const parentLines = lines.filter((l: { parent_line_id: string | null }) => !l.parent_line_id);
+  const modifierLines = lines.filter((l: { parent_line_id: string | null }) => !!l.parent_line_id);
+
+  // Mapa line_id → fudo_item_id para vincular modificadores
+  const lineIdToFudoItemId = new Map<string, string>();
+
+  // ── Paso 1: enviar líneas padre ──────────────────────────────────────────
+  for (const line of parentLines) {
     if (!line.fudo_product_id) {
-      // Producto sin mapeo — marcar como REJECTED y seguir
       await sb.from("order_lines")
         .update({ status: "REJECTED", error_detail: "Sin fudoProductId" })
         .eq("id", line.id);
@@ -232,15 +245,67 @@ async function processOrder(
     });
 
     const fudoItemId = itemRes.data?.id;
+    lineIdToFudoItemId.set(line.line_id, fudoItemId);
+
     await sb.from("order_lines")
       .update({ status: "ACKNOWLEDGED", fudo_item_id: fudoItemId })
       .eq("id", line.id);
 
-    // Verificar que quedó registrado
     const itemDoc = await fudoRequest(`/items/${fudoItemId}`);
     const itemOk = itemDoc.data?.id === fudoItemId;
     await sb.from("order_lines")
       .update({ status: itemOk ? "VERIFIED" : "UNKNOWN" })
+      .eq("id", line.id);
+  }
+
+  // ── Paso 2: enviar modificadores referenciando al padre ──────────────────
+  for (const line of modifierLines) {
+    if (!line.fudo_product_id) {
+      await sb.from("order_lines")
+        .update({ status: "REJECTED", error_detail: "Sin fudoProductId" })
+        .eq("id", line.id);
+      continue;
+    }
+
+    const parentFudoItemId = lineIdToFudoItemId.get(line.parent_line_id);
+    if (!parentFudoItemId) {
+      // Padre fue REJECTED o no procesado — rechazar también el modificador
+      await sb.from("order_lines")
+        .update({ status: "REJECTED", error_detail: "Padre no enviado" })
+        .eq("id", line.id);
+      continue;
+    }
+
+    await sb.from("order_lines")
+      .update({ status: "SENDING", attempts: (line.attempts ?? 0) + 1 })
+      .eq("id", line.id);
+
+    const modBody = {
+      data: {
+        type: "Item",
+        attributes: { quantity: 1, price: 0 },
+        relationships: {
+          product: { data: { type: "Product", id: line.fudo_product_id } },
+          sale: { data: { type: "Sale", id: fudoSaleId } },
+          parentItem: { data: { type: "Item", id: parentFudoItemId } },
+        },
+      },
+    };
+
+    const modRes = await fudoRequest("/items", {
+      method: "POST",
+      body: JSON.stringify(modBody),
+    });
+
+    const modFudoItemId = modRes.data?.id;
+    await sb.from("order_lines")
+      .update({ status: "ACKNOWLEDGED", fudo_item_id: modFudoItemId })
+      .eq("id", line.id);
+
+    const modDoc = await fudoRequest(`/items/${modFudoItemId}`);
+    const modOk = modDoc.data?.id === modFudoItemId;
+    await sb.from("order_lines")
+      .update({ status: modOk ? "VERIFIED" : "UNKNOWN" })
       .eq("id", line.id);
   }
 
