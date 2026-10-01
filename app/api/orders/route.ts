@@ -142,6 +142,32 @@ export async function POST(req: Request) {
   const { idempotencyKey, mesaNumero, people, catalogRevision, lines } = validation.data;
   const sb = supabase();
 
+  // ── Validar modificadores de combos contra la definición guardada ─────────
+  const comboLines = lines.filter((l) => l.modifiers && l.modifiers.length > 0);
+  if (comboLines.length > 0) {
+    const { data: promosRow } = await sb
+      .from("restaurant_config")
+      .select("value")
+      .eq("key", "promos")
+      .single();
+
+    const promos: Array<{ id: string; comboItems?: Array<{ quantity: number }> }> =
+      Array.isArray(promosRow?.value) ? promosRow.value : [];
+
+    for (const line of comboLines) {
+      const promo = promos.find((p) => p.id === line.productId);
+      if (!promo) continue; // promo no encontrada — no bloqueamos, seguimos
+
+      const maxModifiers = (promo.comboItems ?? []).reduce((sum, ci) => sum + ci.quantity, 0);
+      if ((line.modifiers?.length ?? 0) > maxModifiers) {
+        return NextResponse.json(
+          { error: `El combo "${line.productId}" permite máximo ${maxModifiers} opciones` },
+          { status: 400 }
+        );
+      }
+    }
+  }
+
   // Idempotencia
   const { data: existing } = await sb
     .from("orders")
