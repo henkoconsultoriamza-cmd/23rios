@@ -10,14 +10,8 @@ export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (pathname.startsWith("/admin")) {
-    if (pathname === "/admin/login") return NextResponse.next();
-
-    const token = req.cookies.get(ADMIN_COOKIE)?.value;
-    if (!token || !UUID_RE.test(token)) {
-      const loginUrl = req.nextUrl.clone();
-      loginUrl.pathname = "/admin/login";
-      return NextResponse.redirect(loginUrl);
-    }
+    // El login está integrado en /admin — no hay página /admin/login separada.
+    // El middleware solo deja pasar; la página maneja el estado no autenticado.
   }
 
   return NextResponse.next();
