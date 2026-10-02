@@ -198,13 +198,9 @@ img { display: block; max-width: 100%; }
 .filter-drawer-header span { font-size: 15px; font-weight: 800; color: var(--ink); }
 .filter-drawer-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--ink); line-height: 1; padding: 4px 8px; }
 
-.category-tabs { display: flex; flex-direction: column; gap: 6px; margin-top: 24px; }
-.category-tabs button { width: 100%; min-height: 52px; padding: 13px 18px; border: 1px solid rgba(255,255,255,.12); border-radius: 14px; background: rgba(15,12,8,.52); backdrop-filter: blur(10px); color: rgba(255,255,255,.68); font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 10px; text-align: left; cursor: pointer; transition: all .18s; }
-.category-tabs button:hover:not(.active) { background: rgba(15,12,8,.68); border-color: rgba(255,255,255,.22); color: rgba(255,255,255,.9); }
-.category-tabs button.active { background: rgba(15,12,8,.88); border-color: var(--yellow); color: white; box-shadow: 0 0 0 1px var(--yellow) inset; }
-.cat-tab-icon { flex: 0 0 auto; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 9px; background: rgba(255,255,255,.08); font-size: 16px; line-height: 1; }
-.category-tabs button.active .cat-tab-icon { background: rgba(255,255,255,.14); }
-.cat-tab-label { font-size: 14px; font-weight: 800; letter-spacing: .01em; }
+.category-tabs { display: flex; gap: 8px; margin-top: 28px; }
+.category-tabs button { flex: 1; min-height: 48px; border: 2px solid rgba(26,17,8,.12); border-radius: 12px; background: transparent; color: #7a6e5f; font-size: 15px; font-weight: 800; cursor: pointer; transition: all .18s; }
+.category-tabs button.active { background: #3a9ad9; border-color: #3a9ad9; color: white; }
 .menu-layout { display: block; margin-top: 20px; }
 .vertical-filters { position: sticky; top: 18px; padding: 15px; background: #fff; color: var(--ink); border-top: 3px solid var(--blue); border-radius: 18px; overflow: hidden; box-shadow: 0 8px 32px rgba(26,17,8,.1); border: 1px solid rgba(26,17,8,.09); }
 .primary-filter-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,.12); }

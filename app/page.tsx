@@ -238,7 +238,7 @@ export default function Home() {
   const [eventsOpen, setEventsOpen] = useState(false);
   const [comboBeerPicker, setComboBeerPicker] = useState<{ combo: Promo; selections: Record<number, string[]> } | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [banners, setBanners] = useState<Banner[]>(DEFAULT_BANNERS);
+  const [banners, setBanners] = useState<Banner[]>([]);
   const [promos, setPromos] = useState<Promo[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [urlToken] = useState<string>(() => {
@@ -271,13 +271,11 @@ export default function Home() {
 
     // Banners: caché local instantáneo + fetch desde edge cache de Vercel
     const cachedBanners = window.localStorage.getItem("cache-banners-v1");
-    if (cachedBanners) { try { const parsed = JSON.parse(cachedBanners); if (Array.isArray(parsed) && parsed.length > 0) setBanners(parsed); } catch { /* ignore */ } }
+    if (cachedBanners) { try { setBanners(JSON.parse(cachedBanners)); } catch { /* ignore */ } }
     fetch("/api/banners").then((r) => r.json()).then((bans) => {
-      if (Array.isArray(bans) && bans.length > 0) {
-        setBanners(bans);
-        window.localStorage.setItem("cache-banners-v1", JSON.stringify(bans));
-      }
-    }).catch(() => getBanners().then((bans) => { if (Array.isArray(bans) && bans.length > 0) setBanners(bans); }));
+      setBanners(bans ?? []);
+      window.localStorage.setItem("cache-banners-v1", JSON.stringify(bans ?? []));
+    }).catch(() => getBanners().then((bans) => setBanners(bans ?? [])));
 
     // Eventos: misma estrategia
     const cachedEvents = window.localStorage.getItem("cache-events-v1");
@@ -777,9 +775,9 @@ export default function Home() {
         {appSettings.eventModeActive && <div className="event-mode-banner"><span>🎉</span><div><strong>{tr("Carta de evento")}</strong><small>{tr("Esta noche mostramos una selección especial.")}</small></div></div>}
 
         <div className="category-tabs">
-          <button className={category === "Cocina" ? "active" : ""} onClick={() => changeCategory("Cocina")}><span className="cat-tab-icon">🍽</span><span className="cat-tab-label">{tr("Comida")}</span></button>
-          <button className={category === "Cervezas" ? "active" : ""} onClick={() => changeCategory("Cervezas")}><span className="cat-tab-icon">🍺</span><span className="cat-tab-label">{tr("Bebida")}</span></button>
-          {activeCombos.length > 0 && <button className={category === ("Combos" as any) ? "active" : ""} onClick={() => setCategory("Combos" as any)}><span className="cat-tab-icon">🎁</span><span className="cat-tab-label">{tr("Combos")}</span></button>}
+          <button className={category === "Cocina" ? "active" : ""} onClick={() => changeCategory("Cocina")}>{tr("Comida")}</button>
+          <button className={category === "Cervezas" ? "active" : ""} onClick={() => changeCategory("Cervezas")}>{tr("Bebida")}</button>
+          {activeCombos.length > 0 && <button className={category === ("Combos" as any) ? "active" : ""} onClick={() => setCategory("Combos" as any)}>🎁 {tr("Combos")}</button>}
         </div>
 
         <div className="menu-layout">
