@@ -60,17 +60,21 @@ async function fudoFetch<T = unknown>(path: string, init: RequestInit = {}): Pro
   const url = `${process.env.FUDO_BASE_URL}${path}`;
 
   const method = (init.method ?? "GET").toUpperCase();
-  const res = await fetch(url, {
-    ...init,
+  const fetchOptions: RequestInit = {
+    method,
     headers: {
       "Content-Type": "application/vnd.api+json",
       "Accept": "application/vnd.api+json",
       "Authorization": `Bearer ${token}`,
-      ...(init.headers ?? {}),
     },
-    // cache: no-store solo en GET — en POST puede hacer que Next.js descarte el body
-    ...(method === "GET" ? { cache: "no-store" } : {}),
-  });
+  };
+  if (init.body !== undefined && init.body !== null) {
+    fetchOptions.body = init.body;
+  }
+  if (method === "GET") {
+    fetchOptions.cache = "no-store";
+  }
+  const res = await fetch(url, fetchOptions);
 
   if (!res.ok) {
     const body = await res.text();
