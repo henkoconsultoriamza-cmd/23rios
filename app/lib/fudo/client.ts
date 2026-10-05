@@ -63,8 +63,8 @@ async function fudoFetch<T = unknown>(path: string, init: RequestInit = {}): Pro
   const fetchOptions: RequestInit = {
     method,
     headers: {
-      "Content-Type": "application/vnd.api+json",
-      "Accept": "application/vnd.api+json",
+      "Content-Type": "application/json",
+      "Accept": "application/json",
       "Authorization": `Bearer ${token}`,
     },
   };
