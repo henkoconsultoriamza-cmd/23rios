@@ -59,6 +59,7 @@ async function fudoFetch<T = unknown>(path: string, init: RequestInit = {}): Pro
   const token = await getToken();
   const url = `${process.env.FUDO_BASE_URL}${path}`;
 
+  const method = (init.method ?? "GET").toUpperCase();
   const res = await fetch(url, {
     ...init,
     headers: {
@@ -67,7 +68,8 @@ async function fudoFetch<T = unknown>(path: string, init: RequestInit = {}): Pro
       "Authorization": `Bearer ${token}`,
       ...(init.headers ?? {}),
     },
-    cache: "no-store",
+    // cache: no-store solo en GET — en POST puede hacer que Next.js descarte el body
+    ...(method === "GET" ? { cache: "no-store" } : {}),
   });
 
   if (!res.ok) {
