@@ -120,8 +120,9 @@ async function processOrder(orderId) {
     await goToCart(page);
 
     // 5. Ir a pagar
-    await page.waitForSelector("button", { timeout: 10000 });
-    const irAPagar = await page.$x("//button[contains(text(), 'Ir a pagar')]");
+    await page.waitForTimeout(3000);
+    await page.waitForSelector("button", { timeout: 20000 });
+    const irAPagar = await page.$x("//button[contains(., 'Ir a pagar') or contains(., 'pagar')]");
     if (irAPagar.length === 0) throw new Error("No se encontró botón 'Ir a pagar'");
     await irAPagar[0].click();
     await page.waitForNavigation({ waitUntil: "networkidle2", timeout: 15000 }).catch(() => {});
@@ -151,28 +152,42 @@ async function processOrder(orderId) {
 
 // ── Agregar producto al carrito ────────────────────────────────────────────────
 async function addProductToCart(page, fudoProductId, comment) {
-  // Buscar el producto por su ID en la URL de detalle
   const productUrl = `${FUDO_MENU_URL}/products/${fudoProductId}`;
-  await page.goto(productUrl, { waitUntil: "networkidle2", timeout: 20000 });
+  console.log(`[worker] Navegando a ${productUrl}`);
 
-  // Esperar el botón "Agregar a mi pedido"
-  await page.waitForSelector("button", { timeout: 10000 });
+  // Intentar cargar la página — en SPAs a veces networkidle2 nunca se dispara
+  await page.goto(productUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
 
-  // Si hay comentario, agregarlo
+  // Dar tiempo al JS del SPA para renderizar
+  await page.waitForTimeout(4000);
+
+  // Log del título para debug
+  const title = await page.title();
+  console.log(`[worker] Página cargada: "${title}" | URL: ${page.url()}`);
+
+  // Esperar cualquier botón con timeout generoso
+  await page.waitForSelector("button", { timeout: 20000 });
+
+  // Logear todos los botones visibles para debug
+  const btnTexts = await page.$$eval("button", (btns) =>
+    btns.map((b) => b.innerText.trim()).filter(Boolean)
+  );
+  console.log(`[worker] Botones encontrados:`, btnTexts.join(" | "));
+
   if (comment) {
     const textarea = await page.$("textarea");
-    if (textarea) {
-      await textarea.type(comment);
-    }
+    if (textarea) await textarea.type(comment);
   }
 
-  // Clic en "Agregar a mi pedido"
-  const agregarBtn = await page.$x("//button[contains(text(), 'Agregar a mi pedido')]");
-  if (agregarBtn.length === 0) throw new Error(`No se encontró 'Agregar a mi pedido' para producto ${fudoProductId}`);
-  await agregarBtn[0].click();
+  // Buscar "Agregar a mi pedido" (o variantes)
+  const agregarBtn = await page.$x(
+    "//button[contains(., 'Agregar') or contains(., 'agregar')]"
+  );
+  if (agregarBtn.length === 0)
+    throw new Error(`No se encontró botón 'Agregar' para producto ${fudoProductId}. Botones: ${btnTexts.join(", ")}`);
 
-  // Esperar que procese
-  await page.waitForTimeout(1000);
+  await agregarBtn[0].click();
+  await page.waitForTimeout(2000);
 }
 
 // ── Ir al carrito ──────────────────────────────────────────────────────────────
