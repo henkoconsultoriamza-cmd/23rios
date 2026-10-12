@@ -606,8 +606,6 @@ export default function Home() {
         customerPhone: record.guestPhone,
         lines,
       }),
-    }).then(() => {
-      fetch("/api/fudo-worker", { method: "POST" }).catch(() => undefined);
     }).catch(() => { /* fallo silencioso — el pedido ya quedó en localStorage */ });
   }
 
