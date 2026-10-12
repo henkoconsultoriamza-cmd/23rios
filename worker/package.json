@@ -1,0 +1,15 @@
+{
+  "name": "23rios-fudo-worker",
+  "version": "1.0.0",
+  "description": "Worker que automatiza el menú QR de FUDO para enviar pedidos de 23 Ríos",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "postinstall": "npx puppeteer browsers install chrome"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "puppeteer": "^21.0.0"
+  }
+}
