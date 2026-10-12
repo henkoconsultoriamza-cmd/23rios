@@ -47,6 +47,7 @@ interface OrderLinePayload {
   lineId: string;
   productId: string;
   fudoProductId?: string;
+  fudoCategoryId?: string;
   quantity: number;
   unitPrice: number;
   comment?: string;
@@ -58,6 +59,9 @@ interface CreateOrderPayload {
   mesaNumero: string;
   people?: number;
   catalogRevision?: string;
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
   lines: OrderLinePayload[];
 }
 
@@ -95,10 +99,14 @@ function validatePayload(body: unknown): { valid: true; data: CreateOrderPayload
       mesaNumero: b.mesaNumero as string,
       people: typeof people === "number" ? people : undefined,
       catalogRevision: typeof b.catalogRevision === "string" ? b.catalogRevision : undefined,
+      customerName: typeof b.customerName === "string" ? b.customerName.trim().slice(0, 100) : undefined,
+      customerPhone: typeof b.customerPhone === "string" ? b.customerPhone.trim().slice(0, 30) : undefined,
+      customerEmail: typeof b.customerEmail === "string" ? b.customerEmail.trim().slice(0, 100) : undefined,
       lines: (b.lines as Record<string, unknown>[]).map((l) => ({
         lineId: l.lineId as string,
         productId: l.productId as string,
         fudoProductId: typeof l.fudoProductId === "string" ? l.fudoProductId : undefined,
+        fudoCategoryId: typeof l.fudoCategoryId === "string" ? l.fudoCategoryId : undefined,
         quantity: l.quantity as number,
         unitPrice: l.unitPrice as number,
         comment: sanitizeComment(l.comment),
@@ -139,7 +147,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: validation.error }, { status: 400 });
   }
 
-  const { idempotencyKey, mesaNumero, people, catalogRevision, lines } = validation.data;
+  const { idempotencyKey, mesaNumero, people, catalogRevision, customerName, customerPhone, customerEmail, lines } = validation.data;
   const sb = supabase();
 
   // ── Validar modificadores de combos contra la definición guardada ─────────
@@ -219,6 +227,9 @@ export async function POST(req: Request) {
       table_session_id: sessionId,
       idempotency_key: idempotencyKey,
       catalog_revision: catalogRevision ?? null,
+      customer_name: customerName ?? null,
+      customer_phone: customerPhone ?? null,
+      customer_email: customerEmail ?? null,
       status: "RECEIVED",
     })
     .select("id")
@@ -237,6 +248,7 @@ export async function POST(req: Request) {
       line_id: l.lineId,
       product_id: l.productId,
       fudo_product_id: l.fudoProductId ?? null,
+      fudo_category_id: l.fudoCategoryId ?? null,
       quantity: l.quantity,
       unit_price: l.unitPrice,
       comment: l.comment ?? null,

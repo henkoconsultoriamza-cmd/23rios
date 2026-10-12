@@ -14,6 +14,7 @@ type OrderItem = {
   key: string;
   productId: string;
   fudoProductId?: string;
+  fudoCategoryId?: string;
   name: string;
   image?: string;
   serving?: string;
@@ -31,6 +32,7 @@ type LaunchedOrder = {
   total: number;
   tableNumber: string;
   guestName?: string;
+  guestPhone?: string;
   guestCount?: number;
   status: "En preparación" | "Cuenta solicitada" | "Cerrado";
 };
@@ -231,6 +233,7 @@ export default function Home() {
   const [tableDraft, setTableDraft] = useState("");
   const [tablePromptOpen, setTablePromptOpen] = useState(false);
   const [guestNameDraft, setGuestNameDraft] = useState("");
+  const [guestPhoneDraft, setGuestPhoneDraft] = useState("");
   const [guestCountDraft, setGuestCountDraft] = useState("");
   const [billRequested, setBillRequested] = useState(false);
   const [customizeItemKey, setCustomizeItemKey] = useState<string | null>(null);
@@ -506,6 +509,7 @@ export default function Home() {
         fudoProductId: selectedServingOption
           ? selected.fudoData?.servingIds?.[selectedServingOption.label]
           : selected.fudoData?.productId,
+        fudoCategoryId: selected.fudoData?.categoryId !== undefined ? String(selected.fudoData.categoryId) : undefined,
         name: selected.name,
         image: selected.image,
         serving: selectedServingOption?.label,
@@ -536,7 +540,7 @@ export default function Home() {
     // Si ya hay pedidos lanzados, reusar los datos existentes sin mostrar el prompt
     if (launchedOrders.length > 0 && tableNumber) {
       const prev = launchedOrders[0];
-      doLaunchOrder(tableNumber, prev.guestName ?? "", prev.guestCount ? String(prev.guestCount) : "");
+      doLaunchOrder(tableNumber, prev.guestName ?? "", prev.guestPhone ?? "", prev.guestCount ? String(prev.guestCount) : "");
       return;
     }
     setTableDraft(tableNumber);
@@ -547,10 +551,10 @@ export default function Home() {
 
   function confirmLaunchOrder(event: FormEvent) {
     event.preventDefault();
-    doLaunchOrder(tableDraft.trim(), guestNameDraft.trim(), guestCountDraft);
+    doLaunchOrder(tableDraft.trim(), guestNameDraft.trim(), guestPhoneDraft.trim(), guestCountDraft);
   }
 
-  function doLaunchOrder(confirmedTable: string, guestName: string, guestCount: string) {
+  function doLaunchOrder(confirmedTable: string, guestName: string, guestPhone: string, guestCount: string) {
     trackEvent("cart_send");
     if (!/^\d{1,3}$/.test(confirmedTable)) return;
     const id = `R${Date.now().toString().slice(-6)}`;
@@ -561,6 +565,7 @@ export default function Home() {
       total: orderTotal,
       tableNumber: confirmedTable,
       guestName: guestName || undefined,
+      guestPhone: guestPhone || undefined,
       guestCount: guestCount ? Number(guestCount) : undefined,
       status: "En preparación",
     };
@@ -574,21 +579,21 @@ export default function Home() {
     setOrderOpen(false);
     setOrderFeedback("");
 
-    // Persistir en Supabase para métricas y envío a Fudo (fire-and-forget)
+    // Persistir en Supabase para métricas y envío a FUDO (fire-and-forget)
     const idempotencyKey = crypto.randomUUID();
-    const lines = record.items
-      .map((item) => ({
-        lineId: item.key,
-        productId: item.productId,
-        fudoProductId: item.fudoProductId,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        comment: [
-          ...(item.removedIngredients ?? []).map((r) => `Sin ${r}`),
-          item.customNote ?? "",
-        ].filter(Boolean).join(", ") || undefined,
-        modifiers: item.modifiers,
-      }));
+    const lines = record.items.map((item) => ({
+      lineId: item.key,
+      productId: item.productId,
+      fudoProductId: item.fudoProductId,
+      fudoCategoryId: item.fudoCategoryId,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      comment: [
+        ...(item.removedIngredients ?? []).map((r) => `Sin ${r}`),
+        item.customNote ?? "",
+      ].filter(Boolean).join(", ") || undefined,
+      modifiers: item.modifiers,
+    }));
 
     fetch("/api/orders", {
       method: "POST",
@@ -597,6 +602,8 @@ export default function Home() {
         idempotencyKey,
         mesaNumero: confirmedTable,
         people: record.guestCount ?? 1,
+        customerName: record.guestName,
+        customerPhone: record.guestPhone,
         lines,
       }),
     }).catch(() => { /* fallo silencioso — el pedido ya quedó en localStorage */ });
@@ -994,6 +1001,7 @@ export default function Home() {
             <label>Mesa número<input type="text" inputMode="numeric" pattern="[0-9]{1,3}" maxLength={3} value={tableDraft} onChange={(event) => setTableDraft(event.target.value.replace(/\D/g, ""))} readOnly={launchedOrders.length > 0} autoFocus aria-label="Número de mesa"/></label>
             {launchedOrders.length > 0 && <small>La mesa queda fijada durante esta cuenta. Se libera después del cobro.</small>}
             <label>Nombre y apellido<input type="text" value={guestNameDraft} onChange={(event) => setGuestNameDraft(event.target.value)} placeholder="Ej. María González" aria-label="Nombre y apellido"/></label>
+            <label>Teléfono<input type="tel" value={guestPhoneDraft} onChange={(event) => setGuestPhoneDraft(event.target.value)} placeholder="Ej. +54 9 261 000-0000" aria-label="Teléfono"/></label>
             <label>Personas en la mesa<input type="text" inputMode="numeric" maxLength={2} value={guestCountDraft} onChange={(event) => setGuestCountDraft(event.target.value.replace(/\D/g, ""))} placeholder="Ej. 4" aria-label="Cantidad de personas"/></label>
             <button type="submit" disabled={!/^\d{1,3}$/.test(tableDraft) || !isOnPremise}>Confirmar y lanzar pedido</button>
           </form>
@@ -1080,7 +1088,7 @@ export default function Home() {
 
               const openCustomize = () => {
                 if (!modalItem) {
-                  setOrderItems(prev => [...prev, { key: modalKey, productId: selected.id, fudoProductId: selectedServingOption ? selected.fudoData?.servingIds?.[selectedServingOption.label] : selected.fudoData?.productId, name: selected.name, image: selected.image, serving: selectedServingOption?.label, unitPrice: selectedPrice, quantity: 1 }]);
+                  setOrderItems(prev => [...prev, { key: modalKey, productId: selected.id, fudoProductId: selectedServingOption ? selected.fudoData?.servingIds?.[selectedServingOption.label] : selected.fudoData?.productId, fudoCategoryId: selected.fudoData?.categoryId !== undefined ? String(selected.fudoData.categoryId) : undefined, name: selected.name, image: selected.image, serving: selectedServingOption?.label, unitPrice: selectedPrice, quantity: 1 }]);
                   setOrderStatus("draft");
                 }
                 setCustomizeItemKey(modalKey);

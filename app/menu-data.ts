@@ -32,6 +32,7 @@ export type Product = {
   outOfStock?: boolean;
   removableIngredients?: string[];
   fudoData?: {
+    categoryId?: number;                 // ID de categoría en Fudo (productCategoryId en el body del pedido)
     productId?: string;                  // ID numérico en Fudo (ej: "1476") — productos sin servings
     servingIds?: Record<string, string>; // Para cervezas: { "Pinta": "22", "Lata": "516", ... }
     modifierGroupId?: string;            // ID del grupo modificador en Fudo (ej: "47")
@@ -172,7 +173,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     nutrition: nn,
     beerProfile: { style: "Golden Ale", descriptors: ["Dorada", "Refrescante", "Balanceada"], ibu: "20", abv: "4,5%", srm: "8 EBC" },
     servings: beerServingsClassic,
-    fudoData: { servingIds: { "Pinta": "22", "Lata": "516", "Growler": "77" } },
+    fudoData: { categoryId: 70, servingIds: { "Pinta": "22", "Lata": "516", "Growler": "77" } },
   },
   {
     id: "scottish",
@@ -190,7 +191,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     nutrition: nn,
     beerProfile: { style: "Scottish Export", descriptors: ["Cobriza", "Caramelo", "Frutos secos"], ibu: "25", abv: "5,2%", srm: "40 EBC" },
     servings: beerServingsClassic,
-    fudoData: { servingIds: { "Pinta": "21", "Lata": "518", "Growler": "76" } },
+    fudoData: { categoryId: 71, servingIds: { "Pinta": "21", "Lata": "518", "Growler": "76" } },
   },
   {
     id: "ipa",
@@ -208,7 +209,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     nutrition: nn,
     beerProfile: { style: "IPA", descriptors: ["Cítrica", "Resinosa", "Premiada"], ibu: "52", abv: "5,0%", srm: "13 EBC" },
     servings: beerServingsIPA,
-    fudoData: { servingIds: { "Pinta": "25", "Lata": "517", "Growler": "81" } },
+    fudoData: { categoryId: 73, servingIds: { "Pinta": "25", "Lata": "517", "Growler": "81" } },
   },
   {
     id: "stout",
@@ -225,7 +226,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     price: 5000,
     nutrition: nn,
     beerProfile: { style: "Stout", descriptors: ["Negra", "Café", "Sedosa"], ibu: "30", abv: "4,5%", srm: "70 EBC" },
-    fudoData: { servingIds: { "Copa": "24", "Lata": "356", "Growler": "75" } },
+    fudoData: { categoryId: 72, servingIds: { "Copa": "24", "Lata": "356", "Growler": "75" } },
   },
   {
     id: "honey",
@@ -242,7 +243,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     price: 5000,
     nutrition: nn,
     beerProfile: { style: "Honey Ale", descriptors: ["Miel", "Floral", "Mendocina"], ibu: "23", abv: "5,0%", srm: "12 EBC" },
-    fudoData: { servingIds: { "Pinta": "23", "Growler": "78" } },
+    fudoData: { categoryId: 74, servingIds: { "Pinta": "23", "Growler": "78" } },
   },
 
   // ── CERVEZAS ESPECIALES ───────────────────────────────────────────────────
@@ -261,7 +262,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     price: 4500,
     nutrition: nn,
     beerProfile: { style: "Lager", descriptors: ["Dorada", "Suave", "Alemana"], ibu: "—", abv: "—", srm: "—" },
-    fudoData: { servingIds: { "Pinta": "607", "Media pinta": "878" } }, // confirmar con 23 Ríos
+    fudoData: { categoryId: 75, servingIds: { "Pinta": "607", "Media pinta": "878" } }, // confirmar con 23 Ríos
   },
   {
     id: "american-ipa",
@@ -313,7 +314,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 10200,
     nutrition: nn,
-    fudoData: { productId: "1320" }, // confirmar con 23 Ríos (existe como ID 1320)
+    fudoData: { categoryId: 63, productId: "1320" }, // confirmar con 23 Ríos (existe como ID 1320)
   },
   {
     id: "papas-23-rios",
@@ -329,7 +330,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Lácteos"],
     price: 10100,
     nutrition: nn,
-    fudoData: { productId: "1321" }, // confirmar con 23 Ríos
+    fudoData: { categoryId: 63, productId: "1321" }, // confirmar con 23 Ríos
   },
   {
     id: "nuggets-brocoli",
@@ -345,7 +346,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten"],
     price: 10800,
     nutrition: nn,
-    fudoData: { productId: "180" }, // confirmar con 23 Ríos
+    fudoData: { categoryId: 63, productId: "180" }, // confirmar con 23 Ríos
   },
   {
     id: "picada",
@@ -361,7 +362,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten", "Lácteos"],
     price: 17500,
     nutrition: nn,
-    fudoData: { productId: "55" }, // ✅ match exacto confirmado
+    fudoData: { categoryId: 80, productId: "55" }, // ✅ match exacto confirmado
   },
   {
     id: "provoleta",
@@ -377,7 +378,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Lácteos"],
     price: 19600,
     nutrition: nn,
-    fudoData: { productId: "1487" }, // confirmar con 23 Ríos
+    fudoData: { categoryId: 80, productId: "1487" }, // confirmar con 23 Ríos
   },
   {
     id: "general-tso",
@@ -393,7 +394,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten", "Soja"],
     price: 14100,
     nutrition: nn,
-    fudoData: { productId: "1477" }, // confirmar con 23 Ríos
+    fudoData: { categoryId: 22, productId: "1477" }, // confirmar con 23 Ríos
   },
   {
     id: "experiencia-alemana",
@@ -427,7 +428,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten", "Lácteos"],
     price: 25100,
     nutrition: nn,
-    fudoData: { productId: "1330" },
+    fudoData: { categoryId: 21, productId: "1330" },
   },
   {
     id: "pizza-napolitana",
@@ -443,7 +444,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten", "Lácteos"],
     price: 24300,
     nutrition: nn,
-    fudoData: { productId: "1375" },
+    fudoData: { categoryId: 21, productId: "1375" },
   },
   {
     id: "pizza-calabresa",
@@ -459,7 +460,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten", "Lácteos"],
     price: 0,
     nutrition: nn,
-    fudoData: { productId: "1331" },
+    fudoData: { categoryId: 21, productId: "1331" },
   },
   {
     id: "pizza-americana",
@@ -475,7 +476,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten", "Lácteos", "Huevo"],
     price: 0,
     nutrition: nn,
-    fudoData: { productId: "1333" },
+    fudoData: { categoryId: 21, productId: "1333" },
   },
 
   // ── ENTRE PANES Y MÁS ────────────────────────────────────────────────────
@@ -493,7 +494,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten", "Lácteos", "Huevo"],
     price: 15600,
     nutrition: nn,
-    fudoData: { productId: "1326" },
+    fudoData: { categoryId: 83, productId: "1326" },
   },
   {
     id: "smash-doble-queso",
@@ -509,7 +510,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten", "Lácteos"],
     price: 15000,
     nutrition: nn,
-    fudoData: { productId: "1513" }, // confirmar — Fudo tiene "Smash Doble Cheddar Sin tacc"
+    fudoData: { categoryId: 83, productId: "1513" }, // confirmar — Fudo tiene "Smash Doble Cheddar Sin tacc"
   },
   {
     id: "smash-23",
@@ -525,7 +526,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten"],
     price: 15500,
     nutrition: nn,
-    fudoData: { productId: "1476" },
+    fudoData: { categoryId: 83, productId: "1476" },
   },
   {
     id: "lomo-clasico",
@@ -541,7 +542,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten", "Lácteos", "Huevo"],
     price: 27700,
     nutrition: nn,
-    fudoData: { productId: "1373" }, // Fudo: "Lomo Completo 30cm"
+    fudoData: { categoryId: 84, productId: "1373" }, // Fudo: "Lomo Completo 30cm"
   },
 
   // ── EMPANADAS ARTESANALES ─────────────────────────────────────────────────
@@ -558,7 +559,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten"],
     price: 2700,
     nutrition: nn,
-    fudoData: { productId: "1318" },
+    fudoData: { categoryId: 64, productId: "1318" },
   },
   {
     id: "empanadas-carne",
@@ -590,7 +591,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten"],
     price: 18000,
     nutrition: nn,
-    fudoData: { productId: "1485" }, // Fudo: "Nuggets infantil"
+    fudoData: { categoryId: 63, productId: "1485" }, // Fudo: "Nuggets infantil"
   },
   {
     id: "kid-hamburguesa",
@@ -605,7 +606,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten", "Lácteos"],
     price: 18000,
     nutrition: nn,
-    fudoData: { productId: "1224" }, // Fudo: "Burger Infantil"
+    fudoData: { categoryId: 83, productId: "1224" }, // Fudo: "Burger Infantil"
   },
 
   // ── POSTRES ───────────────────────────────────────────────────────────────
@@ -623,7 +624,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten", "Lácteos", "Huevo"],
     price: 6500,
     nutrition: nn,
-    fudoData: { productId: "1334" },
+    fudoData: { categoryId: 4, productId: "1334" },
   },
   {
     id: "flan",
@@ -639,7 +640,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Lácteos", "Huevo"],
     price: 6500,
     nutrition: nn,
-    fudoData: { productId: "1335" },
+    fudoData: { categoryId: 4, productId: "1335" },
   },
   {
     id: "lemon-pie",
@@ -654,7 +655,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten", "Lácteos", "Huevo"],
     price: 6500,
     nutrition: nn,
-    fudoData: { productId: "1010" }, // Fudo: "Porcion Lemon pie"
+    fudoData: { categoryId: 4, productId: "1010" }, // Fudo: "Porcion Lemon pie"
   },
   {
     id: "brownie",
@@ -669,7 +670,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten", "Lácteos", "Huevo"],
     price: 6500,
     nutrition: nn,
-    fudoData: { productId: "1471" }, // Fudo: "Porcion Brownie"
+    fudoData: { categoryId: 4, productId: "1471" }, // Fudo: "Porcion Brownie"
   },
 
   // ── TRAGOS CLÁSICOS ───────────────────────────────────────────────────────
@@ -686,7 +687,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 8000,
     nutrition: nn,
-    fudoData: { productId: "39" }, // Fudo: "Fernet 500cc" — confirmar
+    fudoData: { categoryId: 121, productId: "39" }, // Fudo: "Fernet 500cc" — confirmar
   },
   {
     id: "aperol-spritz",
@@ -701,7 +702,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 9900,
     nutrition: nn,
-    fudoData: { productId: "43" }, // Fudo: "Aperol 500cc" — confirmar
+    fudoData: { categoryId: 121, productId: "43" }, // Fudo: "Aperol 500cc" — confirmar
   },
   {
     id: "cuba-libre",
@@ -716,7 +717,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 8900,
     nutrition: nn,
-    fudoData: { productId: "42" }, // ✅ confirmado — "Cuba libre 500cc"
+    fudoData: { categoryId: 121, productId: "42" }, // ✅ confirmado — "Cuba libre 500cc"
   },
   {
     id: "vermouth-rosso",
@@ -731,7 +732,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 7000,
     nutrition: nn,
-    fudoData: { productId: "1094" }, // Fudo: "Carpano Rosso" — confirmar
+    fudoData: { categoryId: 121, productId: "1094" }, // Fudo: "Carpano Rosso" — confirmar
   },
   {
     id: "cynar",
@@ -746,7 +747,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 7100,
     nutrition: nn,
-    fudoData: { productId: "44" }, // ✅ match exacto confirmado
+    fudoData: { categoryId: 121, productId: "44" }, // ✅ match exacto confirmado
   },
   {
     id: "mojito-clasico",
@@ -761,7 +762,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 7600,
     nutrition: nn,
-    fudoData: { productId: "38" }, // Fudo: "Mojito 500cc Clasico" — confirmar
+    fudoData: { categoryId: 121, productId: "38" }, // Fudo: "Mojito 500cc Clasico" — confirmar
   },
   {
     id: "mojito-malibu",
@@ -776,7 +777,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 9400,
     nutrition: nn,
-    fudoData: { productId: "37" }, // Fudo: "Mojito 500cc Malibu" — confirmar
+    fudoData: { categoryId: 121, productId: "37" }, // Fudo: "Mojito 500cc Malibu" — confirmar
   },
   {
     id: "campari",
@@ -791,7 +792,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 7000,
     nutrition: nn,
-    fudoData: { productId: "41" }, // ✅ confirmado — "Campari 500cc Tonic"
+    fudoData: { categoryId: 121, productId: "41" }, // ✅ confirmado — "Campari 500cc Tonic"
   },
   {
     id: "gin-gordons",
@@ -806,7 +807,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 0,
     nutrition: nn,
-    fudoData: { productId: "86" }, // ✅ confirmado — "Gin Gordon"
+    fudoData: { categoryId: 121, productId: "86" }, // ✅ confirmado — "Gin Gordon"
   },
   {
     id: "gin-beefeater",
@@ -821,7 +822,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 10200,
     nutrition: nn,
-    fudoData: { productId: "165" }, // ✅ confirmado — "Beefeater"
+    fudoData: { categoryId: 121, productId: "165" }, // ✅ confirmado — "Beefeater"
   },
   {
     id: "gin-bulldog",
@@ -836,7 +837,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 12700,
     nutrition: nn,
-    fudoData: { productId: "523" }, // ✅ match exacto confirmado
+    fudoData: { categoryId: 121, productId: "523" }, // ✅ match exacto confirmado
   },
   {
     id: "negroni",
@@ -851,7 +852,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 7200,
     nutrition: nn,
-    fudoData: { productId: "51" }, // ✅ match exacto confirmado
+    fudoData: { categoryId: 121, productId: "51" }, // ✅ match exacto confirmado
   },
   {
     id: "boulevardier",
@@ -866,7 +867,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 8700,
     nutrition: nn,
-    fudoData: { productId: "1310" },
+    fudoData: { categoryId: 121, productId: "1310" },
   },
   {
     id: "garibaldi",
@@ -881,7 +882,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 7000,
     nutrition: nn,
-    fudoData: { productId: "1376" },
+    fudoData: { categoryId: 121, productId: "1376" },
   },
   {
     id: "daiquiri",
@@ -896,7 +897,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 8000,
     nutrition: nn,
-    fudoData: { productId: "1308" }, // Fudo: "Daiquiri de Frutos Rojos" — confirmar
+    fudoData: { categoryId: 121, productId: "1308" }, // Fudo: "Daiquiri de Frutos Rojos" — confirmar
   },
 
   // ── PARA PREPARAR ─────────────────────────────────────────────────────────
@@ -913,7 +914,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 13500,
     nutrition: nn,
-    fudoData: { productId: "329" }, // Fudo: "Fernet para preparar" — confirmar o crear combo
+    fudoData: { categoryId: 118, productId: "329" }, // Fudo: "Fernet para preparar" — confirmar o crear combo
   },
   {
     id: "prep-ron",
@@ -928,7 +929,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 15500,
     nutrition: nn,
-    fudoData: { productId: "1121" }, // Fudo: "Ron para preparar" — confirmar
+    fudoData: { categoryId: 118, productId: "1121" }, // Fudo: "Ron para preparar" — confirmar
   },
   {
     id: "prep-vodka",
@@ -958,7 +959,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 28200,
     nutrition: nn,
-    fudoData: { productId: "1542" }, // Fudo: "Combo de Jager" — confirmar
+    fudoData: { categoryId: 118, productId: "1542" }, // Fudo: "Combo de Jager" — confirmar
   },
 
   // ── WHISKIES ──────────────────────────────────────────────────────────────
@@ -975,7 +976,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten"],
     price: 8500,
     nutrition: nn,
-    fudoData: { productId: "1066" }, // Fudo: "Whisky Johnnie Walker Red Label Medida"
+    fudoData: { categoryId: 90, productId: "1066" }, // Fudo: "Whisky Johnnie Walker Red Label Medida"
   },
   {
     id: "whisky-jim-beam",
@@ -990,7 +991,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten"],
     price: 8500,
     nutrition: nn,
-    fudoData: { productId: "218" }, // ✅ match exacto confirmado — "Jim beam"
+    fudoData: { categoryId: 90, productId: "218" }, // ✅ match exacto confirmado — "Jim beam"
   },
   {
     id: "whisky-double-black",
@@ -1005,7 +1006,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten"],
     price: 12500,
     nutrition: nn,
-    fudoData: { productId: "920" }, // Fudo: "Whisky Johnnie Walker Double Black Medida"
+    fudoData: { categoryId: 90, productId: "920" }, // Fudo: "Whisky Johnnie Walker Double Black Medida"
   },
 
   // ── VINOS ─────────────────────────────────────────────────────────────────
@@ -1022,7 +1023,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 14000,
     nutrition: nn,
-    fudoData: { productId: "1167" }, // Fudo: "Vino Malbec Las Perdices"
+    fudoData: { categoryId: 12, productId: "1167" }, // Fudo: "Vino Malbec Las Perdices"
   },
   {
     id: "cabernet-franc",
@@ -1037,7 +1038,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 14000,
     nutrition: nn,
-    fudoData: { productId: "1510" }, // Fudo: "Vino Cabernet Franc Chac Chac"
+    fudoData: { categoryId: 12, productId: "1510" }, // Fudo: "Vino Cabernet Franc Chac Chac"
   },
   {
     id: "sauvignon-blanc",
@@ -1052,7 +1053,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 14000,
     nutrition: nn,
-    fudoData: { productId: "1508" }, // Fudo: "Vino Las Perdices Chac Chac Sauvignon Blanc"
+    fudoData: { categoryId: 12, productId: "1508" }, // Fudo: "Vino Las Perdices Chac Chac Sauvignon Blanc"
   },
   {
     id: "reserva-malbec",
@@ -1067,7 +1068,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 18000,
     nutrition: nn,
-    fudoData: { productId: "1507" }, // Fudo: "Vino Reserva las Perdices Malbec"
+    fudoData: { categoryId: 12, productId: "1507" }, // Fudo: "Vino Reserva las Perdices Malbec"
   },
 
   // ── COMBOS ────────────────────────────────────────────────────────────────
@@ -1084,7 +1085,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 70000,
     nutrition: nn,
-    fudoData: { productId: "49" }, // Fudo: "Combo Fernet" — confirmar
+    fudoData: { categoryId: 13, productId: "49" }, // Fudo: "Combo Fernet" — confirmar
   },
   {
     id: "combo-ron",
@@ -1099,7 +1100,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 74000,
     nutrition: nn,
-    fudoData: { productId: "148" }, // Fudo: "Combo ron dorado Havanna" — confirmar
+    fudoData: { categoryId: 13, productId: "148" }, // Fudo: "Combo ron dorado Havanna" — confirmar
   },
   {
     id: "combo-vodka",
@@ -1114,7 +1115,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 60000,
     nutrition: nn,
-    fudoData: { productId: "191" }, // Fudo: "Combo Vodka" — confirmar
+    fudoData: { categoryId: 13, productId: "191" }, // Fudo: "Combo Vodka" — confirmar
   },
   {
     id: "combo-gin-gordons",
@@ -1129,7 +1130,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 74000,
     nutrition: nn,
-    fudoData: { productId: "233" }, // Fudo: "Combo Gin Gordons" — confirmar
+    fudoData: { categoryId: 13, productId: "233" }, // Fudo: "Combo Gin Gordons" — confirmar
   },
   {
     id: "combo-gin-beefeater",
@@ -1144,7 +1145,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 78000,
     nutrition: nn,
-    fudoData: { productId: "166" }, // Fudo: "Combo de Beefeater" — confirmar
+    fudoData: { categoryId: 13, productId: "166" }, // Fudo: "Combo de Beefeater" — confirmar
   },
 
   // ── SIN ALCOHOL / GASEOSAS ────────────────────────────────────────────────
@@ -1161,7 +1162,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 3500,
     nutrition: nn,
-    fudoData: { productId: "527" }, // Fudo: "Coca Cola 500ml"
+    fudoData: { categoryId: 98, productId: "527" }, // Fudo: "Coca Cola 500ml"
   },
   {
     id: "coca-zero",
@@ -1176,7 +1177,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 3500,
     nutrition: nn,
-    fudoData: { productId: "12" }, // Fudo: "CocaCola Zero 500ml"
+    fudoData: { categoryId: 98, productId: "12" }, // Fudo: "CocaCola Zero 500ml"
   },
   {
     id: "sprite",
@@ -1191,7 +1192,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 3500,
     nutrition: nn,
-    fudoData: { productId: "529" }, // Fudo: "Sprite 500ml"
+    fudoData: { categoryId: 98, productId: "529" }, // Fudo: "Sprite 500ml"
   },
   {
     id: "agua-saborizada",
@@ -1221,7 +1222,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 3000,
     nutrition: nn,
-    fudoData: { productId: "13" }, // Fudo: "Schweppes tonica 310cc" — confirmar si es el mismo
+    fudoData: { categoryId: 98, productId: "13" }, // Fudo: "Schweppes tonica 310cc" — confirmar si es el mismo
   },
   {
     id: "pomelo",
@@ -1236,7 +1237,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 3000,
     nutrition: nn,
-    fudoData: { productId: "172" }, // Fudo: "Lata Pomelo PDT 269ml"
+    fudoData: { categoryId: 98, productId: "172" }, // Fudo: "Lata Pomelo PDT 269ml"
   },
   {
     id: "agua",
@@ -1266,7 +1267,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 6000,
     nutrition: nn,
-    fudoData: { productId: "84" }, // ✅ match exacto confirmado
+    fudoData: { categoryId: 11, productId: "84" }, // ✅ match exacto confirmado
   },
   {
     id: "jarra-limonada",
@@ -1281,7 +1282,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 9000,
     nutrition: nn,
-    fudoData: { productId: "129" }, // Fudo: "Jarra Limonada" — verificar precio
+    fudoData: { categoryId: 11, productId: "129" }, // Fudo: "Jarra Limonada" — verificar precio
   },
 ];
 
