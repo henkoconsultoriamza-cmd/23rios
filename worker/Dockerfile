@@ -11,9 +11,9 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-ARG CACHEBUST=20261013d
 COPY package.json ./
 RUN npm install
+RUN npm install puppeteer-extra puppeteer-extra-plugin-stealth @supabase/supabase-js
 
 COPY . .
 
