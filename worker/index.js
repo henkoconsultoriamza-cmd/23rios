@@ -147,19 +147,26 @@ async function getWarmPage() {
   await warmPage.setUserAgent(
     "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
   );
-  // Interceptar requests para capturar headers de auth que usa Angular
+  // Capturar token de sesión de las respuestas de FUDO durante inicialización
+  let fudoSessionToken = null;
   await warmPage.setRequestInterception(true);
   warmPage.on("request", req => {
     if (req.url().includes("integrations.fu.do")) {
-      console.log(`[worker] FUDO request: ${req.method()} ${req.url()}`);
-      const headers = req.headers();
-      const authHeaders = Object.entries(headers)
-        .filter(([k]) => k.toLowerCase().includes("auth") || k.toLowerCase().includes("token") || k.toLowerCase() === "x-api-key" || k.toLowerCase() === "authorization")
-        .map(([k, v]) => `${k}: ${v}`);
-      if (authHeaders.length) console.log(`[worker] Auth headers:`, authHeaders.join(" | "));
-      else console.log(`[worker] Headers:`, JSON.stringify(headers).slice(0, 300));
+      console.log(`[worker] → ${req.method()} ${req.url().replace("https://integrations.fu.do", "")}`);
+      const allHeaders = req.headers();
+      console.log(`[worker] req headers: ${JSON.stringify(allHeaders).slice(0, 400)}`);
     }
     req.continue();
+  });
+  warmPage.on("response", async res => {
+    if (res.url().includes("integrations.fu.do")) {
+      const resHeaders = res.headers();
+      console.log(`[worker] ← ${res.status()} ${res.url().replace("https://integrations.fu.do", "")} headers: ${JSON.stringify(resHeaders).slice(0, 300)}`);
+      try {
+        const body = await res.text();
+        console.log(`[worker] body: ${body.slice(0, 200)}`);
+      } catch {}
+    }
   });
 
   await warmPage.goto(FUDO_MENU_URL, { waitUntil: "networkidle2", timeout: 45000 });
