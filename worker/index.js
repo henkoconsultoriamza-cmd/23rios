@@ -147,15 +147,23 @@ async function getWarmPage() {
   await warmPage.setUserAgent(
     "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
   );
+  // Interceptar requests para capturar headers de auth que usa Angular
+  await warmPage.setRequestInterception(true);
+  warmPage.on("request", req => {
+    if (req.url().includes("integrations.fu.do")) {
+      console.log(`[worker] FUDO request: ${req.method()} ${req.url()}`);
+      const headers = req.headers();
+      const authHeaders = Object.entries(headers)
+        .filter(([k]) => k.toLowerCase().includes("auth") || k.toLowerCase().includes("token") || k.toLowerCase() === "x-api-key" || k.toLowerCase() === "authorization")
+        .map(([k, v]) => `${k}: ${v}`);
+      if (authHeaders.length) console.log(`[worker] Auth headers:`, authHeaders.join(" | "));
+      else console.log(`[worker] Headers:`, JSON.stringify(headers).slice(0, 300));
+    }
+    req.continue();
+  });
+
   await warmPage.goto(FUDO_MENU_URL, { waitUntil: "networkidle2", timeout: 45000 });
   await warmPage.waitForTimeout(3000);
-
-  const lsData = await warmPage.evaluate(() => {
-    const raw = localStorage.getItem("23rios");
-    return raw ? JSON.parse(raw) : null;
-  }).catch(() => null);
-  console.log("[worker] localStorage[23rios]:", JSON.stringify(lsData).slice(0, 500));
-
   console.log("[worker] Pestaña caliente lista");
   return warmPage;
 }
