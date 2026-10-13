@@ -909,7 +909,7 @@ export default function Home() {
               {ev.imageUrl && <div className="event-poster"><img src={ev.imageUrl} alt={ev.title}/></div>}
               <div className="event-information">
                 <h3>{ev.title}</h3>
-                {(ev.date || ev.time) && <p className="event-date-text">{ev.date}{ev.date && ev.time ? " · " : ""}{ev.time}</p>}
+                {(ev.date || ev.time || ev.timeSlots?.length) && <p className="event-date-text">{ev.date}{(ev.date && (ev.timeSlots?.length || ev.time)) ? " · " : ""}{(ev.timeSlots?.filter(Boolean) ?? (ev.time ? [ev.time] : [])).join(" / ")}</p>}
                 {ev.subtitle && <p className="event-description">{ev.subtitle}</p>}
                 {ev.ctaLabel && (ev.ctaHref
                   ? <a className="event-cta" href={ev.ctaHref} target="_blank" rel="noopener noreferrer">{ev.ctaLabel}</a>

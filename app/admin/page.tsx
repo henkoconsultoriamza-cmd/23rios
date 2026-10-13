@@ -1314,7 +1314,22 @@ export default function AdminPage() {
                     <label className="wide">Título del evento<input value={eventDraft.title} onChange={(e) => updateEventDraft("title", e.target.value)} placeholder="Ej. Noche de Jazz en 23 Ríos"/></label>
                     <label className="wide">Subtítulo / descripción<input value={eventDraft.subtitle ?? ""} onChange={(e) => updateEventDraft("subtitle", e.target.value || undefined)} placeholder="Descripción breve (opcional)"/></label>
                     <label>Fecha<input type="date" value={eventDraft.date ?? ""} onChange={(e) => updateEventDraft("date", e.target.value || undefined)}/></label>
-                    <label>Hora<input type="time" value={eventDraft.time ?? ""} onChange={(e) => updateEventDraft("time", e.target.value || undefined)}/></label>
+                    <div className="wide">
+                      <p style={{fontSize:12,color:"var(--muted)",marginBottom:6}}>Horarios</p>
+                      {(eventDraft.timeSlots ?? (eventDraft.time ? [eventDraft.time] : [""])).map((slot, idx) => {
+                        const slots = eventDraft.timeSlots ?? (eventDraft.time ? [eventDraft.time] : [""]);
+                        return (
+                          <div key={idx} style={{display:"flex",gap:8,marginBottom:6,alignItems:"center"}}>
+                            <input type="time" value={slot} style={{flex:1}} onChange={(e) => {
+                              const next = [...slots]; next[idx] = e.target.value;
+                              updateEventDraft("timeSlots", next); updateEventDraft("time", undefined);
+                            }}/>
+                            {slots.length > 1 && <button type="button" onClick={() => { const next = slots.filter((_,i)=>i!==idx); updateEventDraft("timeSlots", next.length ? next : undefined); }} style={{background:"none",border:"1px solid var(--muted)",borderRadius:6,padding:"4px 8px",cursor:"pointer",color:"var(--muted)"}}>✕</button>}
+                          </div>
+                        );
+                      })}
+                      <button type="button" onClick={() => { const slots = eventDraft.timeSlots ?? (eventDraft.time ? [eventDraft.time] : []); updateEventDraft("timeSlots", [...slots, ""]); updateEventDraft("time", undefined); }} style={{fontSize:12,background:"none",border:"1px dashed var(--muted)",borderRadius:6,padding:"4px 12px",cursor:"pointer",color:"var(--muted)"}}>＋ Agregar horario</button>
+                    </div>
                     <div className="wide admin-event-image-field">
                       {eventDraft.imageUrl && <img src={eventDraft.imageUrl} alt="Preview" className="admin-event-image-preview"/>}
                       <label className="admin-upload-slim">Subir imagen — 900 × 500 px recomendado para móvil<input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; if (file.size > 2_097_152) { setNotice("La imagen debe pesar menos de 2 MB."); e.target.value = ""; return; } setNotice("Subiendo imagen..."); uploadImage(file, "events").then((url) => { updateEventDraft("imageUrl", url); setNotice(""); }).catch(() => setNotice("Error al subir la imagen.")); }}/></label>
@@ -1389,7 +1404,7 @@ export default function AdminPage() {
                     : <div className="admin-preview-event-img admin-preview-no-image"><span>Sin imagen</span></div>}
                   <div className="admin-preview-copy" style={{padding: "14px 0 0"}}>
                     <h2 style={{fontSize: 22, marginBottom: 8}}>{eventDraft.title || <em>Sin título</em>}</h2>
-                    {(eventDraft.date || eventDraft.time) && <p className="event-date-text" style={{fontSize: 13}}>{eventDraft.date}{eventDraft.date && eventDraft.time ? " · " : ""}{eventDraft.time}</p>}
+                    {(eventDraft.date || eventDraft.time || eventDraft.timeSlots?.length) && <p className="event-date-text" style={{fontSize: 13}}>{eventDraft.date}{(eventDraft.date && (eventDraft.timeSlots?.length || eventDraft.time)) ? " · " : ""}{(eventDraft.timeSlots?.filter(Boolean) ?? (eventDraft.time ? [eventDraft.time] : [])).join(" / ")}</p>}
                     {eventDraft.subtitle && <p className="admin-preview-desc">{eventDraft.subtitle}</p>}
                     {eventDraft.ctaLabel && <span className="event-cta" style={{display:"inline-block", marginTop:10}}>{eventDraft.ctaLabel}</span>}
                   </div>
