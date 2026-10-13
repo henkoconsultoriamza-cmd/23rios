@@ -155,6 +155,8 @@ async function getWarmPage() {
       console.log(`[worker] → ${req.method()} ${req.url().replace("https://integrations.fu.do", "")}`);
       const allHeaders = req.headers();
       console.log(`[worker] req headers: ${JSON.stringify(allHeaders).slice(0, 400)}`);
+      const postData = req.postData();
+      if (postData) console.log(`[worker] req body: ${postData.slice(0, 800)}`);
     }
     req.continue();
   });
