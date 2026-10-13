@@ -62,16 +62,41 @@ async function refreshSession() {
     await warmPage.waitForTimeout(5000);
   } else {
     // Ping silencioso para mantener la sesión viva
-    await warmPage.reload({ waitUntil: "networkidle2", timeout: 30000 }).catch(() => {});
-    await warmPage.waitForTimeout(3000);
+    try {
+      await warmPage.reload({ waitUntil: "networkidle2", timeout: 30000 });
+      await warmPage.waitForTimeout(3000);
+    } catch (e) {
+      console.warn("[worker] Error en reload, recreando página:", e.message);
+      warmPage = null;
+      return refreshSession();
+    }
   }
 
-  // Extraer cookies y armar el header
-  const cookies = await warmPage.cookies();
-  sessionCookieHeader = cookies.map(c => `${c.name}=${c.value}`).join("; ");
+  // Extraer token de sesión desde localStorage (FUDO usa JWT, no cookies)
+  const sessionData = await warmPage.evaluate(() => {
+    const data = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      data[key] = localStorage.getItem(key);
+    }
+    return data;
+  }).catch(() => ({}));
+
+  console.log(`[worker] localStorage keys: ${Object.keys(sessionData).join(", ") || "(vacío)"}`);
+
+  // Buscar token JWT en localStorage
+  const tokenKey = Object.keys(sessionData).find(k =>
+    k.toLowerCase().includes("token") || k.toLowerCase().includes("auth") || k.toLowerCase().includes("session")
+  );
+  if (tokenKey) {
+    sessionCookieHeader = `token=${sessionData[tokenKey]}`;
+    console.log(`[worker] Token encontrado en key: ${tokenKey}`);
+  } else {
+    sessionCookieHeader = null;
+    console.warn("[worker] No se encontró token de sesión en localStorage");
+  }
+
   lastCookieRefresh = Date.now();
-  console.log(`[worker] Sesión renovada — ${cookies.length} cookies`);
-  if (cookies.length === 0) console.warn("[worker] ADVERTENCIA: sin cookies — FUDO puede rechazar pedidos");
 
   // Catálogo solo la primera vez
   if (!fudoProductsCache) {
