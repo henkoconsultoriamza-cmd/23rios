@@ -540,7 +540,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten"],
     price: 5000,
     nutrition: nn,
-    fudoData: { categoryId: 64, productId: "PLT-005" },
+    fudoData: { categoryId: 64, productId: "1317" },
   },
 
   // ── MENÚ INFANTIL ─────────────────────────────────────────────────────────
@@ -1081,7 +1081,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 60000,
     nutrition: nn,
-    fudoData: { categoryId: 13, productId: "1365" },
+    fudoData: { categoryId: 13, productId: "191" },
   },
   {
     id: "combo-gin-gordons",

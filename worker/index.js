@@ -1,53 +1,122 @@
 /**
  * Worker de automatización FUDO para 23 Ríos
  *
- * Flujo:
- * 1. Polling cada 10s a Supabase order_outbox buscando PENDING
- * 2. Por cada pedido pendiente, abre menu.fu.do/23rios/self-service con Puppeteer
- * 3. Agrega cada producto al carrito navegando la UI de FUDO
- * 4. Completa el formulario de checkout con los datos del cliente
- * 5. Confirma el pedido — FUDO lo recibe como si viniera de su propio menú
+ * Arquitectura:
+ * - Puppeteer mantiene UNA pestaña caliente solo para gestionar la sesión FUDO
+ * - Las cookies se extraen de esa pestaña y se usan en fetch() nativo de Node.js
+ * - Todos los pedidos se procesan en paralelo con fetch directo — sin límite de concurrencia
+ * - Las cookies se renuevan cada COOKIE_REFRESH_MS para mantener la sesión viva
  */
 
-const puppeteer = require("puppeteer");
+const puppeteer = require("puppeteer-extra");
+const StealthPlugin = require("puppeteer-extra-plugin-stealth");
+puppeteer.use(StealthPlugin());
 const { createClient } = require("@supabase/supabase-js");
 
 const FUDO_MENU_URL = "https://menu.fu.do/23rios/self-service";
-const POLL_INTERVAL_MS = 10_000;
-const LEASE_MS = 120_000; // 2 minutos de lease por pedido
+const FUDO_ORDERS_URL = "https://integrations.fu.do/fudo/orders/";
+const FUDO_PRODUCTS_URL = "https://integrations.fu.do/fudo/products/?a=23rios";
+const POLL_INTERVAL_MS = 3_000;
+const LEASE_MS = 120_000;
+const COOKIE_REFRESH_MS = 8 * 60 * 1000; // renovar sesión cada 8 minutos
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// ── Estado compartido ──────────────────────────────────────────────────────────
+let sharedBrowser = null;
+let warmPage = null;
+let sessionCookieHeader = null;   // string listo para usar en header Cookie
+let fudoProductsCache = null;
+let lastCookieRefresh = 0;
+
+// ── Browser ────────────────────────────────────────────────────────────────────
+async function getBrowser() {
+  if (!sharedBrowser || !sharedBrowser.connected) {
+    console.log("[worker] Iniciando Chrome...");
+    sharedBrowser = await puppeteer.launch({
+      headless: "new",
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium",
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+    });
+    console.log("[worker] Chrome listo");
+    warmPage = null;
+  }
+  return sharedBrowser;
+}
+
+// ── Sesión FUDO ────────────────────────────────────────────────────────────────
+async function refreshSession() {
+  const browser = await getBrowser();
+
+  if (!warmPage || warmPage.isClosed()) {
+    console.log("[worker] Calentando pestaña FUDO...");
+    warmPage = await browser.newPage();
+    await warmPage.setViewport({ width: 390, height: 844 });
+    await warmPage.setUserAgent(
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
+    );
+    await warmPage.goto(FUDO_MENU_URL, { waitUntil: "domcontentloaded", timeout: 30000 });
+    await warmPage.waitForTimeout(2500);
+  } else {
+    // Ping silencioso para mantener la sesión viva
+    await warmPage.reload({ waitUntil: "domcontentloaded", timeout: 20000 }).catch(() => {});
+    await warmPage.waitForTimeout(1000);
+  }
+
+  // Extraer cookies y armar el header
+  const cookies = await warmPage.cookies();
+  sessionCookieHeader = cookies.map(c => `${c.name}=${c.value}`).join("; ");
+  lastCookieRefresh = Date.now();
+  console.log(`[worker] Sesión renovada — ${cookies.length} cookies`);
+
+  // Catálogo solo la primera vez
+  if (!fudoProductsCache) {
+    fudoProductsCache = await warmPage.evaluate(async (url) => {
+      const res = await fetch(url);
+      return res.json();
+    }, FUDO_PRODUCTS_URL);
+    console.log(`[worker] Catálogo FUDO: ${fudoProductsCache?.length ?? 0} productos`);
+  }
+}
+
+async function ensureSession() {
+  const stale = Date.now() - lastCookieRefresh > COOKIE_REFRESH_MS;
+  if (!sessionCookieHeader || stale) {
+    await refreshSession();
+  }
+}
+
 // ── Polling principal ──────────────────────────────────────────────────────────
 async function poll() {
-  const now = new Date().toISOString();
+  await ensureSession();
 
   const { data: items, error } = await supabase
     .from("order_outbox")
     .select("id, order_id")
     .eq("status", "PENDING")
-    .or(`leased_until.is.null,leased_until.lt.${now}`)
     .order("created_at", { ascending: true })
-    .limit(3);
+    .limit(200);
 
   if (error) {
-    console.error("[worker] Error leyendo outbox:", error.message);
+    console.error("[worker] Error leyendo outbox:", JSON.stringify(error));
     return;
   }
 
   if (!items || items.length === 0) return;
+  console.log(`[worker] ${items.length} pedidos PENDING — procesando en paralelo`);
 
-  // Lease
+  // Lease de todos juntos
   const leaseUntil = new Date(Date.now() + LEASE_MS).toISOString();
   await supabase
     .from("order_outbox")
     .update({ status: "PROCESSING", leased_until: leaseUntil })
-    .in("id", items.map((i) => i.id));
+    .in("id", items.map(i => i.id));
 
-  for (const item of items) {
+  // Procesar todos en paralelo — fetch nativo Node.js, sin límite de concurrencia
+  await Promise.all(items.map(async (item) => {
     try {
       await processOrder(item.order_id);
       await supabase
@@ -63,20 +132,19 @@ async function poll() {
         .update({ status: "ERROR", leased_until: null, error_message: msg })
         .eq("id", item.id);
     }
-  }
+  }));
 }
 
-// ── Procesar un pedido con Puppeteer ──────────────────────────────────────────
+// ── Procesar un pedido ─────────────────────────────────────────────────────────
 async function processOrder(orderId) {
-  // 1. Obtener datos del pedido
   const { data: order, error: orderErr } = await supabase
     .from("orders")
-    .select("id, table_session_id, customer_name, customer_phone, customer_email, status")
+    .select("id, table_session_id, customer_name, customer_phone, status")
     .eq("id", orderId)
     .single();
 
   if (orderErr || !order) throw new Error(`Pedido ${orderId} no encontrado`);
-  if (order.status === "REGISTERED") return; // ya procesado
+  if (order.status === "REGISTERED") return;
 
   const { data: session } = await supabase
     .from("table_sessions")
@@ -90,186 +158,116 @@ async function processOrder(orderId) {
     .eq("order_id", orderId)
     .is("parent_line_id", null);
 
-  const mappedLines = (lines || []).filter((l) => l.fudo_product_id);
-  if (mappedLines.length === 0) throw new Error(`Pedido ${orderId} sin productos mapeados a FUDO`);
-
-  // 2. Abrir Puppeteer
-  const browser = await puppeteer.launch({
-    headless: "new",
-    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
-  });
-
-  try {
-    const page = await browser.newPage();
-    await page.setViewport({ width: 390, height: 844 }); // mobile
-    await page.setUserAgent(
-      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
-    );
-
-    console.log(`[worker] Abriendo menú FUDO para pedido ${orderId}...`);
-    await page.goto(FUDO_MENU_URL, { waitUntil: "networkidle2", timeout: 30000 });
-
-    // 3. Agregar cada producto al carrito
-    for (const line of mappedLines) {
-      for (let i = 0; i < line.quantity; i++) {
-        await addProductToCart(page, line.fudo_product_id, line.comment);
-      }
-    }
-
-    // 4. Ir al carrito
-    await goToCart(page);
-
-    // 5. Ir a pagar
-    await page.waitForTimeout(3000);
-    await page.waitForSelector("button", { timeout: 20000 });
-    const irAPagar = await page.$x("//button[contains(., 'Ir a pagar') or contains(., 'pagar')]");
-    if (irAPagar.length === 0) throw new Error("No se encontró botón 'Ir a pagar'");
-    await irAPagar[0].click();
-    await page.waitForNavigation({ waitUntil: "networkidle2", timeout: 15000 }).catch(() => {});
-
-    // 6. Completar formulario de checkout
-    await fillCheckout(page, {
-      nombre: order.customer_name || "Cliente",
-      telefono: order.customer_phone || "",
-      email: order.customer_email || "",
-      mesa: session?.mesa_numero || "1",
-      personas: String(session?.people || 1),
+  const fudoItems = (lines || [])
+    .filter(l => l.fudo_product_id)
+    .map(l => {
+      const fProd = (fudoProductsCache || []).find(p => String(p.id) === String(l.fudo_product_id));
+      return {
+        subitems: [],
+        price: fProd?.price ?? 0,
+        productCategoryId: fProd?.categoryId ?? fProd?.category?.id ?? fProd?.productCategoryId ?? 0,
+        productId: parseInt(l.fudo_product_id),
+        quantity: l.quantity,
+      };
     });
 
-    // 7. Confirmar pedido
-    await confirmOrder(page);
+  if (fudoItems.length === 0) throw new Error(`Pedido ${orderId} sin productos mapeados a FUDO`);
 
-    // 8. Actualizar estado en Supabase
-    await supabase
-      .from("orders")
-      .update({ status: "REGISTERED" })
-      .eq("id", orderId);
-
-  } finally {
-    await browser.close();
-  }
-}
-
-// ── Agregar producto al carrito ────────────────────────────────────────────────
-async function addProductToCart(page, fudoProductId, comment) {
-  const productUrl = `${FUDO_MENU_URL}/products/${fudoProductId}`;
-  console.log(`[worker] Navegando a ${productUrl}`);
-
-  // Intentar cargar la página — en SPAs a veces networkidle2 nunca se dispara
-  await page.goto(productUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
-
-  // Dar tiempo al JS del SPA para renderizar
-  await page.waitForTimeout(4000);
-
-  // Log del título para debug
-  const title = await page.title();
-  console.log(`[worker] Página cargada: "${title}" | URL: ${page.url()}`);
-
-  // Esperar cualquier botón con timeout generoso
-  await page.waitForSelector("button", { timeout: 20000 });
-
-  // Logear todos los botones visibles para debug
-  const btnTexts = await page.$$eval("button", (btns) =>
-    btns.map((b) => b.innerText.trim()).filter(Boolean)
-  );
-  console.log(`[worker] Botones encontrados:`, btnTexts.join(" | "));
-
-  if (comment) {
-    const textarea = await page.$("textarea");
-    if (textarea) await textarea.type(comment);
-  }
-
-  // Buscar "Agregar a mi pedido" (o variantes)
-  const agregarBtn = await page.$x(
-    "//button[contains(., 'Agregar') or contains(., 'agregar')]"
-  );
-  if (agregarBtn.length === 0)
-    throw new Error(`No se encontró botón 'Agregar' para producto ${fudoProductId}. Botones: ${btnTexts.join(", ")}`);
-
-  await agregarBtn[0].click();
-  await page.waitForTimeout(2000);
-}
-
-// ── Ir al carrito ──────────────────────────────────────────────────────────────
-async function goToCart(page) {
-  await page.goto(`${FUDO_MENU_URL}/cart`, { waitUntil: "networkidle2", timeout: 20000 });
-  await page.waitForTimeout(1000);
-}
-
-// ── Completar formulario de checkout ──────────────────────────────────────────
-async function fillCheckout(page, { nombre, telefono, email, mesa, personas }) {
-  await page.waitForSelector("input", { timeout: 10000 });
-
-  // Limpiar y completar cada campo buscando por label
-  await fillField(page, "Nombre y apellido", nombre);
-  await fillField(page, "Correo electrónico", email);
-  await fillField(page, "Número de mesa", mesa);
-  await fillField(page, "Cantidad de personas", personas);
-
-  // El teléfono tiene un selector de país — completar solo el número
-  if (telefono) {
-    const inputs = await page.$$("input[type='tel'], input[type='phone']");
-    if (inputs.length > 0) {
-      await inputs[0].click({ clickCount: 3 });
-      await inputs[0].type(telefono);
+  const payload = {
+    order: {
+      customer: {
+        dataCollectionEnabled: false,
+        name: order.customer_name || "Cliente",
+        phone: order.customer_phone || "",
+      },
+      items: fudoItems,
+      payment: { method: "cash" },
+      tableNumber: parseInt(session?.mesa_numero || "1"),
+      people: session?.people || 1,
     }
-  }
-}
+  };
 
-async function fillField(page, labelText, value) {
-  if (!value) return;
-  try {
-    // Buscar input asociado al label
-    const labels = await page.$x(`//label[contains(text(), '${labelText}')]`);
-    if (labels.length > 0) {
-      const forAttr = await labels[0].evaluate((el) => el.getAttribute("for"));
-      if (forAttr) {
-        const input = await page.$(`#${forAttr}`);
-        if (input) {
-          await input.click({ clickCount: 3 });
-          await input.type(String(value));
-          return;
-        }
-      }
+  console.log(`[worker] POST pedido ${orderId} → FUDO (${fudoItems.length} items, mesa ${session?.mesa_numero})`);
+
+  // Fetch directo desde Node.js con las cookies de sesión
+  const res = await fetch(FUDO_ORDERS_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Cookie": sessionCookieHeader,
+      "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+      "Origin": "https://menu.fu.do",
+      "Referer": FUDO_MENU_URL,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const body = await res.json().catch(() => ({}));
+  console.log(`[worker] FUDO response pedido ${orderId}: ${res.status} ${JSON.stringify(body).slice(0, 300)}`);
+
+  if (res.status === 401) {
+    // Sesión expirada — forzar renovación y reintentar una vez
+    console.log("[worker] 401 — renovando sesión y reintentando...");
+    await refreshSession();
+    const retry = await fetch(FUDO_ORDERS_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Cookie": sessionCookieHeader,
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+        "Origin": "https://menu.fu.do",
+        "Referer": FUDO_MENU_URL,
+      },
+      body: JSON.stringify(payload),
+    });
+    const retryBody = await retry.json().catch(() => ({}));
+    if (retry.status < 200 || retry.status >= 300) {
+      throw new Error(`FUDO rechazó pedido tras renovar sesión: HTTP ${retry.status} — ${JSON.stringify(retryBody).slice(0, 300)}`);
     }
-    // Fallback: buscar por placeholder
-    const input = await page.$(`input[placeholder*="${labelText}"]`);
-    if (input) {
-      await input.click({ clickCount: 3 });
-      await input.type(String(value));
-    }
-  } catch (e) {
-    console.warn(`[worker] No se pudo completar campo "${labelText}":`, e.message);
+  } else if (res.status < 200 || res.status >= 300) {
+    throw new Error(`FUDO rechazó pedido: HTTP ${res.status} — ${JSON.stringify(body).slice(0, 300)}`);
   }
+
+  await supabase
+    .from("orders")
+    .update({ status: "REGISTERED" })
+    .eq("id", orderId);
 }
 
-// ── Confirmar pedido ───────────────────────────────────────────────────────────
-async function confirmOrder(page) {
-  const confirmarBtn = await page.$x("//button[contains(text(), 'Confirmar pedido')]");
-  if (confirmarBtn.length === 0) throw new Error("No se encontró botón 'Confirmar pedido'");
-  await confirmarBtn[0].click();
-  // Esperar confirmación
-  await page.waitForTimeout(3000);
-  console.log("[worker] Pedido confirmado en FUDO");
-}
-
-// ── Servidor HTTP mínimo para que Render no cierre el proceso ─────────────────
+// ── Servidor HTTP ──────────────────────────────────────────────────────────────
 const http = require("http");
 const PORT = process.env.PORT || 3000;
 
 http.createServer((req, res) => {
-  res.writeHead(200);
-  res.end("worker ok");
+  const path = (req.url?.split("?")[0] || "").replace(/\/$/, "") || "/";
+  if (path === "/products" && fudoProductsCache) {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(fudoProductsCache, null, 2));
+  } else if (path === "/products") {
+    res.writeHead(503);
+    res.end("Catálogo aún no cargado");
+  } else if (path === "/health") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({
+      status: "ok",
+      session: !!sessionCookieHeader,
+      catalog: fudoProductsCache?.length ?? 0,
+      lastRefresh: new Date(lastCookieRefresh).toISOString(),
+    }));
+  } else {
+    res.writeHead(200);
+    res.end(`worker ok | session=${!!sessionCookieHeader} | cache=${fudoProductsCache?.length ?? "null"}`);
+  }
 }).listen(PORT, () => {
-  console.log(`[worker] HTTP escuchando en puerto ${PORT}`);
+  console.log(`[worker] HTTP en puerto ${PORT}`);
 });
 
-// ── Loop principal ─────────────────────────────────────────────────────────────
+// ── Arranque ───────────────────────────────────────────────────────────────────
 async function main() {
   console.log("[worker] Iniciando worker 23 Ríos → FUDO");
-  console.log(`[worker] Polling cada ${POLL_INTERVAL_MS / 1000}s`);
 
-  // Poll inmediato al arrancar
+  await refreshSession().catch(e => console.error("[worker] Error al calentar sesión inicial:", e?.message));
+
   await poll().catch(console.error);
 
   setInterval(async () => {
