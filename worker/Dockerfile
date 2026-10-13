@@ -14,7 +14,7 @@ WORKDIR /app
 COPY package.json ./
 RUN npm install --ignore-scripts
 
-COPY index.js ./
+ARG CACHEBUST=20261013c
 COPY . .
 
 # cache bust: 2026-10-13c
