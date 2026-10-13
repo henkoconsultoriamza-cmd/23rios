@@ -256,9 +256,11 @@ async function processOrder(orderId) {
       },
       items: fudoItems,
       payment: { total },
-      type: "self-service",
-      type_options: { tableNumber: parseInt(session?.mesa_numero || "1") },
       people: session?.people || 1,
+      shippingCost: 0,
+      tableNumber: parseInt(session?.mesa_numero || "1"),
+      type: "self-service",
+      typeOptions: {},
     }
   };
 
