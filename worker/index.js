@@ -259,47 +259,27 @@ async function processOrder(orderId) {
 
   console.log(`[worker] Enviando pedido ${orderId} mesa ${session?.mesa_numero} — ${fudoItems.length} items`);
 
-  const page = await getWarmPage();
-  const result = await page.evaluate(async (url, p) => {
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(p),
-      });
-      const body = await res.json();
-      return { status: res.status, body };
-    } catch (e) {
-      return { status: 0, body: { error: e.message } };
-    }
-  }, FUDO_ORDERS_URL, payload);
+  const FUDO_HEADERS = {
+    "Content-Type": "application/json",
+    "fudo-app": "self-service",
+    "fudo-account-id": "MjNyaW9z",
+    "origin": "https://menu.fu.do",
+    "referer": "https://menu.fu.do/",
+    "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+    "accept": "application/json, text/plain, */*",
+  };
 
-  console.log(`[worker] FUDO response ${orderId}: ${result.status} ${JSON.stringify(result.body).slice(0, 300)}`);
+  const res = await fetch(FUDO_ORDERS_URL, {
+    method: "POST",
+    headers: FUDO_HEADERS,
+    body: JSON.stringify(payload),
+  });
 
-  if (result.status < 200 || result.status >= 300) {
-    if (result.status === 401) {
-      // Renovar sesión y reintentar
-      console.log("[worker] 401 — renovando sesión...");
-      warmPage = null;
-      const page2 = await getWarmPage();
-      const retry = await page2.evaluate(async (url, p) => {
-        try {
-          const res = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(p),
-          });
-          return { status: res.status, body: await res.json() };
-        } catch (e) {
-          return { status: 0, body: { error: e.message } };
-        }
-      }, FUDO_ORDERS_URL, payload);
-      if (retry.status < 200 || retry.status >= 300) {
-        throw new Error(`FUDO rechazó tras renovar sesión: HTTP ${retry.status} — ${JSON.stringify(retry.body).slice(0, 200)}`);
-      }
-    } else {
-      throw new Error(`FUDO rechazó pedido: HTTP ${result.status} — ${JSON.stringify(result.body).slice(0, 200)}`);
-    }
+  const resBody = await res.json().catch(() => ({}));
+  console.log(`[worker] FUDO response ${orderId}: ${res.status} ${JSON.stringify(resBody).slice(0, 300)}`);
+
+  if (res.status < 200 || res.status >= 300) {
+    throw new Error(`FUDO rechazó pedido: HTTP ${res.status} — ${JSON.stringify(resBody).slice(0, 200)}`);
   }
 
   await supabase.from("orders").update({ status: "REGISTERED" }).eq("id", orderId);
