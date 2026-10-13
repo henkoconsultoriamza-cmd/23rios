@@ -58,12 +58,12 @@ async function refreshSession() {
     await warmPage.setUserAgent(
       "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
     );
-    await warmPage.goto(FUDO_MENU_URL, { waitUntil: "domcontentloaded", timeout: 30000 });
-    await warmPage.waitForTimeout(2500);
+    await warmPage.goto(FUDO_MENU_URL, { waitUntil: "networkidle2", timeout: 45000 });
+    await warmPage.waitForTimeout(5000);
   } else {
     // Ping silencioso para mantener la sesión viva
-    await warmPage.reload({ waitUntil: "domcontentloaded", timeout: 20000 }).catch(() => {});
-    await warmPage.waitForTimeout(1000);
+    await warmPage.reload({ waitUntil: "networkidle2", timeout: 30000 }).catch(() => {});
+    await warmPage.waitForTimeout(3000);
   }
 
   // Extraer cookies y armar el header
@@ -71,6 +71,7 @@ async function refreshSession() {
   sessionCookieHeader = cookies.map(c => `${c.name}=${c.value}`).join("; ");
   lastCookieRefresh = Date.now();
   console.log(`[worker] Sesión renovada — ${cookies.length} cookies`);
+  if (cookies.length === 0) console.warn("[worker] ADVERTENCIA: sin cookies — FUDO puede rechazar pedidos");
 
   // Catálogo solo la primera vez
   if (!fudoProductsCache) {
@@ -84,7 +85,8 @@ async function refreshSession() {
 
 async function ensureSession() {
   const stale = Date.now() - lastCookieRefresh > COOKIE_REFRESH_MS;
-  if (!sessionCookieHeader || stale) {
+  const noSession = !sessionCookieHeader || sessionCookieHeader.length === 0;
+  if (noSession || stale) {
     await refreshSession();
   }
 }
