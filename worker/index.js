@@ -216,43 +216,45 @@ async function processOrder(orderId) {
 
   console.log(`[worker] POST pedido ${orderId} → FUDO (${fudoItems.length} items, mesa ${session?.mesa_numero})`);
 
-  // Fetch directo desde Node.js con las cookies de sesión
-  const res = await fetch(FUDO_ORDERS_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Cookie": sessionCookieHeader,
-      "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-      "Origin": "https://menu.fu.do",
-      "Referer": FUDO_MENU_URL,
-    },
-    body: JSON.stringify(payload),
-  });
+  // Usar page.evaluate(fetch) — corre dentro del browser con la sesión activa de FUDO
+  // Múltiples evaluate concurrentes en la misma página son seguros para fetch
+  const result = await warmPage.evaluate(async (url, p) => {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(p),
+      });
+      const body = await res.json();
+      return { status: res.status, body };
+    } catch (e) {
+      return { status: 0, body: { error: e.message } };
+    }
+  }, FUDO_ORDERS_URL, payload);
 
-  const body = await res.json().catch(() => ({}));
-  console.log(`[worker] FUDO response pedido ${orderId}: ${res.status} ${JSON.stringify(body).slice(0, 300)}`);
+  console.log(`[worker] FUDO response ${orderId}: ${result.status} ${JSON.stringify(result.body).slice(0, 300)}`);
 
-  if (res.status === 401) {
-    // Sesión expirada — forzar renovación y reintentar una vez
+  if (result.status === 401) {
     console.log("[worker] 401 — renovando sesión y reintentando...");
     await refreshSession();
-    const retry = await fetch(FUDO_ORDERS_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Cookie": sessionCookieHeader,
-        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-        "Origin": "https://menu.fu.do",
-        "Referer": FUDO_MENU_URL,
-      },
-      body: JSON.stringify(payload),
-    });
-    const retryBody = await retry.json().catch(() => ({}));
+    const retry = await warmPage.evaluate(async (url, p) => {
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(p),
+        });
+        const body = await res.json();
+        return { status: res.status, body };
+      } catch (e) {
+        return { status: 0, body: { error: e.message } };
+      }
+    }, FUDO_ORDERS_URL, payload);
     if (retry.status < 200 || retry.status >= 300) {
-      throw new Error(`FUDO rechazó pedido tras renovar sesión: HTTP ${retry.status} — ${JSON.stringify(retryBody).slice(0, 300)}`);
+      throw new Error(`FUDO rechazó tras renovar sesión: HTTP ${retry.status} — ${JSON.stringify(retry.body).slice(0, 300)}`);
     }
-  } else if (res.status < 200 || res.status >= 300) {
-    throw new Error(`FUDO rechazó pedido: HTTP ${res.status} — ${JSON.stringify(body).slice(0, 300)}`);
+  } else if (result.status < 200 || result.status >= 300) {
+    throw new Error(`FUDO rechazó pedido: HTTP ${result.status} — ${JSON.stringify(result.body).slice(0, 300)}`);
   }
 
   await supabase
