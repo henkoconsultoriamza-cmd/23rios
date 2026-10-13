@@ -84,16 +84,14 @@ async function refreshSession() {
 
   console.log(`[worker] localStorage keys: ${Object.keys(sessionData).join(", ") || "(vacío)"}`);
 
-  // Buscar token JWT en localStorage
-  const tokenKey = Object.keys(sessionData).find(k =>
-    k.toLowerCase().includes("token") || k.toLowerCase().includes("auth") || k.toLowerCase().includes("session")
-  );
-  if (tokenKey) {
-    sessionCookieHeader = `token=${sessionData[tokenKey]}`;
-    console.log(`[worker] Token encontrado en key: ${tokenKey}`);
+  // FUDO guarda la sesión bajo la key del nombre del local ("23rios")
+  const sessionValue = sessionData["23rios"] || Object.values(sessionData)[0];
+  if (sessionValue) {
+    sessionCookieHeader = sessionValue; // guardamos para el timing de refresh
+    console.log(`[worker] Sesión FUDO activa — localStorage["23rios"] presente`);
   } else {
     sessionCookieHeader = null;
-    console.warn("[worker] No se encontró token de sesión en localStorage");
+    console.warn("[worker] Sin sesión en localStorage — FUDO puede rechazar pedidos");
   }
 
   lastCookieRefresh = Date.now();
