@@ -150,26 +150,7 @@ async function getWarmPage() {
   // Capturar token de sesión de las respuestas de FUDO durante inicialización
   let fudoSessionToken = null;
   await warmPage.setRequestInterception(true);
-  warmPage.on("request", req => {
-    if (req.url().includes("integrations.fu.do")) {
-      console.log(`[worker] → ${req.method()} ${req.url().replace("https://integrations.fu.do", "")}`);
-      const allHeaders = req.headers();
-      console.log(`[worker] req headers: ${JSON.stringify(allHeaders).slice(0, 400)}`);
-      const postData = req.postData();
-      if (postData) console.log(`[worker] req body: ${postData.slice(0, 800)}`);
-    }
-    req.continue();
-  });
-  warmPage.on("response", async res => {
-    if (res.url().includes("integrations.fu.do")) {
-      const resHeaders = res.headers();
-      console.log(`[worker] ← ${res.status()} ${res.url().replace("https://integrations.fu.do", "")} headers: ${JSON.stringify(resHeaders).slice(0, 300)}`);
-      try {
-        const body = await res.text();
-        console.log(`[worker] body: ${body.slice(0, 200)}`);
-      } catch {}
-    }
-  });
+  warmPage.on("request", req => req.continue());
 
   await warmPage.goto(FUDO_MENU_URL, { waitUntil: "networkidle2", timeout: 45000 });
   await warmPage.waitForTimeout(3000);
@@ -200,17 +181,22 @@ async function poll() {
     .update({ status: "PROCESSING", leased_until: leaseUntil })
     .in("id", items.map(i => i.id));
 
+  let done = 0, errors = 0;
+  const tCiclo = Date.now();
   await Promise.all(items.map(async (item) => {
     try {
       await processOrder(item.order_id);
       await supabase.from("order_outbox").update({ status: "DONE", leased_until: null }).eq("id", item.id);
-      console.log(`[worker] ✓ Pedido ${item.order_id} enviado a FUDO`);
+      done++;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error(`[worker] ✗ Error ${item.order_id}:`, msg);
+      console.error(`[worker] ✗ ${item.order_id}: ${msg}`);
       await supabase.from("order_outbox").update({ status: "ERROR", leased_until: null, error_message: msg }).eq("id", item.id);
+      errors++;
     }
   }));
+
+  console.log(`[worker] ciclo: ${done} ok${errors ? `, ${errors} errores` : ""} — ${((Date.now() - tCiclo) / 1000).toFixed(1)}s`);
 }
 
 // ── Procesar pedido ────────────────────────────────────────────────────────────
@@ -264,7 +250,6 @@ async function processOrder(orderId) {
     }
   };
 
-  console.log(`[worker] Enviando pedido ${orderId} mesa ${session?.mesa_numero} — ${fudoItems.length} items`);
 
   const FUDO_HEADERS = {
     "Content-Type": "application/json",
@@ -282,11 +267,9 @@ async function processOrder(orderId) {
     body: JSON.stringify(payload),
   });
 
-  const resBody = await res.json().catch(() => ({}));
-  console.log(`[worker] FUDO response ${orderId}: ${res.status} ${JSON.stringify(resBody).slice(0, 300)}`);
-
   if (res.status < 200 || res.status >= 300) {
-    throw new Error(`FUDO rechazó pedido: HTTP ${res.status} — ${JSON.stringify(resBody).slice(0, 200)}`);
+    const resBody = await res.json().catch(() => ({}));
+    throw new Error(`FUDO HTTP ${res.status}: ${JSON.stringify(resBody).slice(0, 150)}`);
   }
 
   await supabase.from("orders").update({ status: "REGISTERED" }).eq("id", orderId);
