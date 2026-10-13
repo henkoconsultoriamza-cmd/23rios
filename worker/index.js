@@ -186,10 +186,11 @@ async function processOrder(orderId) {
     .eq("order_id", orderId)
     .is("parent_line_id", null);
 
+  const catalogArray = Array.isArray(fudoProductsCache) ? fudoProductsCache : [];
   const fudoItems = (lines || [])
     .filter(l => l.fudo_product_id)
     .map(l => {
-      const fProd = (fudoProductsCache || []).find(p => String(p.id) === String(l.fudo_product_id));
+      const fProd = catalogArray.find(p => String(p.id) === String(l.fudo_product_id));
       return {
         subitems: [],
         price: fProd?.price ?? 0,
