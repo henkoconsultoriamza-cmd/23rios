@@ -98,11 +98,14 @@ async function refreshSession() {
 
   // Catálogo solo la primera vez
   if (!fudoProductsCache) {
-    fudoProductsCache = await warmPage.evaluate(async (url) => {
+    const raw = await warmPage.evaluate(async (url) => {
       const res = await fetch(url);
       return res.json();
     }, FUDO_PRODUCTS_URL);
-    console.log(`[worker] Catálogo FUDO: ${fudoProductsCache?.length ?? 0} productos`);
+    // La API puede devolver array directo o { products: [...] } u otro wrapper
+    fudoProductsCache = Array.isArray(raw) ? raw : (raw?.products || raw?.data || raw?.items || []);
+    console.log(`[worker] Catálogo FUDO: ${fudoProductsCache.length} productos`);
+    console.log(`[worker] Muestra catálogo: ${JSON.stringify(fudoProductsCache.slice(0, 2))}`);
   }
 }
 
