@@ -149,6 +149,13 @@ async function getWarmPage() {
   );
   await warmPage.goto(FUDO_MENU_URL, { waitUntil: "networkidle2", timeout: 45000 });
   await warmPage.waitForTimeout(3000);
+
+  const lsData = await warmPage.evaluate(() => {
+    const raw = localStorage.getItem("23rios");
+    return raw ? JSON.parse(raw) : null;
+  }).catch(() => null);
+  console.log("[worker] localStorage[23rios]:", JSON.stringify(lsData).slice(0, 500));
+
   console.log("[worker] Pestaña caliente lista");
   return warmPage;
 }
