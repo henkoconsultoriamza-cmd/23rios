@@ -1,4 +1,4 @@
-export type Product = {
+﻿export type Product = {
   id: string;
   name: string;
   category: "Cervezas" | "Bebidas" | "Cocina";
@@ -262,7 +262,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     price: 4500,
     nutrition: nn,
     beerProfile: { style: "Lager", descriptors: ["Dorada", "Suave", "Alemana"], ibu: "—", abv: "—", srm: "—" },
-    fudoData: { categoryId: 75, servingIds: { "Pinta": "607", "Media pinta": "878" } }, // confirmar con 23 Ríos
+    fudoData: { categoryId: 75, servingIds: { "Pinta": "607", "Media pinta": "878" } },
   },
   {
     id: "american-ipa",
@@ -314,7 +314,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 10200,
     nutrition: nn,
-    fudoData: { categoryId: 63, productId: "1320" }, // confirmar con 23 Ríos (existe como ID 1320)
+    fudoData: { categoryId: 63, productId: "1320" },
   },
   {
     id: "papas-23-rios",
@@ -330,7 +330,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Lácteos"],
     price: 10100,
     nutrition: nn,
-    fudoData: { categoryId: 63, productId: "1321" }, // confirmar con 23 Ríos
+    fudoData: { categoryId: 63, productId: "1321" },
   },
   {
     id: "nuggets-brocoli",
@@ -346,7 +346,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten"],
     price: 10800,
     nutrition: nn,
-    fudoData: { categoryId: 63, productId: "180" }, // confirmar con 23 Ríos
+    fudoData: { categoryId: 63, productId: "180" },
   },
   {
     id: "picada",
@@ -378,7 +378,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Lácteos"],
     price: 19600,
     nutrition: nn,
-    fudoData: { categoryId: 80, productId: "1487" }, // confirmar con 23 Ríos
+    fudoData: { categoryId: 129, productId: "1487" },
   },
   {
     id: "general-tso",
@@ -394,7 +394,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten", "Soja"],
     price: 14100,
     nutrition: nn,
-    fudoData: { categoryId: 22, productId: "1477" }, // confirmar con 23 Ríos
+    fudoData: { categoryId: 22, productId: "1477" },
   },
   {
     id: "experiencia-alemana",
@@ -510,7 +510,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten", "Lácteos"],
     price: 15000,
     nutrition: nn,
-    fudoData: { categoryId: 83, productId: "1513" }, // confirmar — Fudo tiene "Smash Doble Cheddar Sin tacc"
+    fudoData: { categoryId: 83, productId: "1325" },
   },
   {
     id: "smash-23",
@@ -687,7 +687,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 8000,
     nutrition: nn,
-    fudoData: { categoryId: 121, productId: "39" }, // Fudo: "Fernet 500cc" — confirmar
+    fudoData: { categoryId: 121, productId: "39" },
   },
   {
     id: "aperol-spritz",
@@ -702,7 +702,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 9900,
     nutrition: nn,
-    fudoData: { categoryId: 121, productId: "43" }, // Fudo: "Aperol 500cc" — confirmar
+    fudoData: { categoryId: 121, productId: "43" },
   },
   {
     id: "cuba-libre",
@@ -732,7 +732,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 7000,
     nutrition: nn,
-    fudoData: { categoryId: 121, productId: "1094" }, // Fudo: "Carpano Rosso" — confirmar
+    fudoData: { categoryId: 121, productId: "1094" },
   },
   {
     id: "cynar",
@@ -762,7 +762,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 7600,
     nutrition: nn,
-    fudoData: { categoryId: 121, productId: "38" }, // Fudo: "Mojito 500cc Clasico" — confirmar
+    fudoData: { categoryId: 121, productId: "38" },
   },
   {
     id: "mojito-malibu",
@@ -777,7 +777,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 9400,
     nutrition: nn,
-    fudoData: { categoryId: 121, productId: "37" }, // Fudo: "Mojito 500cc Malibu" — confirmar
+    fudoData: { categoryId: 121, productId: "37" },
   },
   {
     id: "campari",
@@ -897,7 +897,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 8000,
     nutrition: nn,
-    fudoData: { categoryId: 121, productId: "1308" }, // Fudo: "Daiquiri de Frutos Rojos" — confirmar
+    fudoData: { categoryId: 121, productId: "1308" },
   },
 
   // ── PARA PREPARAR ─────────────────────────────────────────────────────────
@@ -914,7 +914,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 13500,
     nutrition: nn,
-    fudoData: { categoryId: 118, productId: "329" }, // Fudo: "Fernet para preparar" — confirmar o crear combo
+    fudoData: { categoryId: 118, productId: "329" },
   },
   {
     id: "prep-ron",
@@ -929,7 +929,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 15500,
     nutrition: nn,
-    fudoData: { categoryId: 118, productId: "1121" }, // Fudo: "Ron para preparar" — confirmar
+    fudoData: { categoryId: 118, productId: "1121" },
   },
   {
     id: "prep-vodka",
@@ -944,7 +944,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 11700,
     nutrition: nn,
-    // ⚠️ Fudo tiene ID 352 "Red Bull" (solo el energizante) — crear combo en Fudo
+    fudoData: { categoryId: 118, productId: "46" },
   },
   {
     id: "prep-jager",
@@ -959,7 +959,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 28200,
     nutrition: nn,
-    fudoData: { categoryId: 118, productId: "1542" }, // Fudo: "Combo de Jager" — confirmar
+    fudoData: { categoryId: 118, productId: "1542" },
   },
 
   // ── WHISKIES ──────────────────────────────────────────────────────────────
@@ -1085,7 +1085,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 70000,
     nutrition: nn,
-    fudoData: { categoryId: 13, productId: "49" }, // Fudo: "Combo Fernet" — confirmar
+    fudoData: { categoryId: 13, productId: "49" },
   },
   {
     id: "combo-ron",
@@ -1100,7 +1100,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 74000,
     nutrition: nn,
-    fudoData: { categoryId: 13, productId: "148" }, // Fudo: "Combo ron dorado Havanna" — confirmar
+    fudoData: { categoryId: 13, productId: "148" },
   },
   {
     id: "combo-vodka",
@@ -1115,7 +1115,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 60000,
     nutrition: nn,
-    fudoData: { categoryId: 13, productId: "191" }, // Fudo: "Combo Vodka" — confirmar
+    fudoData: { categoryId: 13, productId: "1365" },
   },
   {
     id: "combo-gin-gordons",
@@ -1130,7 +1130,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 74000,
     nutrition: nn,
-    fudoData: { categoryId: 13, productId: "233" }, // Fudo: "Combo Gin Gordons" — confirmar
+    fudoData: { categoryId: 13, productId: "233" },
   },
   {
     id: "combo-gin-beefeater",
@@ -1145,7 +1145,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 78000,
     nutrition: nn,
-    fudoData: { categoryId: 13, productId: "166" }, // Fudo: "Combo de Beefeater" — confirmar
+    fudoData: { categoryId: 13, productId: "166" },
   },
 
   // ── SIN ALCOHOL / GASEOSAS ────────────────────────────────────────────────
@@ -1222,7 +1222,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 3000,
     nutrition: nn,
-    fudoData: { categoryId: 98, productId: "13" }, // Fudo: "Schweppes tonica 310cc" — confirmar si es el mismo
+    fudoData: { categoryId: 98, productId: "13" },
   },
   {
     id: "pomelo",
@@ -1240,10 +1240,10 @@ export const DEFAULT_PRODUCTS: Product[] = [
     fudoData: { categoryId: 98, productId: "172" }, // Fudo: "Lata Pomelo PDT 269ml"
   },
   {
-    id: "agua",
-    name: "Agua sin / con gas",
+    id: "agua-sin-gas",
+    name: "Agua sin gas",
     category: "Bebidas",
-    description: "Agua mineral sin o con gas.",
+    description: "Agua mineral sin gas Graziani.",
     tag: "Sin alcohol",
     note: "",
     group: "Sin alcohol / Gaseosas",
@@ -1252,7 +1252,22 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 3000,
     nutrition: nn,
-    // ⚠️ Fudo tiene ID 1159 (sin gas) y 1160 (con gas) por separado — confirmar cómo unificar
+    fudoData: { categoryId: 99, productId: "1159" },
+  },
+  {
+    id: "agua-con-gas",
+    name: "Agua con gas",
+    category: "Bebidas",
+    description: "Agua mineral con gas Graziani.",
+    tag: "Sin alcohol",
+    note: "",
+    group: "Sin alcohol / Gaseosas",
+    relatedIds: [],
+    attributes: ["Sin alcohol"],
+    allergens: [],
+    price: 3000,
+    nutrition: nn,
+    fudoData: { categoryId: 99, productId: "1160" },
   },
   {
     id: "limonada",
