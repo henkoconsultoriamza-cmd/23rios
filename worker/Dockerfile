@@ -11,8 +11,8 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-COPY package.json ./
-RUN npm install --ignore-scripts
+COPY package.json package-lock.json* ./
+RUN npm install
 
 ARG CACHEBUST=20261013c
 COPY . .
