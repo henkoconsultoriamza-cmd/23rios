@@ -14,9 +14,10 @@ WORKDIR /app
 COPY package.json ./
 RUN npm install --ignore-scripts
 
+COPY index.js ./
 COPY . .
 
-# cache bust: 2026-10-13b
+# cache bust: 2026-10-13c
 EXPOSE 3000
 
 CMD ["node", "index.js"]
