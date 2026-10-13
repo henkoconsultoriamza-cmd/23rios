@@ -210,7 +210,7 @@ async function processOrder(orderId) {
   if (order.status === "REGISTERED") return;
 
   const { data: session } = await supabase
-    .from("table_sessions").select("mesa_numero, people").eq("id", order.table_session_id).single();
+    .from("table_sessions").select("mesa_numero, fudo_table_id, people").eq("id", order.table_session_id).single();
 
   const { data: lines } = await supabase
     .from("order_lines").select("fudo_product_id, quantity, comment")
@@ -244,7 +244,7 @@ async function processOrder(orderId) {
       payment: { total },
       people: session?.people || 1,
       shippingCost: 0,
-      tableNumber: parseInt(session?.mesa_numero || "1"),
+      tableNumber: parseInt(session?.fudo_table_id || session?.mesa_numero || "1"),
       type: "self-service",
       typeOptions: {},
     }
