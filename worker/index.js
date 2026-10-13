@@ -253,9 +253,9 @@ async function processOrder(orderId) {
         phone: order.customer_phone || "",
       },
       items: fudoItems,
-      payment: { method: "in_place", total },
+      payment: { total },
       type: "self-service",
-      type_options: { table_number: parseInt(session?.mesa_numero || "1") },
+      type_options: { table_number: String(session?.mesa_numero || "1") },
       people: session?.people || 1,
     }
   };
@@ -298,7 +298,7 @@ http.createServer((req, res) => {
 
 // ── Main ───────────────────────────────────────────────────────────────────────
 async function main() {
-  console.log("[worker] Iniciando worker 23 Ríos → FUDO");
+  console.log("[worker] Iniciando worker 23 Ríos → FUDO v10");
   await getWarmPage().catch(e => console.error("[worker] Error calentando página:", e?.message));
   await poll().catch(console.error);
   setInterval(() => poll().catch(console.error), POLL_INTERVAL_MS);
