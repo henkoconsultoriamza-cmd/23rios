@@ -264,40 +264,6 @@ export const DEFAULT_PRODUCTS: Product[] = [
     beerProfile: { style: "Lager", descriptors: ["Dorada", "Suave", "Alemana"], ibu: "—", abv: "—", srm: "—" },
     fudoData: { categoryId: 75, servingIds: { "Pinta": "607", "Media pinta": "878" } },
   },
-  {
-    id: "american-ipa",
-    name: "American IPA",
-    category: "Cervezas",
-    description: "American Pale Ale de alta fermentación con aroma y sabor marcado a lúpulos americanos. Características frutales y cítricas: melón, durazno, ananá y cáscara de pomelo. Color de dorado pálido a ámbar. Edición limitada. · Picheuta",
-    tag: "Picheuta",
-    note: "",
-    group: "Cervezas especiales",
-    relatedIds: ["smash-blue", "papas-23-rios", "general-tso"],
-    attributes: [],
-    allergens: ["Gluten"],
-    beerStyle: "American IPA",
-    price: 6000,
-    nutrition: nn,
-    beerProfile: { style: "American Pale Ale", descriptors: ["Tropical", "Cítrica", "Frutal"], ibu: "32", abv: "6,0%", srm: "17 EBC" },
-    // ⚠️ Sin ID Fudo confirmado — crear en Fudo o mapear cuando esté disponible
-  },
-  {
-    id: "orange-wheat",
-    name: "Orange Wheat",
-    category: "Cervezas",
-    description: "Color pajizo pálido y aspecto nublado por levadura en suspensión y almidón de trigo. Espuma blanca, densa y persistente. Notas especiadas con fondo cítrico a naranja. Suave en el paladar con final ligeramente ácido. Elaborada con trigo y piel de naranja. · Salvaje",
-    tag: "Salvaje",
-    note: "Consultar disponibilidad.",
-    group: "Cervezas especiales",
-    relatedIds: ["pizza-napolitana", "nuggets-brocoli", "provoleta"],
-    attributes: [],
-    allergens: ["Gluten"],
-    beerStyle: "Orange Wheat",
-    price: 0,
-    nutrition: nn,
-    beerProfile: { style: "Orange Wheat", descriptors: ["Naranja", "Trigo", "Refrescante"], ibu: "18", abv: "4,0%", srm: "5 EBC" },
-    // ⚠️ Sin ID Fudo confirmado — crear en Fudo cuando esté disponible
-  },
 
   // ── ENTRADAS ──────────────────────────────────────────────────────────────
   {
@@ -389,7 +355,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     tag: "Entrada",
     note: "",
     group: "Entradas",
-    relatedIds: ["ipa", "american-ipa", "golden"],
+    relatedIds: ["ipa", "golden"],
     attributes: [],
     allergens: ["Gluten", "Soja"],
     price: 14100,
@@ -410,7 +376,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten"],
     price: 41000,
     nutrition: nn,
-    // ⚠️ Sin ID Fudo — crear en Fudo
+    fudoData: { categoryId: 80, productId: "1316" },
   },
 
   // ── PIZZAS ────────────────────────────────────────────────────────────────
@@ -489,7 +455,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     tag: "Hamburguesa",
     note: "",
     group: "Entre panes y más",
-    relatedIds: ["ipa", "american-ipa", "scottish"],
+    relatedIds: ["ipa", "scottish"],
     attributes: [],
     allergens: ["Gluten", "Lácteos", "Huevo"],
     price: 15600,
@@ -574,7 +540,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: ["Gluten"],
     price: 5000,
     nutrition: nn,
-    // ⚠️ No encontrado como dúo en Fudo — confirmar si usar empanada individual x2 o crear combo
+    fudoData: { categoryId: 64, productId: "PLT-005" },
   },
 
   // ── MENÚ INFANTIL ─────────────────────────────────────────────────────────
@@ -1195,10 +1161,10 @@ export const DEFAULT_PRODUCTS: Product[] = [
     fudoData: { categoryId: 98, productId: "529" }, // Fudo: "Sprite 500ml"
   },
   {
-    id: "agua-saborizada",
-    name: "Agua saborizada",
+    id: "aquarius-manzana",
+    name: "Aquarius Manzana",
     category: "Bebidas",
-    description: "Agua saborizada.",
+    description: "Agua saborizada sabor manzana.",
     tag: "Sin alcohol",
     note: "",
     group: "Sin alcohol / Gaseosas",
@@ -1207,7 +1173,37 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 3500,
     nutrition: nn,
-    // ⚠️ Sin ID Fudo — identificar en Fudo y cargar
+    fudoData: { categoryId: 97, productId: "979" },
+  },
+  {
+    id: "aquarius-pomelo",
+    name: "Aquarius Pomelo",
+    category: "Bebidas",
+    description: "Agua saborizada sabor pomelo.",
+    tag: "Sin alcohol",
+    note: "",
+    group: "Sin alcohol / Gaseosas",
+    relatedIds: [],
+    attributes: ["Sin alcohol"],
+    allergens: [],
+    price: 3500,
+    nutrition: nn,
+    fudoData: { categoryId: 97, productId: "980" },
+  },
+  {
+    id: "aquarius-pera",
+    name: "Aquarius Pera",
+    category: "Bebidas",
+    description: "Agua saborizada sabor pera.",
+    tag: "Sin alcohol",
+    note: "",
+    group: "Sin alcohol / Gaseosas",
+    relatedIds: [],
+    attributes: ["Sin alcohol"],
+    allergens: [],
+    price: 3500,
+    nutrition: nn,
+    fudoData: { categoryId: 97, productId: "1002" },
   },
   {
     id: "tonica",
@@ -1306,7 +1302,7 @@ export const DEFAULT_MENU_SETTINGS: MenuSettings = {
   foodPreferences: ["Vegetariano", "Sin TACC", "Para compartir"],
   allergenOptions: ["Gluten", "Lácteos", "Huevo", "Maní", "Soja"],
   drinkGroups: ["Cervezas clásicas", "Cervezas especiales", "Tragos clásicos", "Para preparar", "Whiskies", "Vinos", "Combos", "Sin alcohol / Gaseosas"],
-  beerStyles: ["Golden", "Scottish", "IPA", "Stout", "Honey", "Lager", "American IPA", "Orange Wheat"],
+  beerStyles: ["Golden", "Scottish", "IPA", "Stout", "Honey", "Lager"],
 };
 
 export function cloneDefaultProducts() {
