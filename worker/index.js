@@ -243,6 +243,8 @@ async function processOrder(orderId) {
 
   if (fudoItems.length === 0) throw new Error(`Pedido ${orderId} sin productos mapeados`);
 
+  const total = fudoItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
   const payload = {
     order: {
       customer: {
@@ -251,8 +253,9 @@ async function processOrder(orderId) {
         phone: order.customer_phone || "",
       },
       items: fudoItems,
-      payment: { method: "cash" },
-      tableNumber: parseInt(session?.mesa_numero || "1"),
+      payment: { method: "none", total },
+      type: "self-service",
+      type_options: { tableNumber: parseInt(session?.mesa_numero || "1") },
       people: session?.people || 1,
     }
   };
