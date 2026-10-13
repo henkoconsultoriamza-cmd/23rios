@@ -253,7 +253,7 @@ async function processOrder(orderId) {
         phone: order.customer_phone || "",
       },
       items: fudoItems,
-      payment: { method: "cash", total },
+      payment: { method: "in_place", total },
       type: "self-service",
       type_options: { table_number: parseInt(session?.mesa_numero || "1") },
       people: session?.people || 1,
