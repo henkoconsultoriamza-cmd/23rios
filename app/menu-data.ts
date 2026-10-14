@@ -173,7 +173,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     nutrition: nn,
     beerProfile: { style: "Golden Ale", descriptors: ["Dorada", "Refrescante", "Balanceada"], ibu: "20", abv: "4,5%", srm: "8 EBC" },
     servings: beerServingsClassic,
-    fudoData: { categoryId: 70, servingIds: { "Pinta": "22", "Lata": "516", "Growler": "77" } },
+    fudoData: { categoryId: 70, servingIds: { "Pinta": "22", "Media pinta": "740", "Growler": "77" } },
   },
   {
     id: "scottish",
@@ -262,7 +262,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     price: 4500,
     nutrition: nn,
     beerProfile: { style: "Lager", descriptors: ["Dorada", "Suave", "Alemana"], ibu: "—", abv: "—", srm: "—" },
-    fudoData: { categoryId: 75, servingIds: { "Pinta": "607", "Media pinta": "878" } },
+    fudoData: { categoryId: 75, servingIds: { "Pinta": "607", "Media pinta": "878", "Growler": "618" } },
   },
 
   // ── ENTRADAS ──────────────────────────────────────────────────────────────
