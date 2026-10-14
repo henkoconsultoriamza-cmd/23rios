@@ -771,9 +771,9 @@ export const DEFAULT_PRODUCTS: Product[] = [
     relatedIds: [],
     attributes: [],
     allergens: [],
-    price: 0,
+    price: 8500,
     nutrition: nn,
-    fudoData: { categoryId: 121, productId: "86" }, // ✅ confirmado — "Gin Gordon"
+    fudoData: { categoryId: 121, productId: "86" },
   },
   {
     id: "gin-beefeater",
