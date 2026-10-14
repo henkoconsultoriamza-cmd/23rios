@@ -147,12 +147,12 @@ const nn = { basis: "—", calories: "—", fats: "—", proteins: "—", carbs:
 const beerServingsClassic = [
   { label: "Media pinta", volume: "250 cc", price: 3700 },
   { label: "Pinta", volume: "500 cc", price: 5000 },
-  { label: "Jarra", volume: "1 L", price: 9000 },
+  { label: "Growler", volume: "1 L", price: 14500 },
 ];
 const beerServingsIPA = [
   { label: "Media pinta", volume: "250 cc", price: 3700 },
   { label: "Pinta", volume: "500 cc", price: 5500 },
-  { label: "Jarra", volume: "1 L", price: 10000 },
+  { label: "Growler", volume: "1 L", price: 15500 },
 ];
 
 export const DEFAULT_PRODUCTS: Product[] = [
