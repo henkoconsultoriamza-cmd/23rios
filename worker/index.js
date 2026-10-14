@@ -71,6 +71,7 @@ const FUDO_CATALOG = {
   "1094": { categoryId: 121, price: 7000 },
   "1308": { categoryId: 121, price: 8000 },
   "1310": { categoryId: 121, price: 8700 },
+  "1376": { categoryId: 121, price: 7000 },
   "561":  { categoryId: 10,  price: 7500 },
   "1555": { categoryId: 10,  price: 7500 },
   "166":  { categoryId: 13,  price: 78000 },
