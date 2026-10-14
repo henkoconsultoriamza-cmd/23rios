@@ -145,12 +145,12 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
 const nn = { basis: "—", calories: "—", fats: "—", proteins: "—", carbs: "—", sugars: "—" };
 
 const beerServingsClassic = [
-  { label: "Media pinta", volume: "250 cc", price: 2800 },
+  { label: "Media pinta", volume: "250 cc", price: 3700 },
   { label: "Pinta", volume: "500 cc", price: 5000 },
   { label: "Jarra", volume: "1 L", price: 9000 },
 ];
 const beerServingsIPA = [
-  { label: "Media pinta", volume: "250 cc", price: 3000 },
+  { label: "Media pinta", volume: "250 cc", price: 3700 },
   { label: "Pinta", volume: "500 cc", price: 5500 },
   { label: "Jarra", volume: "1 L", price: 10000 },
 ];
@@ -191,7 +191,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     nutrition: nn,
     beerProfile: { style: "Scottish Export", descriptors: ["Cobriza", "Caramelo", "Frutos secos"], ibu: "25", abv: "5,2%", srm: "40 EBC" },
     servings: beerServingsClassic,
-    fudoData: { categoryId: 71, servingIds: { "Pinta": "21", "Lata": "518", "Growler": "76" } },
+    fudoData: { categoryId: 71, servingIds: { "Pinta": "21", "Media pinta": "741", "Growler": "76" } },
   },
   {
     id: "ipa",
@@ -209,7 +209,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     nutrition: nn,
     beerProfile: { style: "IPA", descriptors: ["Cítrica", "Resinosa", "Premiada"], ibu: "52", abv: "5,0%", srm: "13 EBC" },
     servings: beerServingsIPA,
-    fudoData: { categoryId: 73, servingIds: { "Pinta": "25", "Lata": "517", "Growler": "81" } },
+    fudoData: { categoryId: 73, servingIds: { "Pinta": "25", "Media pinta": "743", "Growler": "81" } },
   },
   {
     id: "stout",
@@ -226,7 +226,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     price: 5000,
     nutrition: nn,
     beerProfile: { style: "Stout", descriptors: ["Negra", "Café", "Sedosa"], ibu: "30", abv: "4,5%", srm: "70 EBC" },
-    fudoData: { categoryId: 72, servingIds: { "Copa": "24", "Lata": "356", "Growler": "75" } },
+    fudoData: { categoryId: 72, servingIds: { "Copa": "24", "Media pinta": "742", "Growler": "75" } },
   },
   {
     id: "honey",
@@ -243,7 +243,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     price: 5000,
     nutrition: nn,
     beerProfile: { style: "Honey Ale", descriptors: ["Miel", "Floral", "Mendocina"], ibu: "23", abv: "5,0%", srm: "12 EBC" },
-    fudoData: { categoryId: 74, servingIds: { "Pinta": "23", "Growler": "78" } },
+    fudoData: { categoryId: 74, servingIds: { "Pinta": "23", "Media pinta": "744", "Growler": "78" } },
   },
 
   // ── CERVEZAS ESPECIALES ───────────────────────────────────────────────────
