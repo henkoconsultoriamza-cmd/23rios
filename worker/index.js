@@ -238,28 +238,34 @@ async function processOrder(orderId) {
 
   const COMBO_SUBITEM_GROUPS = { "49": 4, "148": 6 };
 
-  const fudoItems = (lines || [])
-    .filter(l => l.fudo_product_id)
-    .map(l => {
-      const cat = FUDO_CATALOG[String(l.fudo_product_id)] || { categoryId: 0, price: 0 };
-      const children = childByParent[l.line_id] || [];
-      const productGroupId = COMBO_SUBITEM_GROUPS[String(l.fudo_product_id)];
-      const subitems = children
-        .filter(c => c.fudo_product_id)
-        .map(c => ({
-          price: 0,
-          productGroupId,
-          productId: parseInt(c.fudo_product_id),
-          quantity: c.quantity,
-        }));
-      return {
-        subitems,
-        price: cat.price,
-        productCategoryId: cat.categoryId,
-        productId: parseInt(l.fudo_product_id),
-        quantity: l.quantity,
-      };
-    });
+  // Agrupar líneas por fudo_product_id — FUDO rechaza el mismo productId dos veces
+  const grouped = {};
+  for (const l of (lines || []).filter(l => l.fudo_product_id)) {
+    const pid = String(l.fudo_product_id);
+    if (!grouped[pid]) grouped[pid] = { line: l, quantity: 0, subitems: [] };
+    grouped[pid].quantity += l.quantity;
+    const children = childByParent[l.line_id] || [];
+    const productGroupId = COMBO_SUBITEM_GROUPS[pid];
+    for (const c of children.filter(c => c.fudo_product_id)) {
+      grouped[pid].subitems.push({
+        price: 0,
+        productGroupId,
+        productId: parseInt(c.fudo_product_id),
+        quantity: c.quantity,
+      });
+    }
+  }
+
+  const fudoItems = Object.values(grouped).map(({ line: l, quantity, subitems }) => {
+    const cat = FUDO_CATALOG[String(l.fudo_product_id)] || { categoryId: 0, price: 0 };
+    return {
+      subitems,
+      price: cat.price,
+      productCategoryId: cat.categoryId,
+      productId: parseInt(l.fudo_product_id),
+      quantity,
+    };
+  });
 
   if (fudoItems.length === 0) throw new Error(`Pedido ${orderId} sin productos mapeados`);
 
