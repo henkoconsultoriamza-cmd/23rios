@@ -1485,34 +1485,32 @@ export default function AdminPage() {
                       </article>
                     </div>
                   : promoDraft.type === "happy-hour"
-                  ? <div className="admin-preview-copy" style={{padding:0}}>
-                      <article className="detail-modal" style={{position:"relative", boxShadow:"none", maxHeight:"none", overflowY:"visible", borderRadius:12}}>
-                        <div className="detail-image" style={{borderRadius:"12px 12px 0 0", overflow:"hidden", maxHeight:200}}>
-                          {promoDraft.happyHourImageUrl
-                            ? <img src={promoDraft.happyHourImageUrl} alt="" style={{width:"100%", objectFit:"cover", maxHeight:200}}/>
-                            : <div className="detail-photo-pending"><strong>Sin imagen</strong></div>}
+                  ? <div style={{padding:"0 0 16px"}}>
+                      <div style={{width:"100%", height:180, background:"#1a1008", borderRadius:"12px 12px 0 0", overflow:"hidden", flexShrink:0}}>
+                        {promoDraft.happyHourImageUrl
+                          ? <img src={promoDraft.happyHourImageUrl} alt="" style={{width:"100%", height:"100%", objectFit:"cover"}}/>
+                          : <div style={{height:"100%", display:"flex", alignItems:"center", justifyContent:"center", color:"#666", fontSize:13}}>Sin imagen</div>}
+                      </div>
+                      <div style={{padding:"14px 16px 0"}}>
+                        <h2 style={{fontSize:20, margin:"0 0 4px"}}>{promoDraft.happyHourTitle || "Happy Hour"}</h2>
+                        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", margin:"8px 0 12px", padding:"8px 0", borderTop:"1px solid #eee", borderBottom:"1px solid #eee"}}>
+                          <span style={{fontSize:13, color:"#888"}}>Precio</span>
+                          <strong style={{fontSize:18}}>$ {(promoDraft.happyHourPrice ?? 0).toLocaleString("es-AR")}</strong>
                         </div>
-                        <div className="detail-copy" style={{padding:"16px 16px 20px"}}>
-                          <h2 style={{marginBottom:4}}>{promoDraft.happyHourTitle || "Happy Hour"}</h2>
-                          <div className="single-price" style={{marginBottom:12}}>
-                            <span>Precio</span>
-                            <strong>$ {(promoDraft.happyHourPrice ?? 0).toLocaleString("es-AR")}</strong>
-                          </div>
-                          {(promoDraft.happyHourOptions ?? []).length > 0 && (
-                            <div className="modifier-selector" style={{pointerEvents:"none"}}>
-                              <p className="modifier-selector-title">
-                                Elegí {promoDraft.happyHourMin ?? 1}{promoDraft.happyHourMax && promoDraft.happyHourMax !== promoDraft.happyHourMin ? `–${promoDraft.happyHourMax}` : ""} opción{(promoDraft.happyHourMax ?? 1) > 1 ? "es" : ""}
-                              </p>
-                              <div className="modifier-options">
-                                {(promoDraft.happyHourOptions ?? []).map((opt, i) => (
-                                  <button key={i} className="modifier-option" disabled>{opt.name || "—"}</button>
-                                ))}
-                              </div>
+                        {(promoDraft.happyHourOptions ?? []).length > 0 && (
+                          <div style={{pointerEvents:"none", marginBottom:14}}>
+                            <p style={{fontSize:13, fontWeight:600, margin:"0 0 8px"}}>
+                              Elegí {promoDraft.happyHourMin ?? 1}{promoDraft.happyHourMax && promoDraft.happyHourMax !== promoDraft.happyHourMin ? `–${promoDraft.happyHourMax}` : ""} opción{(promoDraft.happyHourMax ?? 1) > 1 ? "es" : ""}
+                            </p>
+                            <div style={{display:"flex", flexWrap:"wrap", gap:8}}>
+                              {(promoDraft.happyHourOptions ?? []).map((opt, i) => (
+                                <span key={i} style={{border:"1px solid #ccc", borderRadius:20, padding:"5px 14px", fontSize:13, background:"#fafafa"}}>{opt.name || "—"}</span>
+                              ))}
                             </div>
-                          )}
-                          <button className="order-button" disabled style={{marginTop:12, width:"100%"}}>Agregar al carrito · $ {(promoDraft.happyHourPrice ?? 0).toLocaleString("es-AR")}</button>
-                        </div>
-                      </article>
+                          </div>
+                        )}
+                        <button className="order-button" disabled style={{width:"100%"}}>Agregar al carrito · $ {(promoDraft.happyHourPrice ?? 0).toLocaleString("es-AR")}</button>
+                      </div>
                     </div>
                   : <div className="admin-preview-copy">
                       <div className="admin-preview-promo-card">
