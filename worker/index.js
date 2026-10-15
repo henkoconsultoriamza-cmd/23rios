@@ -275,7 +275,7 @@ async function processOrder(orderId) {
       // Producto con comentario (ej: "Sin tomate"): enviar por separado para preservar la nota
       const cat = FUDO_CATALOG[pid] || { categoryId: 0, price: 0 };
       for (let i = 0; i < l.quantity; i++) {
-        fudoItems.push({ subitems: [], price: cat.price, productCategoryId: cat.categoryId, productId: parseInt(pid), quantity: 1, note: l.comment });
+        fudoItems.push({ subitems: [], price: cat.price, productCategoryId: cat.categoryId, productId: parseInt(pid), quantity: 1, comment: l.comment });
       }
     } else {
       // Producto regular o combo: agrupar por productId
