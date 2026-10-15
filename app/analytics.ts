@@ -10,6 +10,8 @@ export type EventType =
   | "cart_send"
   | "language_change"
   | "events_open"
+  | "event_view"
+  | "event_cta_click"
   | "banner_click"
   | "banner_view"
   | "assistant_open"
@@ -24,6 +26,7 @@ export type AnalyticsEvent = {
   relatedProductId?: string;
   language?: string;
   bannerId?: string;
+  eventId?: string;
   filterName?: string;
   filterType?: string;
 };
