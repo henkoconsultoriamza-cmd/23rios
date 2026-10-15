@@ -122,6 +122,40 @@ function BannerCard({ banner }: { banner: Banner }) {
   );
 }
 
+function EventCard({ ev }: { ev: import("./event-data").EventItem }) {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          trackEvent("event_view", { eventId: ev.id });
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.5 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ev.id]);
+
+  return (
+    <article ref={ref}>
+      {ev.imageUrl && <div className="event-poster"><img src={ev.imageUrl} alt={ev.title}/></div>}
+      <div className="event-information">
+        <h3>{ev.title}</h3>
+        {(ev.date || ev.time || ev.timeSlots?.length) && <p className="event-date-text">{ev.date}{(ev.date && (ev.timeSlots?.length || ev.time)) ? " · " : ""}{(ev.timeSlots?.filter(Boolean) ?? (ev.time ? [ev.time] : [])).join(" / ")}</p>}
+        {ev.subtitle && <p className="event-description">{ev.subtitle}</p>}
+        {ev.ctaLabel && (ev.ctaHref
+          ? <a className="event-cta" href={ev.ctaHref} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent("event_cta_click", { eventId: ev.id })}>{ev.ctaLabel}</a>
+          : <span className="event-cta">{ev.ctaLabel}</span>
+        )}
+      </div>
+    </article>
+  );
+}
+
 function NovedadesSlider({ banners }: { banners: Banner[] }) {
   const [current, setCurrent] = useState(0);
   const touchStartX = useRef<number | null>(null);
@@ -873,7 +907,7 @@ export default function Home() {
                                 <small>{product.servings ? tr("Desde") : ""}</small>
                                 <strong>{displayPrice(cardPrice)}</strong>
                               </span>
-                              <button disabled={product.outOfStock} className={product.outOfStock ? "add-to-cart-btn out-of-stock-btn" : cartQty > 0 && !product.servings ? "add-to-cart-btn in-cart" : "add-to-cart-btn"} onClick={(e) => { e.stopPropagation(); if (product.outOfStock) return; if (product.servings) { setSelected(product); } else { const cardUnitPrice = promoPrice(product); setOrderItems(prev => { const key = product.id; const existing = prev.find(i => i.key === key); return existing ? prev.map(i => i.key === key ? {...i, quantity: i.quantity + 1, unitPrice: cardUnitPrice} : i) : [...prev, { key, productId: product.id, fudoProductId: product.fudoData?.productId, fudoCategoryId: product.fudoData?.categoryId !== undefined ? String(product.fudoData.categoryId) : undefined, name: product.name, image: product.image, unitPrice: cardUnitPrice, quantity: 1 }]; }); setOrderStatus("draft"); } }}>{btnLabel}</button>
+                              <button disabled={product.outOfStock} className={product.outOfStock ? "add-to-cart-btn out-of-stock-btn" : cartQty > 0 && !product.servings ? "add-to-cart-btn in-cart" : "add-to-cart-btn"} onClick={(e) => { e.stopPropagation(); if (product.outOfStock) return; if (product.servings || product.fudoData?.modifierOptions?.length) { setSelected(product); } else { const cardUnitPrice = promoPrice(product); setOrderItems(prev => { const key = product.id; const existing = prev.find(i => i.key === key); return existing ? prev.map(i => i.key === key ? {...i, quantity: i.quantity + 1, unitPrice: cardUnitPrice} : i) : [...prev, { key, productId: product.id, fudoProductId: product.fudoData?.productId, fudoCategoryId: product.fudoData?.categoryId !== undefined ? String(product.fudoData.categoryId) : undefined, name: product.name, image: product.image, unitPrice: cardUnitPrice, quantity: 1 }]; }); setOrderStatus("draft"); } }}>{btnLabel}</button>
                             </div>
                           );
                         })()}
@@ -905,18 +939,7 @@ export default function Home() {
         <section className="events-panel" role="dialog" aria-modal="true" aria-labelledby="events-title" onMouseDown={(e) => e.stopPropagation()}>
           <header className="events-panel-header"><div><p>AGENDA · {brandName.toLocaleUpperCase("es")}</p><h2 id="events-title">{tr("Agenda de eventos")}</h2><span>Conocé las próximas experiencias del restaurante.</span></div><button onClick={() => setEventsOpen(false)} aria-label="Cerrar agenda"><Icon name="close"/></button></header>
           <div className="events-list">
-            {events.filter(e => e.active).map((ev) => <article key={ev.id}>
-              {ev.imageUrl && <div className="event-poster"><img src={ev.imageUrl} alt={ev.title}/></div>}
-              <div className="event-information">
-                <h3>{ev.title}</h3>
-                {(ev.date || ev.time || ev.timeSlots?.length) && <p className="event-date-text">{ev.date}{(ev.date && (ev.timeSlots?.length || ev.time)) ? " · " : ""}{(ev.timeSlots?.filter(Boolean) ?? (ev.time ? [ev.time] : [])).join(" / ")}</p>}
-                {ev.subtitle && <p className="event-description">{ev.subtitle}</p>}
-                {ev.ctaLabel && (ev.ctaHref
-                  ? <a className="event-cta" href={ev.ctaHref} target="_blank" rel="noopener noreferrer">{ev.ctaLabel}</a>
-                  : <span className="event-cta">{ev.ctaLabel}</span>
-                )}
-              </div>
-            </article>)}
+            {events.filter(e => e.active).map((ev) => <EventCard key={ev.id} ev={ev}/>)}
             <div className="events-coming-soon"><span>＋</span><div><strong>{tr("Más eventos próximamente")}</strong><p>{tr("La agenda está preparada para incorporar todas las fechas de cada mes.")}</p></div></div>
           </div>
         </section>

@@ -1051,7 +1051,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 70000,
     nutrition: nn,
-    fudoData: { categoryId: 13, productId: "49" },
+    fudoData: { categoryId: 13, productId: "49", modifierGroupId: "4", modifierMin: 1, modifierMax: 1, modifierOptions: [{ name: "Coca Cola 2.25", fudoProductId: "102" }, { name: "Coca Zero 2.25", fudoProductId: "811" }] },
   },
   {
     id: "combo-ron",
@@ -1066,7 +1066,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     allergens: [],
     price: 74000,
     nutrition: nn,
-    fudoData: { categoryId: 13, productId: "148" },
+    fudoData: { categoryId: 13, productId: "148", modifierGroupId: "6", modifierMin: 1, modifierMax: 1, modifierOptions: [{ name: "Coca Cola 2.25", fudoProductId: "102" }, { name: "Coca Zero 2.25", fudoProductId: "811" }] },
   },
   {
     id: "combo-vodka",

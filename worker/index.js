@@ -223,15 +223,37 @@ async function processOrder(orderId) {
     .from("table_sessions").select("mesa_numero, fudo_table_id, people").eq("id", order.table_session_id).single();
 
   const { data: lines } = await supabase
-    .from("order_lines").select("fudo_product_id, quantity, comment")
+    .from("order_lines").select("line_id, fudo_product_id, quantity, comment")
     .eq("order_id", orderId).is("parent_line_id", null);
+
+  const { data: childLines } = await supabase
+    .from("order_lines").select("parent_line_id, fudo_product_id, quantity")
+    .eq("order_id", orderId).not("parent_line_id", "is", null);
+
+  const childByParent = {};
+  for (const c of childLines || []) {
+    if (!childByParent[c.parent_line_id]) childByParent[c.parent_line_id] = [];
+    childByParent[c.parent_line_id].push(c);
+  }
+
+  const COMBO_SUBITEM_GROUPS = { "49": 4, "148": 6 };
 
   const fudoItems = (lines || [])
     .filter(l => l.fudo_product_id)
     .map(l => {
       const cat = FUDO_CATALOG[String(l.fudo_product_id)] || { categoryId: 0, price: 0 };
+      const children = childByParent[l.line_id] || [];
+      const productGroupId = COMBO_SUBITEM_GROUPS[String(l.fudo_product_id)];
+      const subitems = children
+        .filter(c => c.fudo_product_id)
+        .map(c => ({
+          price: 0,
+          productGroupId,
+          productId: parseInt(c.fudo_product_id),
+          quantity: c.quantity,
+        }));
       return {
-        subitems: [],
+        subitems,
         price: cat.price,
         productCategoryId: cat.categoryId,
         productId: parseInt(l.fudo_product_id),
