@@ -1165,7 +1165,7 @@ export default function Home() {
                 {modalItem && modalItem.quantity > 0
                   ? <>
                       {selected.category === "Cocina" && <button className="customize-modal-btn" onClick={openCustomize}>{tr("Le quiero sacar...")}</button>}
-                      <div className="modal-quantity-control"><button onClick={() => changeOrderQuantity(modalKey, -1)} aria-label="Quitar uno">−</button><span>{modalItem.quantity} en el pedido</span><button onClick={() => changeOrderQuantity(modalKey, 1)} aria-label="Agregar uno">+</button></div>
+                      <div className="modal-quantity-control"><button onClick={() => changeOrderQuantity(modalKey, -1)} aria-label="Quitar uno">−</button><span>{modalItem.quantity} en el pedido</span><button onClick={() => { if (modOptions.length > 0) { setSelectedModifiers([]); } else { changeOrderQuantity(modalKey, 1); } }} aria-label="Agregar uno">+</button></div>
                     </>
                   : <button
                       className="order-button"
