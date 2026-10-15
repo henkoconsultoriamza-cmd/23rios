@@ -1192,8 +1192,8 @@ export default function AdminPage() {
                   const DAY_LABELS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
                   const scheduleLabel = promo.days.length === 0 ? "Todos los días" : promo.days.map(d => DAY_LABELS[d]).join(", ");
                   const timeLabel = promo.timeStart && promo.timeEnd ? ` · ${promo.timeStart}–${promo.timeEnd}` : "";
-                  const typeLabel = promo.type === "2x1" ? "2×1" : promo.type === "precio" ? `Precio especial $${promo.promoPrice ?? "—"}` : promo.type === "combo" ? `Combo · $${promo.comboPrice ?? "—"}` : `${promo.promoPercent ?? "—"}% off`;
-                  const targetLabel = promo.type === "combo" ? (promo.comboTitle || "Combo sin nombre") : promo.targetType === "producto" ? (products.find(p => p.id === promo.targetValue)?.name ?? promo.targetValue) : promo.targetType === "grupo" ? `Grupo: ${promo.targetValue}` : `Categoría: ${promo.targetValue}`;
+                  const typeLabel = promo.type === "2x1" ? "2×1" : promo.type === "precio" ? `Precio especial $${promo.promoPrice ?? "—"}` : promo.type === "combo" ? `Combo · $${promo.comboPrice ?? "—"}` : promo.type === "happy-hour" ? `Happy Hour · $${promo.happyHourPrice ?? "—"}` : `${promo.promoPercent ?? "—"}% off`;
+                  const targetLabel = promo.type === "combo" ? (promo.comboTitle || "Combo sin nombre") : promo.type === "happy-hour" ? (promo.happyHourTitle || "Happy Hour sin nombre") : promo.targetType === "producto" ? (products.find(p => p.id === promo.targetValue)?.name ?? promo.targetValue) : promo.targetType === "grupo" ? `Grupo: ${promo.targetValue}` : `Categoría: ${promo.targetValue}`;
                   const currentlyOn = isPromoActive(promo);
                   const uniqueGroups = [...new Set(products.map(p => p.group))].sort();
                   return <article key={promo.id} className={`admin-banner-card${promoDraft?.id === promo.id ? " is-editing" : ""}${!promo.active ? " is-hidden" : ""}`}>
@@ -1215,10 +1215,11 @@ export default function AdminPage() {
                           <option value="precio">Precio especial</option>
                           <option value="porcentaje">% Off</option>
                           <option value="combo">Combo (varios productos)</option>
+                          <option value="happy-hour">Happy Hour</option>
                         </select>
                       </label>
 
-                      {promoDraft.type !== "combo" && <>
+                      {promoDraft.type !== "combo" && promoDraft.type !== "happy-hour" && <>
                         <label className="wide">Aplicar a
                           <select value={promoDraft.targetType} onChange={(e) => { const t = e.target.value as Promo["targetType"]; const defaultVal = t === "producto" ? (products[0]?.id ?? "") : t === "grupo" ? (uniqueGroups[0] ?? "") : "Cervezas"; updatePromoDraft("targetType", t); updatePromoDraft("targetValue", defaultVal); }}>
                             <option value="producto">Producto específico</option>
@@ -1279,6 +1280,32 @@ export default function AdminPage() {
                         </div>
                         <label className="wide">Precio del combo<input type="number" min="0" step="100" value={promoDraft.comboPrice ?? ""} onChange={(e) => updatePromoDraft("comboPrice", Number(e.target.value))} placeholder="Ej. 6000"/></label>
                         <label className="wide">ID producto en Fudo<input type="text" inputMode="numeric" value={promoDraft.fudoProductId ?? ""} onChange={(e) => updatePromoDraft("fudoProductId", e.target.value.replace(/\D/g, "") || undefined)} placeholder="Ej. 1234 (ID del combo en Fudo)"/></label>
+                      </>}
+
+                      {promoDraft.type === "happy-hour" && <>
+                        <label className="wide">Nombre<input value={promoDraft.happyHourTitle ?? ""} onChange={(e) => updatePromoDraft("happyHourTitle", e.target.value || undefined)} placeholder="Ej. Happy Hour Cervezas Clásicas"/></label>
+                        <div className="wide admin-event-image-field">
+                          {promoDraft.happyHourImageUrl && <img src={promoDraft.happyHourImageUrl} alt="Preview" className="admin-event-image-preview"/>}
+                          <label className="admin-upload-slim">Imagen — 800 × 600 px recomendado<input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; if (file.size > 2_097_152) { setNotice("La imagen debe pesar menos de 2 MB."); e.target.value = ""; return; } setNotice("Subiendo imagen..."); uploadImage(file, "combos").then((url) => { updatePromoDraft("happyHourImageUrl", url); setNotice(""); }).catch(() => setNotice("Error al subir la imagen.")); }}/></label>
+                          <div className="admin-image-url-divider">o pegá una URL</div>
+                          <input value={promoDraft.happyHourImageUrl?.startsWith("data:") ? "" : (promoDraft.happyHourImageUrl ?? "")} onChange={(e) => updatePromoDraft("happyHourImageUrl", e.target.value || undefined)} placeholder="https://..."/>
+                        </div>
+                        <label>Precio<input type="number" min="0" step="100" value={promoDraft.happyHourPrice ?? ""} onChange={(e) => updatePromoDraft("happyHourPrice", Number(e.target.value))} placeholder="Ej. 9000"/></label>
+                        <label>ID producto Fudo<input type="text" inputMode="numeric" value={promoDraft.happyHourFudoProductId ?? ""} onChange={(e) => updatePromoDraft("happyHourFudoProductId", e.target.value.replace(/\D/g, "") || undefined)} placeholder="ID en Fudo"/></label>
+                        <label>ID grupo modificador Fudo<input type="text" inputMode="numeric" value={promoDraft.happyHourFudoGroupId ?? ""} onChange={(e) => updatePromoDraft("happyHourFudoGroupId", e.target.value.replace(/\D/g, "") || undefined)} placeholder="Ej. 4"/></label>
+                        <label>Mín. opciones<input type="number" min="1" max="10" value={promoDraft.happyHourMin ?? 1} onChange={(e) => updatePromoDraft("happyHourMin", Number(e.target.value))}/></label>
+                        <label>Máx. opciones<input type="number" min="1" max="10" value={promoDraft.happyHourMax ?? 1} onChange={(e) => updatePromoDraft("happyHourMax", Number(e.target.value))}/></label>
+                        <div className="wide">
+                          <p style={{margin:"0 0 8px", fontWeight:700, fontSize:13}}>Opciones disponibles</p>
+                          {(promoDraft.happyHourOptions ?? []).map((opt, idx) => (
+                            <div key={idx} className="admin-combo-item-row" style={{marginBottom:6}}>
+                              <input value={opt.name} onChange={(e) => { const next = [...(promoDraft.happyHourOptions ?? [])]; next[idx] = {...opt, name: e.target.value}; updatePromoDraft("happyHourOptions", next); }} placeholder="Nombre (ej. Pinta Golden)"/>
+                              <input style={{width:100}} value={opt.fudoProductId} onChange={(e) => { const next = [...(promoDraft.happyHourOptions ?? [])]; next[idx] = {...opt, fudoProductId: e.target.value.replace(/\D/g,"")}; updatePromoDraft("happyHourOptions", next); }} placeholder="ID Fudo" inputMode="numeric"/>
+                              <button type="button" className="combo-del-btn" onClick={() => { const next = (promoDraft.happyHourOptions ?? []).filter((_,i) => i !== idx); updatePromoDraft("happyHourOptions", next); }}>×</button>
+                            </div>
+                          ))}
+                          <button type="button" className="admin-combo-add-row" onClick={() => updatePromoDraft("happyHourOptions", [...(promoDraft.happyHourOptions ?? []), {name:"", fudoProductId:""}])}>＋ Agregar opción</button>
+                        </div>
                       </>}
 
                       <label className="wide">Días activos
@@ -1413,7 +1440,7 @@ export default function AdminPage() {
 
               {/* Promo being edited */}
               {promoDraft && <>
-                <div className="admin-preview-banner-label"><span>{promoDraft.type === "combo" ? "COMBO · CARD EN MENÚ" : "PROMOCIÓN · BADGE EN PRODUCTO"}</span></div>
+                <div className="admin-preview-banner-label"><span>{promoDraft.type === "combo" ? "COMBO · CARD EN MENÚ" : promoDraft.type === "happy-hour" ? "HAPPY HOUR · CARD EN MENÚ" : "PROMOCIÓN · BADGE EN PRODUCTO"}</span></div>
                 {promoDraft.type === "combo"
                   ? <div className="admin-preview-copy" style={{padding: 16}}>
                       {/* Combo card — igual que el menú público */}
@@ -1476,8 +1503,8 @@ export default function AdminPage() {
                 {promos.filter(p => p.active).length > 0 && <>
                   <p style={{fontSize:10, fontWeight:800, letterSpacing:".12em", color:"#2a9a6e", margin:"16px 0 8px"}}>PROMOCIONES ACTIVAS</p>
                   {promos.filter(p => p.active).map(p => {
-                    const label = p.type === "2x1" ? "2×1" : p.type === "porcentaje" ? `-${p.promoPercent}%` : p.type === "combo" ? "Combo" : "Precio esp.";
-                    const target = p.type === "combo" ? (p.comboTitle || "Combo") : p.targetType === "producto" ? (products.find(x => x.id === p.targetValue)?.name ?? p.targetValue) : p.targetValue;
+                    const label = p.type === "2x1" ? "2×1" : p.type === "porcentaje" ? `-${p.promoPercent}%` : p.type === "combo" ? "Combo" : p.type === "happy-hour" ? "Happy Hour" : "Precio esp.";
+                    const target = p.type === "combo" ? (p.comboTitle || "Combo") : p.type === "happy-hour" ? (p.happyHourTitle || "Happy Hour") : p.targetType === "producto" ? (products.find(x => x.id === p.targetValue)?.name ?? p.targetValue) : p.targetValue;
                     return <div key={p.id} className="admin-preview-summary-row"><span>{target}</span><small>{label}</small></div>;
                   })}
                 </>}

@@ -44,11 +44,13 @@
 
 export type ComboItem = { productId: string; quantity: number; anyBeer?: boolean; optionIds?: string[] };
 
+export type HappyHourOption = { name: string; fudoProductId: string };
+
 export type Promo = {
   id: string;
   targetType: "producto" | "grupo" | "categoria";
   targetValue: string;  // product.id | product.group | product.category
-  type: "precio" | "2x1" | "porcentaje" | "combo";
+  type: "precio" | "2x1" | "porcentaje" | "combo" | "happy-hour";
   promoPrice?: number;
   promoPercent?: number;
   // combo fields
@@ -56,7 +58,16 @@ export type Promo = {
   comboItems?: ComboItem[];
   comboPrice?: number;
   comboImageUrl?: string;
-  fudoProductId?: string;  // ID del producto combo en Fudo (para enviar como item padre)
+  fudoProductId?: string;
+  // happy-hour fields
+  happyHourTitle?: string;
+  happyHourPrice?: number;
+  happyHourImageUrl?: string;
+  happyHourFudoProductId?: string;
+  happyHourFudoGroupId?: string;
+  happyHourMin?: number;
+  happyHourMax?: number;
+  happyHourOptions?: HappyHourOption[];
   days: number[];       // 0=Dom 1=Lun … 6=Sab; vacío = todos los días
   timeStart?: string;   // "18:00"
   timeEnd?: string;     // "23:00"
