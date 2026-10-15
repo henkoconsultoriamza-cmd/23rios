@@ -1299,8 +1299,10 @@ export default function AdminPage() {
                           <p style={{margin:"0 0 8px", fontWeight:700, fontSize:13}}>Opciones disponibles</p>
                           {(promoDraft.happyHourOptions ?? []).map((opt, idx) => (
                             <div key={idx} className="admin-combo-item-row" style={{marginBottom:6}}>
-                              <input value={opt.name} onChange={(e) => { const next = [...(promoDraft.happyHourOptions ?? [])]; next[idx] = {...opt, name: e.target.value}; updatePromoDraft("happyHourOptions", next); }} placeholder="Nombre (ej. Pinta Golden)"/>
-                              <input style={{width:100}} value={opt.fudoProductId} onChange={(e) => { const next = [...(promoDraft.happyHourOptions ?? [])]; next[idx] = {...opt, fudoProductId: e.target.value.replace(/\D/g,"")}; updatePromoDraft("happyHourOptions", next); }} placeholder="ID Fudo" inputMode="numeric"/>
+                              <select value={products.find(p => p.fudoData?.productId === opt.fudoProductId)?.id ?? ""} onChange={(e) => { const prod = products.find(p => p.id === e.target.value); if (!prod) return; const next = [...(promoDraft.happyHourOptions ?? [])]; next[idx] = { name: prod.name, fudoProductId: prod.fudoData?.productId ?? "" }; updatePromoDraft("happyHourOptions", next); }}>
+                                <option value="">— Elegir producto —</option>
+                                {products.map(p => <option key={p.id} value={p.id}>{p.name}{p.fudoData?.productId ? ` (ID ${p.fudoData.productId})` : " ⚠ sin ID Fudo"}</option>)}
+                              </select>
                               <button type="button" className="combo-del-btn" onClick={() => { const next = (promoDraft.happyHourOptions ?? []).filter((_,i) => i !== idx); updatePromoDraft("happyHourOptions", next); }}>×</button>
                             </div>
                           ))}
