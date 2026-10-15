@@ -236,31 +236,62 @@ async function processOrder(orderId) {
     childByParent[c.parent_line_id].push(c);
   }
 
-  const COMBO_SUBITEM_GROUPS = { "49": 4, "148": 6 };
-
-  // FUDO: un solo item por productId con quantity:N y UN subitem (la elección, no la cantidad)
-  const grouped = {};
-  for (const l of (lines || []).filter(l => l.fudo_product_id)) {
-    const pid = String(l.fudo_product_id);
-    if (!grouped[pid]) {
-      const cat = FUDO_CATALOG[pid] || { categoryId: 0, price: 0 };
-      const productGroupId = COMBO_SUBITEM_GROUPS[pid];
-      const firstChild = (childByParent[l.line_id] || []).find(c => c.fudo_product_id);
-      grouped[pid] = {
-        productId: parseInt(pid),
-        categoryId: cat.categoryId,
-        price: cat.price,
-        quantity: 0,
-        subitems: firstChild
-          ? [{ price: 0, productGroupId, productId: parseInt(firstChild.fudo_product_id), quantity: 1 }]
-          : [],
+  // Cargar happy hours configurados para saber precio, categoría y grupo de modificadores
+  const { data: promosRow } = await supabase.from("restaurant_config").select("value").eq("key", "promos").single();
+  const promoList = Array.isArray(promosRow?.value) ? promosRow.value : [];
+  const happyHourByProductId = {};
+  for (const p of promoList) {
+    if (p.type === "happy-hour" && p.happyHourFudoProductId) {
+      happyHourByProductId[String(p.happyHourFudoProductId)] = {
+        categoryId: p.happyHourFudoCategoryId || 0,
+        price: p.happyHourPrice || 0,
+        groupId: parseInt(p.happyHourFudoGroupId || "0"),
       };
     }
-    grouped[pid].quantity += l.quantity;
   }
 
-  // Expandir quantity > 1 en items separados — FUDO parece no soportar quantity > 1 en combos
+  const COMBO_SUBITEM_GROUPS = { "49": 4, "148": 6 };
+
+  const grouped = {};
   const fudoItems = [];
+
+  for (const l of (lines || []).filter(l => l.fudo_product_id)) {
+    const pid = String(l.fudo_product_id);
+    const hhData = happyHourByProductId[pid];
+
+    if (hhData) {
+      // Happy hour: cada línea se envía por separado con TODOS sus hijos como subitems
+      const children = (childByParent[l.line_id] || []).filter(c => c.fudo_product_id);
+      const subitems = children.map(c => ({
+        price: 0,
+        productGroupId: hhData.groupId,
+        productId: parseInt(c.fudo_product_id),
+        quantity: 1,
+      }));
+      for (let i = 0; i < l.quantity; i++) {
+        fudoItems.push({ subitems, price: hhData.price, productCategoryId: hhData.categoryId, productId: parseInt(pid), quantity: 1 });
+      }
+    } else {
+      // Producto regular o combo: agrupar por productId
+      if (!grouped[pid]) {
+        const cat = FUDO_CATALOG[pid] || { categoryId: 0, price: 0 };
+        const productGroupId = COMBO_SUBITEM_GROUPS[pid];
+        const firstChild = productGroupId ? (childByParent[l.line_id] || []).find(c => c.fudo_product_id) : null;
+        grouped[pid] = {
+          productId: parseInt(pid),
+          categoryId: cat.categoryId,
+          price: cat.price,
+          quantity: 0,
+          subitems: firstChild
+            ? [{ price: 0, productGroupId, productId: parseInt(firstChild.fudo_product_id), quantity: 1 }]
+            : [],
+        };
+      }
+      grouped[pid].quantity += l.quantity;
+    }
+  }
+
+  // Expandir quantity > 1 en items separados
   for (const g of Object.values(grouped)) {
     for (let i = 0; i < g.quantity; i++) {
       fudoItems.push({

@@ -65,6 +65,7 @@ export type Promo = {
   happyHourImageUrl?: string;
   happyHourFudoProductId?: string;
   happyHourFudoGroupId?: string;
+  happyHourFudoCategoryId?: number;
   happyHourMin?: number;
   happyHourMax?: number;
   happyHourOptions?: HappyHourOption[];

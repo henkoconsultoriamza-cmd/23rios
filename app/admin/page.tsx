@@ -937,7 +937,7 @@ export default function AdminPage() {
                 {/* Producto sin servings: un solo ID */}
                 {!(draft.servings && draft.servings.length > 0) && (
                   <div className="admin-fudo-row">
-                    <label className="admin-fudo-label">ID Fudo</label>
+                    <label className="admin-fudo-label">ID producto Fudo</label>
                     <input
                       className="admin-fudo-input"
                       type="text"
@@ -952,10 +952,25 @@ export default function AdminPage() {
                     {draft.fudoData?.productId
                       ? <span className="admin-fudo-badge ok">✓ mapeado</span>
                       : <span className="admin-fudo-badge missing">sin mapear</span>}
+                    <label className="admin-fudo-label" style={{marginTop:8}}>ID categoría Fudo</label>
+                    <input
+                      className="admin-fudo-input"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Ej: 83"
+                      value={draft.fudoData?.categoryId ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "");
+                        setDraft((d) => ({ ...d, fudoData: { ...d.fudoData, categoryId: val ? Number(val) : undefined } }));
+                      }}
+                    />
+                    {draft.fudoData?.categoryId
+                      ? <span className="admin-fudo-badge ok">✓ categoría ok</span>
+                      : <span className="admin-fudo-badge missing">sin categoría</span>}
                   </div>
                 )}
 
-                {/* Producto con servings (cervezas): un ID por tamaño */}
+                {/* Producto con servings (cervezas): un ID por tamaño + categoría compartida */}
                 {draft.servings && draft.servings.length > 0 && (
                   <div className="admin-fudo-servings">
                     <p className="admin-fudo-hint">Cada tamaño es un producto distinto en Fudo. Completar el ID de cada uno.</p>
@@ -984,6 +999,23 @@ export default function AdminPage() {
                           : <span className="admin-fudo-badge missing">—</span>}
                       </div>
                     ))}
+                    <div className="admin-fudo-row" style={{ marginTop: 8 }}>
+                      <label className="admin-fudo-label">ID categoría Fudo</label>
+                      <input
+                        className="admin-fudo-input"
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="Ej: 70"
+                        value={draft.fudoData?.categoryId ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "");
+                          setDraft((d) => ({ ...d, fudoData: { ...d.fudoData, categoryId: val ? Number(val) : undefined } }));
+                        }}
+                      />
+                      {draft.fudoData?.categoryId
+                        ? <span className="admin-fudo-badge ok">✓ categoría ok</span>
+                        : <span className="admin-fudo-badge missing">sin categoría</span>}
+                    </div>
                   </div>
                 )}
 
@@ -1292,6 +1324,7 @@ export default function AdminPage() {
                         </div>
                         <label>Precio<input type="number" min="0" step="100" value={promoDraft.happyHourPrice ?? ""} onChange={(e) => updatePromoDraft("happyHourPrice", Number(e.target.value))} placeholder="Ej. 9000"/></label>
                         <label>ID producto Fudo<input type="text" inputMode="numeric" value={promoDraft.happyHourFudoProductId ?? ""} onChange={(e) => updatePromoDraft("happyHourFudoProductId", e.target.value.replace(/\D/g, "") || undefined)} placeholder="ID en Fudo"/></label>
+                        <label>ID categoría Fudo<input type="text" inputMode="numeric" value={promoDraft.happyHourFudoCategoryId ?? ""} onChange={(e) => updatePromoDraft("happyHourFudoCategoryId", e.target.value ? Number(e.target.value.replace(/\D/g, "")) : undefined)} placeholder="Ej. 70"/></label>
                         <label>ID grupo modificador Fudo<input type="text" inputMode="numeric" value={promoDraft.happyHourFudoGroupId ?? ""} onChange={(e) => updatePromoDraft("happyHourFudoGroupId", e.target.value.replace(/\D/g, "") || undefined)} placeholder="Ej. 4"/></label>
                         <label>Mín. opciones<input type="number" min="1" max="10" value={promoDraft.happyHourMin ?? 1} onChange={(e) => updatePromoDraft("happyHourMin", Number(e.target.value))}/></label>
                         <label>Máx. opciones<input type="number" min="1" max="10" value={promoDraft.happyHourMax ?? 1} onChange={(e) => updatePromoDraft("happyHourMax", Number(e.target.value))}/></label>
