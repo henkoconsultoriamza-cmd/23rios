@@ -223,7 +223,7 @@ async function processOrder(orderId) {
     .from("table_sessions").select("mesa_numero, fudo_table_id, people").eq("id", order.table_session_id).single();
 
   const { data: lines } = await supabase
-    .from("order_lines").select("line_id, fudo_product_id, quantity, comment")
+    .from("order_lines").select("line_id, fudo_product_id, quantity, unit_price, comment")
     .eq("order_id", orderId).is("parent_line_id", null);
 
   const { data: childLines } = await supabase
@@ -274,19 +274,21 @@ async function processOrder(orderId) {
     } else if (l.comment) {
       // Producto con comentario (ej: "Sin tomate"): enviar por separado para preservar la nota
       const cat = FUDO_CATALOG[pid] || { categoryId: 0, price: 0 };
+      const price = l.unit_price || cat.price;
       for (let i = 0; i < l.quantity; i++) {
-        fudoItems.push({ subitems: [], price: cat.price, productCategoryId: cat.categoryId, productId: parseInt(pid), quantity: 1, comment: l.comment });
+        fudoItems.push({ subitems: [], price, productCategoryId: cat.categoryId, productId: parseInt(pid), quantity: 1, comment: l.comment });
       }
     } else {
       // Producto regular o combo: agrupar por productId
       if (!grouped[pid]) {
         const cat = FUDO_CATALOG[pid] || { categoryId: 0, price: 0 };
+        const price = l.unit_price || cat.price;
         const productGroupId = COMBO_SUBITEM_GROUPS[pid];
         const firstChild = productGroupId ? (childByParent[l.line_id] || []).find(c => c.fudo_product_id) : null;
         grouped[pid] = {
           productId: parseInt(pid),
           categoryId: cat.categoryId,
-          price: cat.price,
+          price,
           quantity: 0,
           subitems: firstChild
             ? [{ price: 0, productGroupId, productId: parseInt(firstChild.fudo_product_id), quantity: 1 }]
