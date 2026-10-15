@@ -305,7 +305,6 @@ async function processOrder(orderId) {
     "accept": "application/json, text/plain, */*",
   };
 
-  console.log("[worker] FUDO payload:", JSON.stringify(payload, null, 2));
   const res = await fetch(FUDO_ORDERS_URL, {
     method: "POST",
     headers: FUDO_HEADERS,
