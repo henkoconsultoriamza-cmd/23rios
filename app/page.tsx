@@ -255,6 +255,7 @@ export default function Home() {
   const [selected, setSelected] = useState<Product | null>(null);
   const [selectedServing, setSelectedServing] = useState("Pinta");
   const [selectedModifiers, setSelectedModifiers] = useState<string[]>([]); // fudoProductIds elegidos
+  const [addingAnotherUnit, setAddingAnotherUnit] = useState(false);
   const [orderFeedback, setOrderFeedback] = useState("");
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [orderStatus, setOrderStatus] = useState<OrderStatus>("idle");
@@ -488,7 +489,7 @@ export default function Home() {
     : [];
 
   // Resetear modificadores elegidos cada vez que se abre un nuevo producto
-  useEffect(() => { setSelectedModifiers([]); }, [selected]);
+  useEffect(() => { setSelectedModifiers([]); setAddingAnotherUnit(false); }, [selected]);
 
   const selectedServingOption = selected?.servings?.find((serving) => serving.label === selectedServing);
   const selectedBasePrice = selectedServingOption?.price ?? selected?.price ?? 0;
@@ -1126,7 +1127,7 @@ export default function Home() {
 
               return <>
                 {/* Selector de modificadores (combos/promos con grupos en Fudo) */}
-                {modOptions.length > 0 && !modalItem && (
+                {modOptions.length > 0 && (!modalItem || addingAnotherUnit) && (
                   <div className="modifier-selector">
                     <p className="modifier-selector-title">
                       {tr("Elegí")} {modMin === modMax ? modMin : `${modMin}–${modMax}`} {modMin === 1 && modMax === 1 ? tr("opción") : tr("opciones")}
@@ -1162,14 +1163,14 @@ export default function Home() {
                   </div>
                 )}
 
-                {modalItem && modalItem.quantity > 0
+                {modalItem && modalItem.quantity > 0 && !addingAnotherUnit
                   ? <>
                       {selected.category === "Cocina" && <button className="customize-modal-btn" onClick={openCustomize}>{tr("Le quiero sacar...")}</button>}
-                      <div className="modal-quantity-control"><button onClick={() => changeOrderQuantity(modalKey, -1)} aria-label="Quitar uno">−</button><span>{modalItem.quantity} en el pedido</span><button onClick={() => { if (modOptions.length > 0) { setSelectedModifiers([]); } else { changeOrderQuantity(modalKey, 1); } }} aria-label="Agregar uno">+</button></div>
+                      <div className="modal-quantity-control"><button onClick={() => changeOrderQuantity(modalKey, -1)} aria-label="Quitar uno">−</button><span>{modalItem.quantity} en el pedido</span><button onClick={() => { if (modOptions.length > 0) { setSelectedModifiers([]); setAddingAnotherUnit(true); } else { changeOrderQuantity(modalKey, 1); } }} aria-label="Agregar uno">+</button></div>
                     </>
                   : <button
                       className="order-button"
-                      onClick={addSelectedToOrder}
+                      onClick={() => { addSelectedToOrder(); setAddingAnotherUnit(false); }}
                       disabled={!modSelectionComplete}
                       style={!modSelectionComplete ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
                     >
