@@ -1698,7 +1698,14 @@ export default function AdminPage() {
             </article>
 
             <article className="admin-adjustment-card">
-              <div className="admin-adjustment-heading"><span>02</span><div><small>PRODUCTOS DEL EVENTO</small><h2>Seleccioná qué aparece</h2><p>Marcá los productos que van a estar disponibles cuando el modo evento esté activo. El resto queda oculto automáticamente.</p></div></div>
+              <div className="admin-adjustment-heading"><span>02</span><div><small>CARRITO</small><h2>Desactivar pedidos</h2><p>Cuando está activo, los clientes solo pueden ver el menú. Los botones de agregar al carrito desaparecen y no se puede hacer ningún pedido.</p></div></div>
+              <div className="admin-toggle-list">
+                <label><span><strong>Solo lectura (sin carrito)</strong><small>{appSettings.cartDisabled ? "Los clientes solo pueden ver el menú, no pedir." : "Los clientes pueden ver y pedir normalmente."}</small></span><input type="checkbox" checked={appSettings.cartDisabled ?? false} onChange={(e) => updateAppSetting("cartDisabled", e.target.checked)}/><i/></label>
+              </div>
+            </article>
+
+            <article className="admin-adjustment-card">
+              <div className="admin-adjustment-heading"><span>03</span><div><small>PRODUCTOS DEL EVENTO</small><h2>Seleccioná qué aparece</h2><p>Marcá los productos que van a estar disponibles cuando el modo evento esté activo. El resto queda oculto automáticamente.</p></div></div>
               <div className="admin-event-product-list">
                 {(["Cocina", "Cervezas", "Bebidas"] as const).map((cat) => {
                   const catProducts = products.filter((p) => p.category === cat);

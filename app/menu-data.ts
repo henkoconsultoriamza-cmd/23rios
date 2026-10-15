@@ -125,6 +125,7 @@ export type AppSettings = {
   weeklySummary: boolean;
   orderToken: string;
   eventModeActive: boolean;
+  cartDisabled: boolean;
   hours?: string;
 };
 
@@ -152,6 +153,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   weeklySummary: false,
   orderToken: "",
   eventModeActive: false,
+  cartDisabled: false,
 };
 
 const nn = { basis: "—", calories: "—", fats: "—", proteins: "—", carbs: "—", sugars: "—" };

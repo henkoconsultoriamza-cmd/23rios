@@ -400,6 +400,7 @@ export default function Home() {
   const heroImageUrl = appSettings.heroImageUrl.trim() || DEFAULT_APP_SETTINGS.heroImageUrl;
   const displayPrice = (value: number) => formatPrice(value, appSettings.currency);
 
+  const cartDisabled = appSettings.cartDisabled ?? false;
   const activePromos = useMemo(() => appSettings.eventModeActive ? [] : promos.filter(isPromoActive), [promos, appSettings.eventModeActive]);
   const activeCombos = useMemo(() => activePromos.filter(p => p.type === "combo" && (p.comboItems?.length ?? 0) > 0 && p.comboPrice != null), [activePromos]);
   const activeHappyHours = useMemo(() => activePromos.filter(p => p.type === "happy-hour"), [activePromos]);
@@ -889,7 +890,7 @@ export default function Home() {
                       <p className="combo-items-inline">{(hh.happyHourOptions ?? []).map(o => o.name).join(" · ")}</p>
                       <div className="product-footer">
                         <strong>{displayPrice(hh.happyHourPrice ?? 0)}</strong>
-                        <button className="add-to-cart-btn" onClick={() => addHappyHourToCart(hh)}>Lo quiero <Icon name="plus" size={15}/></button>
+                        {!cartDisabled && <button className="add-to-cart-btn" onClick={() => addHappyHourToCart(hh)}>Lo quiero <Icon name="plus" size={15}/></button>}
                       </div>
                     </div>
                   </article>
@@ -921,7 +922,7 @@ export default function Home() {
                             {normalTotal > (combo.comboPrice ?? 0) && <s className="price-original">{displayPrice(normalTotal)}</s>}
                             <strong>{displayPrice(combo.comboPrice ?? 0)}</strong>
                           </span>
-                          <button className="add-to-cart-btn" onClick={() => addComboToCart(combo)}>Lo quiero <Icon name="plus" size={15}/></button>
+                          {!cartDisabled && <button className="add-to-cart-btn" onClick={() => addComboToCart(combo)}>Lo quiero <Icon name="plus" size={15}/></button>}
                         </div>
                       </div>
                     </article>
@@ -948,7 +949,7 @@ export default function Home() {
                             {discountedPrice !== product.price && <s className="price-original">{displayPrice(product.price)}</s>}
                             <strong>{displayPrice(discountedPrice)}</strong>
                           </span>
-                          <button className="add-to-cart-btn" onClick={() => setSelected(product)}>Lo quiero <Icon name="plus" size={15}/></button>
+                          {!cartDisabled && <button className="add-to-cart-btn" onClick={() => setSelected(product)}>Lo quiero <Icon name="plus" size={15}/></button>}
                         </div>
                       </div>
                     </article>
@@ -1002,7 +1003,7 @@ export default function Home() {
                                 <small>{product.servings ? tr("Desde") : ""}</small>
                                 <strong>{displayPrice(cardPrice)}</strong>
                               </span>
-                              <button disabled={product.outOfStock} className={product.outOfStock ? "add-to-cart-btn out-of-stock-btn" : cartQty > 0 && !product.servings ? "add-to-cart-btn in-cart" : "add-to-cart-btn"} onClick={(e) => { e.stopPropagation(); if (product.outOfStock) return; if (product.servings || product.fudoData?.modifierOptions?.length) { setSelected(product); } else { const cardUnitPrice = promoPrice(product); setOrderItems(prev => { const key = product.id; const existing = prev.find(i => i.key === key); return existing ? prev.map(i => i.key === key ? {...i, quantity: i.quantity + 1, unitPrice: cardUnitPrice} : i) : [...prev, { key, productId: product.id, fudoProductId: product.fudoData?.productId, fudoCategoryId: product.fudoData?.categoryId !== undefined ? String(product.fudoData.categoryId) : undefined, name: product.name, image: product.image, unitPrice: cardUnitPrice, quantity: 1 }]; }); setOrderStatus("draft"); } }}>{btnLabel}</button>
+                              {!cartDisabled && <button disabled={product.outOfStock} className={product.outOfStock ? "add-to-cart-btn out-of-stock-btn" : cartQty > 0 && !product.servings ? "add-to-cart-btn in-cart" : "add-to-cart-btn"} onClick={(e) => { e.stopPropagation(); if (product.outOfStock) return; if (product.servings || product.fudoData?.modifierOptions?.length) { setSelected(product); } else { const cardUnitPrice = promoPrice(product); setOrderItems(prev => { const key = product.id; const existing = prev.find(i => i.key === key); return existing ? prev.map(i => i.key === key ? {...i, quantity: i.quantity + 1, unitPrice: cardUnitPrice} : i) : [...prev, { key, productId: product.id, fudoProductId: product.fudoData?.productId, fudoCategoryId: product.fudoData?.categoryId !== undefined ? String(product.fudoData.categoryId) : undefined, name: product.name, image: product.image, unitPrice: cardUnitPrice, quantity: 1 }]; }); setOrderStatus("draft"); } }}>{btnLabel}</button>}
                             </div>
                           );
                         })()}
@@ -1040,7 +1041,7 @@ export default function Home() {
         </section>
       </div>}
 
-      {orderItems.length > 0 && <button className={orderStatus === "sent" ? "order-status-bar sent" : "order-status-bar"} onClick={() => setOrderOpen(true)} aria-label="Abrir carrito">
+      {!cartDisabled && orderItems.length > 0 && <button className={orderStatus === "sent" ? "order-status-bar sent" : "order-status-bar"} onClick={() => setOrderOpen(true)} aria-label="Abrir carrito">
         <span className="order-status-icon"><Icon name={orderStatus === "sent" ? "receipt" : "plus"} size={20}/><b>{orderCount}</b></span>
         <span><small>{tr(orderStatus === "sent" ? "PEDIDO LANZADO" : "CARRITO ABIERTO")}</small><strong>{tr(orderStatus === "sent" ? "Ver estado del pedido" : "Revisar carrito")}</strong></span>
         <span className="order-status-total">{displayPrice(orderTotal)}<Icon name="arrow" size={17}/></span>
@@ -1257,7 +1258,7 @@ export default function Home() {
                   </div>
                 )}
 
-                {modalItem && modalItem.quantity > 0 && !addingAnotherUnit
+                {!cartDisabled && (modalItem && modalItem.quantity > 0 && !addingAnotherUnit
                   ? <>
                       {selected.category === "Cocina" && <button className="customize-modal-btn" onClick={openCustomize}>{tr("Le quiero sacar...")}</button>}
                       <div className="modal-quantity-control"><button onClick={() => changeOrderQuantity(modalKey, -1)} aria-label="Quitar uno">−</button><span>{modalItem.quantity} en el pedido</span><button onClick={() => { if (modOptions.length > 0) { setSelectedModifiers([]); setAddingAnotherUnit(true); } else { changeOrderQuantity(modalKey, 1); } }} aria-label="Agregar uno">+</button></div>
@@ -1271,7 +1272,7 @@ export default function Home() {
                       <Icon name="plus" size={19}/>
                       <span>{tr("Agregar al carrito")} · {displayPrice(selectedPrice)}</span>
                     </button>
-                }
+                )}
               </>;
             })()}
             <section className="cross-sell" aria-labelledby="cross-sell-title">
