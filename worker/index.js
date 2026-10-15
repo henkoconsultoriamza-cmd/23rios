@@ -313,6 +313,7 @@ async function processOrder(orderId) {
   }
 
   if (fudoItems.length === 0) throw new Error(`Pedido ${orderId} sin productos mapeados`);
+  console.log("[worker] fudoItems:", JSON.stringify(fudoItems));
 
   const total = fudoItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
