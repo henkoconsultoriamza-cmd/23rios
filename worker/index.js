@@ -271,6 +271,12 @@ async function processOrder(orderId) {
       for (let i = 0; i < l.quantity; i++) {
         fudoItems.push({ subitems, price: hhData.price, productCategoryId: hhData.categoryId, productId: parseInt(pid), quantity: 1 });
       }
+    } else if (l.comment) {
+      // Producto con comentario (ej: "Sin tomate"): enviar por separado para preservar la nota
+      const cat = FUDO_CATALOG[pid] || { categoryId: 0, price: 0 };
+      for (let i = 0; i < l.quantity; i++) {
+        fudoItems.push({ subitems: [], price: cat.price, productCategoryId: cat.categoryId, productId: parseInt(pid), quantity: 1, note: l.comment });
+      }
     } else {
       // Producto regular o combo: agrupar por productId
       if (!grouped[pid]) {
