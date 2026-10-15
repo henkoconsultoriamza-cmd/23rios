@@ -1484,6 +1484,36 @@ export default function AdminPage() {
                         </div>
                       </article>
                     </div>
+                  : promoDraft.type === "happy-hour"
+                  ? <div className="admin-preview-copy" style={{padding:0}}>
+                      <article className="detail-modal" style={{position:"relative", boxShadow:"none", maxHeight:"none", overflowY:"visible", borderRadius:12}}>
+                        <div className="detail-image" style={{borderRadius:"12px 12px 0 0", overflow:"hidden", maxHeight:200}}>
+                          {promoDraft.happyHourImageUrl
+                            ? <img src={promoDraft.happyHourImageUrl} alt="" style={{width:"100%", objectFit:"cover", maxHeight:200}}/>
+                            : <div className="detail-photo-pending"><strong>Sin imagen</strong></div>}
+                        </div>
+                        <div className="detail-copy" style={{padding:"16px 16px 20px"}}>
+                          <h2 style={{marginBottom:4}}>{promoDraft.happyHourTitle || "Happy Hour"}</h2>
+                          <div className="single-price" style={{marginBottom:12}}>
+                            <span>Precio</span>
+                            <strong>$ {(promoDraft.happyHourPrice ?? 0).toLocaleString("es-AR")}</strong>
+                          </div>
+                          {(promoDraft.happyHourOptions ?? []).length > 0 && (
+                            <div className="modifier-selector" style={{pointerEvents:"none"}}>
+                              <p className="modifier-selector-title">
+                                Elegí {promoDraft.happyHourMin ?? 1}{promoDraft.happyHourMax && promoDraft.happyHourMax !== promoDraft.happyHourMin ? `–${promoDraft.happyHourMax}` : ""} opción{(promoDraft.happyHourMax ?? 1) > 1 ? "es" : ""}
+                              </p>
+                              <div className="modifier-options">
+                                {(promoDraft.happyHourOptions ?? []).map((opt, i) => (
+                                  <button key={i} className="modifier-option" disabled>{opt.name || "—"}</button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          <button className="order-button" disabled style={{marginTop:12, width:"100%"}}>Agregar al carrito · $ {(promoDraft.happyHourPrice ?? 0).toLocaleString("es-AR")}</button>
+                        </div>
+                      </article>
+                    </div>
                   : <div className="admin-preview-copy">
                       <div className="admin-preview-promo-card">
                         <div className="admin-preview-promo-badge">
