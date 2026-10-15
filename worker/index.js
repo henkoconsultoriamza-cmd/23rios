@@ -259,13 +259,19 @@ async function processOrder(orderId) {
     grouped[pid].quantity += l.quantity;
   }
 
-  const fudoItems = Object.values(grouped).map(g => ({
-    subitems: g.subitems,
-    price: g.price,
-    productCategoryId: g.categoryId,
-    productId: g.productId,
-    quantity: g.quantity,
-  }));
+  // Expandir quantity > 1 en items separados — FUDO parece no soportar quantity > 1 en combos
+  const fudoItems = [];
+  for (const g of Object.values(grouped)) {
+    for (let i = 0; i < g.quantity; i++) {
+      fudoItems.push({
+        subitems: g.subitems,
+        price: g.price,
+        productCategoryId: g.categoryId,
+        productId: g.productId,
+        quantity: 1,
+      });
+    }
+  }
 
   if (fudoItems.length === 0) throw new Error(`Pedido ${orderId} sin productos mapeados`);
 
