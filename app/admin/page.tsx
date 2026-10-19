@@ -154,7 +154,7 @@ export default function AdminPage() {
   const [draft, setDraft] = useState<Product>(() => createEmptyProduct("Cocina", cloneDefaultSettings()));
   const [isNew, setIsNew] = useState(true);
   const [query, setQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<"Todos" | "Cocina" | "Bebida">("Todos");
+  const [categoryFilter, setCategoryFilter] = useState<"Todos" | "Cocina" | "Bebida" | "SinTACC">("Todos");
   const [newOptions, setNewOptions] = useState<Partial<Record<SettingsKey, string>>>({});
   const [notice, setNotice] = useState("Cambios guardados solamente en este dispositivo.");
   const [hydrated, setHydrated] = useState(false);
@@ -211,7 +211,7 @@ export default function AdminPage() {
   const filteredProducts = useMemo(() => {
     const term = query.trim().toLocaleLowerCase("es");
     const isBebida = (c: string) => c === "Cervezas" || c === "Bebidas";
-    return products.filter((product) => (categoryFilter === "Todos" || (categoryFilter === "Bebida" ? isBebida(product.category) : product.category === categoryFilter)) && (!term || `${product.name} ${product.group}`.toLocaleLowerCase("es").includes(term)));
+    return products.filter((product) => (categoryFilter === "Todos" || (categoryFilter === "SinTACC" ? product.attributes.includes("Sin TACC") : categoryFilter === "Bebida" ? isBebida(product.category) : product.category === categoryFilter)) && (!term || `${product.name} ${product.group}`.toLocaleLowerCase("es").includes(term)));
   }, [categoryFilter, products, query]);
 
   const publishedProducts = products.filter((product) => !product.outOfStock);
@@ -832,7 +832,7 @@ export default function AdminPage() {
             <section className="admin-product-list">
               <div className="admin-list-tools">
                 <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar producto…" aria-label="Buscar producto"/>
-                <div>{(["Todos", "Cocina", "Bebida"] as const).map((filter) => <button key={filter} className={categoryFilter === filter ? "active" : ""} onClick={() => setCategoryFilter(filter)}>{filter === "Cocina" ? "Comida" : filter}</button>)}</div>
+                <div>{(["Todos", "Cocina", "Bebida", "SinTACC"] as const).map((filter) => <button key={filter} className={categoryFilter === filter ? "active" : ""} onClick={() => setCategoryFilter(filter)}>{filter === "Cocina" ? "Comida" : filter === "SinTACC" ? "Sin TACC" : filter}</button>)}</div>
               </div>
               <div className="admin-products-scroll">
                 {filteredProducts.map((product) => <button className={selectedId === product.id && !isNew ? "admin-product-row active" : "admin-product-row"} key={product.id} onClick={() => selectProduct(product)}>
