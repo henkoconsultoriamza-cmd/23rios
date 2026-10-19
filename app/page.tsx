@@ -520,7 +520,7 @@ export default function Home() {
     const term = query.trim().toLocaleLowerCase("es");
     return activePool.filter((product) => {
       const matchesCategory = category === "SinTACC"
-        ? product.attributes.includes("Sin TACC")
+        ? product.category === "Sin TACC" || product.attributes.includes("Sin TACC")
         : category === "Cervezas"
         ? product.category === "Cervezas" || product.category === "Bebidas"
         : product.category === "Cocina";

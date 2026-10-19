@@ -154,7 +154,7 @@ export default function AdminPage() {
   const [draft, setDraft] = useState<Product>(() => createEmptyProduct("Cocina", cloneDefaultSettings()));
   const [isNew, setIsNew] = useState(true);
   const [query, setQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<"Todos" | "Cocina" | "Bebida" | "SinTACC">("Todos");
+  const [categoryFilter, setCategoryFilter] = useState<"Todos" | "Cocina" | "Bebida" | "Sin TACC">("Todos");
   const [newOptions, setNewOptions] = useState<Partial<Record<SettingsKey, string>>>({});
   const [notice, setNotice] = useState("Cambios guardados solamente en este dispositivo.");
   const [hydrated, setHydrated] = useState(false);
@@ -211,7 +211,7 @@ export default function AdminPage() {
   const filteredProducts = useMemo(() => {
     const term = query.trim().toLocaleLowerCase("es");
     const isBebida = (c: string) => c === "Cervezas" || c === "Bebidas";
-    return products.filter((product) => (categoryFilter === "Todos" || (categoryFilter === "SinTACC" ? product.attributes.includes("Sin TACC") : categoryFilter === "Bebida" ? isBebida(product.category) : product.category === categoryFilter)) && (!term || `${product.name} ${product.group}`.toLocaleLowerCase("es").includes(term)));
+    return products.filter((product) => (categoryFilter === "Todos" || (categoryFilter === "Bebida" ? isBebida(product.category) : product.category === categoryFilter)) && (!term || `${product.name} ${product.group}`.toLocaleLowerCase("es").includes(term)));
   }, [categoryFilter, products, query]);
 
   const publishedProducts = products.filter((product) => !product.outOfStock);
@@ -310,7 +310,7 @@ export default function AdminPage() {
     };
   }, [analyticsEvents, dateRange, products]);
 
-  const selectableGroups = draft.category === "Cocina" ? settings.foodGroups : settings.drinkGroups;
+  const selectableGroups = (draft.category === "Cocina" || draft.category === "Sin TACC") ? settings.foodGroups : settings.drinkGroups;
   const isCraftBeer = draft.category === "Cervezas" && draft.group.toLowerCase().includes("cerveza");
   const [descriptorText, setDescriptorText] = useState(() => (draft.beerProfile?.descriptors ?? []).join(", "));
 
@@ -832,7 +832,7 @@ export default function AdminPage() {
             <section className="admin-product-list">
               <div className="admin-list-tools">
                 <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar producto…" aria-label="Buscar producto"/>
-                <div>{(["Todos", "Cocina", "Bebida", "SinTACC"] as const).map((filter) => <button key={filter} className={categoryFilter === filter ? "active" : ""} onClick={() => setCategoryFilter(filter)}>{filter === "Cocina" ? "Comida" : filter === "SinTACC" ? "Sin TACC" : filter}</button>)}</div>
+                <div>{(["Todos", "Cocina", "Bebida", "Sin TACC"] as const).map((filter) => <button key={filter} className={categoryFilter === filter ? "active" : ""} onClick={() => setCategoryFilter(filter)}>{filter === "Cocina" ? "Comida" : filter}</button>)}</div>
               </div>
               <div className="admin-products-scroll">
                 {filteredProducts.map((product) => <button className={selectedId === product.id && !isNew ? "admin-product-row active" : "admin-product-row"} key={product.id} onClick={() => selectProduct(product)}>
@@ -845,7 +845,7 @@ export default function AdminPage() {
             </section>
 
             <section className="admin-editor">
-              <div className="admin-editor-title"><div><p>{isNew ? "NUEVO PRODUCTO" : "EDITAR PRODUCTO"}</p><h2>{draft.name || "Sin nombre todavía"}</h2></div><span>{draft.category === "Cocina" ? "Comida" : "Bebida"}</span></div>
+              <div className="admin-editor-title"><div><p>{isNew ? "NUEVO PRODUCTO" : "EDITAR PRODUCTO"}</p><h2>{draft.name || "Sin nombre todavía"}</h2></div><span>{draft.category === "Cocina" ? "Comida" : draft.category === "Sin TACC" ? "Sin TACC" : "Bebida"}</span></div>
 
               <div className="admin-photo-editor">
                 <div className="wide admin-event-image-field">
@@ -860,7 +860,7 @@ export default function AdminPage() {
                 <div className="admin-section-title"><span>01</span><div><h3>Información principal</h3><p>Nombre, descripción y precio que verá el cliente.</p></div></div>
                 <div className="admin-form-grid">
                   <label className="wide">Nombre del producto<input value={draft.name} onChange={(event) => updateDraft("name", event.target.value)} placeholder="Ej. Hamburguesa de la casa"/></label>
-                  <label>Categoría<select value={draft.category} onChange={(event) => changeProductCategory(event.target.value as Product["category"])}><option value="Cocina">Comida</option><option value="Cervezas">Bebida</option></select></label>
+                  <label>Categoría<select value={draft.category} onChange={(event) => changeProductCategory(event.target.value as Product["category"])}><option value="Cocina">Comida</option><option value="Cervezas">Bebida</option><option value="Sin TACC">Sin TACC</option></select></label>
                   <label>Tipo<select value={draft.group} onChange={(event) => changeProductGroup(event.target.value)}>{selectableGroups.map((group) => <option key={group}>{group}</option>)}</select></label>
                   <label>Precio base<input type="number" min="0" step="100" value={draft.price} onChange={(event) => updateDraft("price", Number(event.target.value))}/></label>
                   <label>Etiqueta corta<input value={draft.tag} onChange={(event) => updateDraft("tag", event.target.value)} placeholder="Ej. Recomendado"/></label>
@@ -1708,7 +1708,7 @@ export default function AdminPage() {
             <article className="admin-adjustment-card">
               <div className="admin-adjustment-heading"><span>03</span><div><small>PRODUCTOS DEL EVENTO</small><h2>Seleccioná qué aparece</h2><p>Marcá los productos que van a estar disponibles cuando el modo evento esté activo. El resto queda oculto automáticamente.</p></div></div>
               <div className="admin-event-product-list">
-                {(["Cocina", "Bebida"] as const).map((cat) => {
+                {(["Cocina", "Bebida", "Sin TACC"] as const).map((cat) => {
                   const catProducts = products.filter((p) => cat === "Bebida" ? (p.category === "Cervezas" || p.category === "Bebidas") : p.category === cat);
                   if (!catProducts.length) return null;
                   const groups = [...new Set(catProducts.map((p) => p.group))];
