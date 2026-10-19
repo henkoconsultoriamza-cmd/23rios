@@ -238,7 +238,8 @@ function EventsBannerSlider({ events, brandName, onOpen, tr }: { events: EventIt
 }
 
 export default function Home() {
-  const [catalogProducts, setCatalogProducts] = useState<Product[]>(DEFAULT_PRODUCTS);
+  const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
+  const [productsReady, setProductsReady] = useState(false);
   const [menuSettings, setMenuSettings] = useState<MenuSettings>(DEFAULT_MENU_SETTINGS);
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS);
   const { foodGroups, foodPreferences, allergenOptions, drinkGroups, beerStyles } = menuSettings;
@@ -330,7 +331,7 @@ export default function Home() {
       getAppSettings(),
       getPromos(),
     ]).then(([products, menuSetts, appSetts, proms]) => {
-      if (products) setCatalogProducts(products);
+      if (products) { setCatalogProducts(products); setProductsReady(true); } else { setCatalogProducts(DEFAULT_PRODUCTS); setProductsReady(true); }
       if (menuSetts) setMenuSettings(menuSetts);
       if (appSetts) {
         const merged = { ...DEFAULT_APP_SETTINGS, ...appSetts };
@@ -959,6 +960,7 @@ export default function Home() {
             ) : null}
 
             {(category as string) !== "Promociones" && <>
+            {!productsReady ? <div className="results-summary"><span>Cargando...</span></div> : <>
             <div className="results-summary"><span>{visibleProducts.length} {tr(visibleProducts.length === 1 ? "resultado" : "resultados")}</span></div>
 
             {visibleProducts.length ? <div className="product-grid">
@@ -1013,7 +1015,7 @@ export default function Home() {
                 </Fragment>
               ))}
             </div> : <div className="empty-state"><h3>No hay resultados con esos filtros</h3><p>Probá desmarcar una opción o limpiar los filtros.</p><button onClick={clearSidebarFilters}>Limpiar filtros</button></div>}
-            </>}
+            </>}</>}
           </div>
         </div>
       </section>
