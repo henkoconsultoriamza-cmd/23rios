@@ -890,7 +890,7 @@ export default function AdminPage() {
                 <div className="admin-serving-editor">{(draft.servings ?? [{ label: "Media pinta", volume: "250 cc", price: 0 }, { label: "Pinta", volume: "500 cc", price: 0 }, { label: "Jarra", volume: "1 L", price: 0 }]).map((serving) => <article key={serving.label}><strong>{serving.label}</strong><label>Capacidad<input value={serving.volume} onChange={(event) => updateServing(serving.label, "volume", event.target.value)}/></label><label>Precio<input type="number" min="0" value={serving.price} onChange={(event) => updateServing(serving.label, "price", event.target.value)}/></label></article>)}</div>
               </div>}
 
-              {draft.category === "Cocina" && <div className="admin-form-section">
+              {(draft.category === "Cocina" || draft.category === "Sin TACC") && <div className="admin-form-section">
                 <div className="admin-section-title"><span>03</span><div><h3>Información nutricional</h3><p>Valores que aparecen al abrir el producto.</p></div></div>
                 <div className="admin-form-grid nutrition-admin-grid">
                   <label>Calorías<input value={draft.nutrition.calories} onChange={(event) => updateNutrition("calories", event.target.value)}/></label>
@@ -910,7 +910,7 @@ export default function AdminPage() {
                 />
               </div>
 
-              {draft.category === "Cocina" && <div className="admin-form-section">
+              {(draft.category === "Cocina" || draft.category === "Sin TACC") && <div className="admin-form-section">
                 <div className="admin-section-title"><span>{isCraftBeer ? "06" : "05"}</span><div><h3>Ingredientes editables</h3><p>El cliente puede pedir que se saquen estos ingredientes al momento de pedir.</p></div></div>
                 <div className="admin-ingredients-editor">
                   <div className="admin-option-list">{(draft.removableIngredients ?? []).map((item) => <span key={item}>{item}<button type="button" onClick={() => updateDraft("removableIngredients", (draft.removableIngredients ?? []).filter((i) => i !== item))} aria-label={`Eliminar ${item}`}>×</button></span>)}</div>

@@ -1188,7 +1188,7 @@ export default function Home() {
             </section> : <div className="single-price">{(() => { const promo = getPromoForProduct(selected); const effPrice = promoPrice(selected); return <><span>{tr("Precio")}</span>{promo && effPrice !== selected.price && <s className="price-original">{displayPrice(selected.price)}</s>}<strong>{displayPrice(effPrice)}</strong></>; })()}</div>}
 
             <section className="nutrition-card" aria-labelledby="nutrition-title">
-              {selected.category === "Cocina" && <>
+              {(selected.category === "Cocina" || selected.category === "Sin TACC") && <>
                 <div className="detail-section-heading"><div><p>{tr("INFORMACIÓN NUTRICIONAL")}</p><h3 id="nutrition-title">{tr("Valores nutricionales")}</h3></div><small>Por 100 g</small></div>
                 <dl>
                   <div><dt>{tr("Calorías")}</dt><dd>{selected.nutrition.calories}</dd></div>
