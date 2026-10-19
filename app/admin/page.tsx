@@ -370,17 +370,6 @@ export default function AdminPage() {
     setNotice("Producto guardado. Ya está disponible en el menú general.");
   }
 
-  function deleteProduct() {
-    if (isNew || !selectedId) return;
-    if (!window.confirm(`¿Eliminás "${draft.name}"? Esta acción no se puede deshacer.`)) return;
-    const next = products.filter((p) => p.id !== selectedId);
-    persistProducts(next);
-    const first = next[0];
-    if (first) { setSelectedId(first.id); setDraft(structuredClone(first)); setIsNew(false); }
-    else { setSelectedId(""); setDraft(createEmptyProduct("Cocina", settings)); setIsNew(true); }
-    setNotice("Producto eliminado.");
-  }
-
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstRender = useRef(true);
   const promoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
