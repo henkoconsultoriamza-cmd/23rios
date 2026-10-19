@@ -247,7 +247,7 @@ export default function Home() {
   const [langOpen, setLangOpen] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
-  const [category, setCategory] = useState<"Cocina" | "Cervezas">("Cocina");
+  const [category, setCategory] = useState<"Cocina" | "Cervezas" | "SinTACC">("Cocina");
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [selectedPreferences, setSelectedPreferences] = useState<string[]>([]);
   const [excludedAllergens, setExcludedAllergens] = useState<string[]>([]);
@@ -519,7 +519,9 @@ export default function Home() {
   const visibleProducts = useMemo(() => {
     const term = query.trim().toLocaleLowerCase("es");
     return activePool.filter((product) => {
-      const matchesCategory = category === "Cervezas"
+      const matchesCategory = category === "SinTACC"
+        ? product.attributes.includes("Sin TACC")
+        : category === "Cervezas"
         ? product.category === "Cervezas" || product.category === "Bebidas"
         : product.category === "Cocina";
       const content = `${product.name} ${product.description} ${product.tag}`.toLocaleLowerCase("es");
@@ -552,7 +554,7 @@ export default function Home() {
     setter((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value]);
   }
 
-  function changeCategory(next: "Cocina" | "Cervezas") {
+  function changeCategory(next: "Cocina" | "Cervezas" | "SinTACC") {
     trackEvent("category_switch", { filterType: next });
     setCategory(next);
     setSelectedGroups([]);
@@ -868,6 +870,7 @@ export default function Home() {
         <div className="category-tabs">
           <button className={category === "Cocina" ? "active" : ""} onClick={() => changeCategory("Cocina")}>{tr("Comida")}</button>
           <button className={category === "Cervezas" ? "active" : ""} onClick={() => changeCategory("Cervezas")}>{tr("Bebida")}</button>
+          <button className={category === "SinTACC" ? "active" : ""} onClick={() => changeCategory("SinTACC")}>{tr("Sin TACC")}</button>
           {(activeCombos.length > 0 || activeHappyHours.length > 0 || activePromoProducts.length > 0) && <button className={category === ("Promociones" as any) ? "active" : ""} onClick={() => setCategory("Promociones" as any)}>🏷️ {tr("Promociones")}</button>}
         </div>
 
@@ -1481,6 +1484,7 @@ export default function Home() {
       <div className="primary-filter-switch">
         <button className={category === "Cocina" ? "active" : ""} onClick={() => changeCategory("Cocina")} aria-pressed={category === "Cocina"}>{tr("Comida")}</button>
         <button className={category === "Cervezas" ? "active" : ""} onClick={() => changeCategory("Cervezas")} aria-pressed={category === "Cervezas"}>{tr("Bebida")}</button>
+        <button className={category === "SinTACC" ? "active" : ""} onClick={() => changeCategory("SinTACC")} aria-pressed={category === "SinTACC"}>{tr("Sin TACC")}</button>
       </div>
       {category === "Cocina" ? <>
         <div className="filter-family">
