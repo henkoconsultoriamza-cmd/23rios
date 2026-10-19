@@ -617,7 +617,7 @@ export default function Home() {
     });
   }
 
-  const isOnPremise = !appSettings.orderToken || urlToken === appSettings.orderToken;
+  const isOnPremise = true;
 
   function launchOrder() {
     if (!orderItems.length || orderStatus !== "draft") return;

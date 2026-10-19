@@ -153,7 +153,7 @@ export default function AdminPage() {
   const [draft, setDraft] = useState<Product>(() => createEmptyProduct("Cocina", cloneDefaultSettings()));
   const [isNew, setIsNew] = useState(true);
   const [query, setQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<"Todos" | Product["category"]>("Todos");
+  const [categoryFilter, setCategoryFilter] = useState<"Todos" | "Cocina" | "Bebida">("Todos");
   const [newOptions, setNewOptions] = useState<Partial<Record<SettingsKey, string>>>({});
   const [notice, setNotice] = useState("Cambios guardados solamente en este dispositivo.");
   const [hydrated, setHydrated] = useState(false);
@@ -209,7 +209,8 @@ export default function AdminPage() {
 
   const filteredProducts = useMemo(() => {
     const term = query.trim().toLocaleLowerCase("es");
-    return products.filter((product) => (categoryFilter === "Todos" || product.category === categoryFilter) && (!term || `${product.name} ${product.group}`.toLocaleLowerCase("es").includes(term)));
+    const isBebida = (c: string) => c === "Cervezas" || c === "Bebidas";
+    return products.filter((product) => (categoryFilter === "Todos" || (categoryFilter === "Bebida" ? isBebida(product.category) : product.category === categoryFilter)) && (!term || `${product.name} ${product.group}`.toLocaleLowerCase("es").includes(term)));
   }, [categoryFilter, products, query]);
 
   const publishedProducts = products.filter((product) => !product.outOfStock);
@@ -367,6 +368,17 @@ export default function AdminPage() {
     setSelectedId(normalized.id);
     setIsNew(false);
     setNotice("Producto guardado. Ya está disponible en el menú general.");
+  }
+
+  function deleteProduct() {
+    if (isNew || !selectedId) return;
+    if (!window.confirm(`¿Eliminás "${draft.name}"? Esta acción no se puede deshacer.`)) return;
+    const next = products.filter((p) => p.id !== selectedId);
+    persistProducts(next);
+    const first = next[0];
+    if (first) { setSelectedId(first.id); setDraft(structuredClone(first)); setIsNew(false); }
+    else { setSelectedId(""); setDraft(createEmptyProduct("Cocina", settings)); setIsNew(true); }
+    setNotice("Producto eliminado.");
   }
 
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -830,7 +842,7 @@ export default function AdminPage() {
             <section className="admin-product-list">
               <div className="admin-list-tools">
                 <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar producto…" aria-label="Buscar producto"/>
-                <div>{(["Todos", "Cocina", "Cervezas"] as const).map((filter) => <button key={filter} className={categoryFilter === filter ? "active" : ""} onClick={() => setCategoryFilter(filter)}>{filter === "Cocina" ? "Comida" : filter === "Cervezas" ? "Bebida" : filter}</button>)}</div>
+                <div>{(["Todos", "Cocina", "Bebida"] as const).map((filter) => <button key={filter} className={categoryFilter === filter ? "active" : ""} onClick={() => setCategoryFilter(filter)}>{filter === "Cocina" ? "Comida" : filter}</button>)}</div>
               </div>
               <div className="admin-products-scroll">
                 {filteredProducts.map((product) => <button className={selectedId === product.id && !isNew ? "admin-product-row active" : "admin-product-row"} key={product.id} onClick={() => selectProduct(product)}>
@@ -1706,8 +1718,8 @@ export default function AdminPage() {
             <article className="admin-adjustment-card">
               <div className="admin-adjustment-heading"><span>03</span><div><small>PRODUCTOS DEL EVENTO</small><h2>Seleccioná qué aparece</h2><p>Marcá los productos que van a estar disponibles cuando el modo evento esté activo. El resto queda oculto automáticamente.</p></div></div>
               <div className="admin-event-product-list">
-                {(["Cocina", "Cervezas", "Bebidas"] as const).map((cat) => {
-                  const catProducts = products.filter((p) => p.category === cat);
+                {(["Cocina", "Bebida"] as const).map((cat) => {
+                  const catProducts = products.filter((p) => cat === "Bebida" ? (p.category === "Cervezas" || p.category === "Bebidas") : p.category === cat);
                   if (!catProducts.length) return null;
                   const groups = [...new Set(catProducts.map((p) => p.group))];
                   return <div key={cat} className="admin-event-category">
@@ -1753,14 +1765,6 @@ export default function AdminPage() {
               </div>
             </article>
 
-
-            <article className="admin-adjustment-card">
-              <div className="admin-adjustment-heading"><span>03</span><div><small>CONTROL DE ACCESO</small><h2>Token de QR</h2><p>Si configurás un token, solo podrán lanzar pedidos los clientes que hayan escaneado el QR de una mesa. Dejalo vacío para deshabilitar la restricción.</p></div></div>
-              <div className="admin-adjustment-form">
-                <label className="wide">Token secreto del QR<input value={appSettings.orderToken} onChange={(event) => updateAppSetting("orderToken", event.target.value)} placeholder="Ej. r10s2026 — letras y números, sin espacios"/></label>
-                {appSettings.orderToken && <div className="admin-token-preview"><small>URL de ejemplo para imprimir en el QR:</small><code>{typeof window !== "undefined" ? window.location.origin : "https://menu.23rios.com"}/?t={appSettings.orderToken}</code></div>}
-              </div>
-            </article>
 
             <article className="admin-adjustment-card admin-security-card">
               <div className="admin-adjustment-heading"><span>05</span><div><small>SEGURIDAD</small><h2>Usuario y contraseña</h2><p>Cambiá las credenciales utilizadas para ingresar en este dispositivo.</p></div></div>

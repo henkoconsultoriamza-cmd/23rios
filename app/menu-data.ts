@@ -122,7 +122,6 @@ export type AppSettings = {
   orderNotifications: boolean;
   serviceNotifications: boolean;
   weeklySummary: boolean;
-  orderToken: string;
   eventModeActive: boolean;
   cartDisabled: boolean;
   hours?: string;
@@ -150,7 +149,6 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   orderNotifications: true,
   serviceNotifications: true,
   weeklySummary: false,
-  orderToken: "",
   eventModeActive: false,
   cartDisabled: false,
 };
