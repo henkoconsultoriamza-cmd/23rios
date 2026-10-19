@@ -1320,6 +1320,35 @@ export function cloneDefaultProducts() {
   return JSON.parse(JSON.stringify(DEFAULT_PRODUCTS)) as Product[];
 }
 
+const NUTRITION_MAP: Record<string, Product["nutrition"]> = {
+  "papas-clasicas":      { calories: "1338", proteins: "15.7",  carbs: "179.5", fats: "62.6",  sugars: "2.0"  },
+  "papas-23-rios":       { calories: "1724", proteins: "29.3",  carbs: "183.9", fats: "96.6",  sugars: "5.3"  },
+  "nuggets-brocoli":     { calories: "1429", proteins: "30.4",  carbs: "139.7", fats: "84.2",  sugars: "10.9" },
+  "provoleta":           { calories: "1017", proteins: "53.6",  carbs: "44.3",  fats: "69.8",  sugars: "6.4"  },
+  "empanadas-carne":     { calories: "152",  proteins: "7.1",   carbs: "8.3",   fats: "10.3",  sugars: "3.6"  },
+  "general-tso":         { calories: "1216", proteins: "80.5",  carbs: "113.7", fats: "48.1",  sugars: "75.6" },
+  "picada":              { calories: "883",  proteins: "33.7",  carbs: "25.7",  fats: "72.2",  sugars: "19.7" },
+  "experiencia-alemana": { calories: "1928", proteins: "20.0",  carbs: "232.1", fats: "103.7", sugars: "30.0" },
+  "pizza-muzzarella":    { calories: "1000", proteins: "61.1",  carbs: "9.4",   fats: "80.5",  sugars: "3.1"  },
+  "pizza-napolitana":    { calories: "1226", proteins: "66.9",  carbs: "16.2",  fats: "101.0", sugars: "7.2"  },
+  "pizza-calabresa":     { calories: "1454", proteins: "86.4",  carbs: "10.2",  fats: "118.4", sugars: "3.4"  },
+  "pizza-americana":     { calories: "1677", proteins: "97.1",  carbs: "11.3",  fats: "137.4", sugars: "4.3"  },
+  "lomo-clasico":        { calories: "1798", proteins: "65.5",  carbs: "115.7", fats: "119.3", sugars: "6.5"  },
+  "smash-doble-queso":   { calories: "1147", proteins: "45.2",  carbs: "66.0",  fats: "77.5",  sugars: "2.4"  },
+  "smash-23":            { calories: "1096", proteins: "41.0",  carbs: "70.6",  fats: "71.6",  sugars: "4.7"  },
+  "smash-blue":          { calories: "1152", proteins: "48.1",  carbs: "65.2",  fats: "76.7",  sugars: "1.7"  },
+};
+
+export function mergeDefaultNutrition(products: Product[]): Product[] {
+  return products.map((p) => {
+    const n = p.nutrition;
+    const isEmpty = !n || (n.calories === "—" && n.fats === "—" && n.proteins === "—" && n.carbs === "—");
+    if (!isEmpty) return p;
+    const defaults = NUTRITION_MAP[p.id];
+    return defaults ? { ...p, nutrition: defaults } : p;
+  });
+}
+
 export function mergeDefaultProductImages(products: Product[]) {
   const defaultImages = new Map(DEFAULT_PRODUCTS.map((product) => [product.id, product.image]));
   return products.map((product) => {

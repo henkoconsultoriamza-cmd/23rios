@@ -9,6 +9,7 @@ import {
   MenuSettings,
   Product,
   mergeDefaultProductImages,
+  mergeDefaultNutrition,
   Promo,
   isPromoActive,
 } from "../menu-data";
@@ -180,7 +181,7 @@ export default function AdminPage() {
       getPortalSettings(),
       getAdminCredentials(),
     ]).then(([prods, menuSetts, appSetts, bans, proms, evts, portalSetts, creds]) => {
-      const loadedProducts = prods ?? cloneDefaultProducts();
+      const loadedProducts = mergeDefaultNutrition(prods ?? cloneDefaultProducts());
       const loadedSettings = menuSetts ?? cloneDefaultSettings();
 
       setProducts(loadedProducts);

@@ -2,7 +2,7 @@
 
 import { CSSProperties, Dispatch, Fragment, FormEvent, SetStateAction, useEffect, useMemo, useRef, useState } from "react";
 import { Language, languageOptions, translate } from "./translations";
-import { AppSettings, DEFAULT_APP_SETTINGS, DEFAULT_MENU_SETTINGS, DEFAULT_PRODUCTS, MenuSettings, Product, Promo, ComboItem, isPromoActive, promoMatchesProduct } from "./menu-data";
+import { AppSettings, DEFAULT_APP_SETTINGS, DEFAULT_MENU_SETTINGS, DEFAULT_PRODUCTS, MenuSettings, Product, Promo, ComboItem, isPromoActive, promoMatchesProduct, mergeDefaultNutrition } from "./menu-data";
 import { trackEvent } from "./analytics";
 import { Banner, DEFAULT_BANNERS } from "./banner-data";
 import { EventItem } from "./event-data";
@@ -331,7 +331,7 @@ export default function Home() {
       getAppSettings(),
       getPromos(),
     ]).then(([products, menuSetts, appSetts, proms]) => {
-      if (products) { setCatalogProducts(products); setProductsReady(true); } else { setCatalogProducts(DEFAULT_PRODUCTS); setProductsReady(true); }
+      if (products) { setCatalogProducts(mergeDefaultNutrition(products)); setProductsReady(true); } else { setCatalogProducts(DEFAULT_PRODUCTS); setProductsReady(true); }
       if (menuSetts) setMenuSettings(menuSetts);
       if (appSetts) {
         const merged = { ...DEFAULT_APP_SETTINGS, ...appSetts };
