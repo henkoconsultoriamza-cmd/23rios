@@ -13,7 +13,6 @@
   relatedIds: string[];
   price: number;
   nutrition: {
-    basis: string;
     calories: string;
     fats: string;
     proteins: string;
@@ -156,7 +155,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   cartDisabled: false,
 };
 
-const nn = { basis: "—", calories: "—", fats: "—", proteins: "—", carbs: "—", sugars: "—" };
+const nn = { calories: "—", fats: "—", proteins: "—", carbs: "—", sugars: "—" };
 
 const beerServingsClassic = [
   { label: "Media pinta", volume: "250 cc", price: 3700 },

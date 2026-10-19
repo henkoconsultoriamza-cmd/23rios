@@ -65,7 +65,7 @@ function createEmptyProduct(category: Product["category"], settings: MenuSetting
     allergens: [],
     relatedIds: [],
     price: 0,
-    nutrition: { basis: "Por porción", calories: "", fats: "", proteins: "", carbs: "", sugars: "" },
+    nutrition: { calories: "", fats: "", proteins: "", carbs: "", sugars: "" },
   };
 }
 
@@ -891,7 +891,6 @@ export default function AdminPage() {
               <div className="admin-form-section">
                 <div className="admin-section-title"><span>{isCraftBeer ? "04" : "03"}</span><div><h3>Información nutricional</h3><p>Valores que aparecen al abrir el producto.</p></div></div>
                 <div className="admin-form-grid nutrition-admin-grid">
-                  <label>Base de cálculo<input value={draft.nutrition.basis} onChange={(event) => updateNutrition("basis", event.target.value)}/></label>
                   <label>Calorías<input value={draft.nutrition.calories} onChange={(event) => updateNutrition("calories", event.target.value)}/></label>
                   <label>Grasas<input value={draft.nutrition.fats} onChange={(event) => updateNutrition("fats", event.target.value)}/></label>
                   <label>Proteínas<input value={draft.nutrition.proteins} onChange={(event) => updateNutrition("proteins", event.target.value)}/></label>

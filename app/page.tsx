@@ -1186,7 +1186,7 @@ export default function Home() {
 
             <section className="nutrition-card" aria-labelledby="nutrition-title">
               {selected.category === "Cocina" && <>
-                <div className="detail-section-heading"><div><p>{tr("INFORMACIÓN NUTRICIONAL")}</p><h3 id="nutrition-title">{tr("Valores nutricionales")}</h3></div><small>{tr(selected.nutrition.basis)}</small></div>
+                <div className="detail-section-heading"><div><p>{tr("INFORMACIÓN NUTRICIONAL")}</p><h3 id="nutrition-title">{tr("Valores nutricionales")}</h3></div><small>Por 100 g</small></div>
                 <dl>
                   <div><dt>{tr("Calorías")}</dt><dd>{selected.nutrition.calories}</dd></div>
                   <div><dt>{tr("Grasas")}</dt><dd>{selected.nutrition.fats}</dd></div>
