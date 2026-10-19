@@ -422,7 +422,7 @@ export default function Home() {
   }, [activePromos, catalogProducts]);
 
   function getPromoForProduct(product: Product): Promo | undefined {
-    return activePromos.find(p => p.type !== "combo" && promoMatchesProduct(p, product));
+    return activePromos.find(p => p.type !== "combo" && p.type !== "happy-hour" && promoMatchesProduct(p, product));
   }
 
   function promoPrice(product: Product): number {
