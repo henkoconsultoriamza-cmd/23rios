@@ -900,8 +900,8 @@ export default function AdminPage() {
                 <div className="admin-serving-editor">{(draft.servings ?? [{ label: "Media pinta", volume: "250 cc", price: 0 }, { label: "Pinta", volume: "500 cc", price: 0 }, { label: "Jarra", volume: "1 L", price: 0 }]).map((serving) => <article key={serving.label}><strong>{serving.label}</strong><label>Capacidad<input value={serving.volume} onChange={(event) => updateServing(serving.label, "volume", event.target.value)}/></label><label>Precio<input type="number" min="0" value={serving.price} onChange={(event) => updateServing(serving.label, "price", event.target.value)}/></label></article>)}</div>
               </div>}
 
-              <div className="admin-form-section">
-                <div className="admin-section-title"><span>{isCraftBeer ? "04" : "03"}</span><div><h3>Información nutricional</h3><p>Valores que aparecen al abrir el producto.</p></div></div>
+              {draft.category === "Cocina" && <div className="admin-form-section">
+                <div className="admin-section-title"><span>03</span><div><h3>Información nutricional</h3><p>Valores que aparecen al abrir el producto.</p></div></div>
                 <div className="admin-form-grid nutrition-admin-grid">
                   <label>Calorías<input value={draft.nutrition.calories} onChange={(event) => updateNutrition("calories", event.target.value)}/></label>
                   <label>Grasas<input value={draft.nutrition.fats} onChange={(event) => updateNutrition("fats", event.target.value)}/></label>
@@ -909,7 +909,7 @@ export default function AdminPage() {
                   <label>Carbohidratos<input value={draft.nutrition.carbs} onChange={(event) => updateNutrition("carbs", event.target.value)}/></label>
                   <label>Azúcares<input value={draft.nutrition.sugars} onChange={(event) => updateNutrition("sugars", event.target.value)}/></label>
                 </div>
-              </div>
+              </div>}
 
               <div className="admin-form-section">
                 <div className="admin-section-title"><span>{isCraftBeer ? "05" : "04"}</span><div><h3>Venta relacionada</h3><p>Elegí qué productos mostrar en "Se puede acompañar con".</p></div></div>
