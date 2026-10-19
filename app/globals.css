@@ -840,9 +840,9 @@ textarea, select { font: inherit; }
 .admin-product-row img, .admin-image-placeholder { width: 58px; height: 54px; border-radius: 10px; object-fit: cover; }
 .admin-image-placeholder { background: var(--ink); color: var(--yellow); display: grid; place-items: center; font: 800 16px "Manrope"; }
 .admin-product-row > span { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.admin-product-row > span strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 11px "Manrope"; }
-.admin-product-row > span small { color: var(--muted); font-size: 10px; }
-.admin-product-row > b { color: #8f6811; font-size: 10px; }
+.admin-product-row > span strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 13px "Manrope"; }
+.admin-product-row > span small { color: var(--muted); font-size: 11.5px; }
+.admin-product-row > b { color: #8f6811; font-size: 11px; }
 .admin-empty { padding: 30px 15px; color: var(--muted); text-align: center; font-size: 10px; }
 
 .admin-editor { min-width: 0; overflow: hidden; }
@@ -879,8 +879,8 @@ textarea, select { font: inherit; }
 .admin-check-groups input:checked + span { border-color: #a57b19; background: #f4e4a7; color: #594006; font-weight: 800; }
 .admin-serving-editor { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin-top: 16px; }
 .admin-serving-editor article { padding: 13px; border-radius: 13px; background: #eee8dd; }
-.admin-serving-editor strong { display: block; margin-bottom: 9px; font: 800 11px "Manrope"; }
-.admin-serving-editor label { display: flex; flex-direction: column; gap: 4px; margin-top: 7px; color: #6f685d; font-size: 8px; }
+.admin-serving-editor strong { display: block; margin-bottom: 9px; font: 800 13px "Manrope"; }
+.admin-serving-editor label { display: flex; flex-direction: column; gap: 4px; margin-top: 7px; color: #6f685d; font-size: 10px; }
 .admin-serving-editor input { width: 100%; min-height: 37px; padding: 8px 9px; border: 1px solid #c9c0b1; border-radius: 9px; background: white; }
 .nutrition-admin-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .admin-related-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
