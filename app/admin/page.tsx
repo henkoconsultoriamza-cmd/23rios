@@ -1083,6 +1083,9 @@ export default function AdminPage() {
 
               {(draft.category === "Cocina" || draft.category === "Sin TACC") && <div className="admin-form-section">
                 <div className="admin-section-title"><span>03</span><div><h3>Información nutricional</h3><p>Valores que aparecen al abrir el producto.</p></div></div>
+                <div className="admin-promo-stock">
+                  <label className="admin-stock-toggle"><input type="checkbox" checked={!!draft.showNutrition} onChange={(e) => updateDraft("showNutrition", e.target.checked)}/><span><strong>Mostrar valores nutricionales</strong><small>Apagado: el cliente no ve el cuadro de valores</small></span><i/></label>
+                </div>
                 <div className="admin-form-grid nutrition-admin-grid">
                   <label>Calorías<input value={draft.nutrition.calories} onChange={(event) => updateNutrition("calories", event.target.value)}/></label>
                   <label>Grasas<input value={draft.nutrition.fats} onChange={(event) => updateNutrition("fats", event.target.value)}/></label>

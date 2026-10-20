@@ -19,6 +19,7 @@
     carbs: string;
     sugars: string;
   };
+  showNutrition?: boolean;               // Muestra el cuadro de valores nutricionales al cliente (sin definir = oculto)
   beerProfile?: {
     style: string;
     descriptors: string[];
