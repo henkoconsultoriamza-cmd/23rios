@@ -4,6 +4,8 @@ import { Banner } from "../app/banner-data";
 import { EventItem } from "../app/event-data";
 import { PortalSettings } from "../app/portal-data";
 import { AnalyticsEvent } from "../app/analytics";
+import type { FudoCatalogItem } from "../lib/fudo/qr-catalog";
+import type { FudoSyncReport } from "../lib/fudo/sync";
 
 // ── Leer una clave de restaurant_config ──────────────────────────
 async function getConfig<T>(key: string): Promise<T | null> {
@@ -23,9 +25,39 @@ async function setConfig<T>(key: string, value: T): Promise<void> {
     .upsert({ key, value }, { onConflict: "key" });
 }
 
+// ── Guardado desde el admin (vía servidor) ───────────────────────
+// Productos y promos se guardan de a uno por /api/admin/*, que aplica el cambio
+// sobre la versión más reciente: una pestaña abierta hace rato no pisa lo de otra.
+async function adminPost<T>(url: string, body?: unknown): Promise<T> {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
+  return json as T;
+}
+
 // ── Productos ────────────────────────────────────────────────────
+type ProductsResponse = { products: Product[]; product?: Product };
 export const getProducts = () => getConfig<Product[]>("products");
-export const saveProducts = (v: Product[]) => setConfig("products", v);
+export const createProduct = (product: Product) =>
+  adminPost<ProductsResponse>("/api/admin/products", { op: "create", product });
+export const patchProduct = (id: string, fields: Record<string, unknown>) =>
+  adminPost<ProductsResponse>("/api/admin/products", { op: "patch", id, fields });
+export const deleteProductById = (id: string) =>
+  adminPost<ProductsResponse>("/api/admin/products", { op: "delete", id });
+
+// ── FUDO: catálogo del menú QR y sincronización ──────────────────
+export type FudoSyncResponse = { products: Product[]; promos: Promo[]; catalog: FudoCatalogItem[]; report: FudoSyncReport };
+export async function getFudoCatalog(): Promise<FudoCatalogItem[]> {
+  const res = await fetch("/api/admin/fudo", { cache: "no-store" });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
+  return json.catalog as FudoCatalogItem[];
+}
+export const syncFromFudo = () => adminPost<FudoSyncResponse>("/api/admin/fudo");
 
 // ── Ajustes del menu ─────────────────────────────────────────────
 export const getMenuSettings = () => getConfig<MenuSettings>("menu_settings");
@@ -41,7 +73,10 @@ export const saveBanners = (v: Banner[]) => setConfig("banners", v);
 
 // ── Promos ───────────────────────────────────────────────────────
 export const getPromos = () => getConfig<Promo[]>("promos");
-export const savePromos = (v: Promo[]) => setConfig("promos", v);
+export const createPromo = (promo: Promo) => adminPost<{ promos: Promo[] }>("/api/admin/promos", { op: "create", promo });
+export const patchPromo = (id: string, fields: Record<string, unknown>) =>
+  adminPost<{ promos: Promo[] }>("/api/admin/promos", { op: "patch", id, fields });
+export const deletePromoById = (id: string) => adminPost<{ promos: Promo[] }>("/api/admin/promos", { op: "delete", id });
 
 // ── Eventos ──────────────────────────────────────────────────────
 export const getEvents = () => getConfig<EventItem[]>("events");

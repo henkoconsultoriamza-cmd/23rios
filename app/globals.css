@@ -973,6 +973,29 @@ textarea, select { font: inherit; }
 .admin-fudo-badge.missing { background: #f0e0d4; color: #a04020; }
 .admin-fudo-add-option { margin-top: 6px; padding: 6px 12px; border: 1.5px dashed var(--line); border-radius: 8px; background: none; font: 600 12px "Manrope"; color: var(--muted); cursor: pointer; }
 .admin-fudo-add-option:hover { border-color: #e8c97a; color: var(--ink); }
+.admin-fudo-ref { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 8px; }
+.admin-fudo-picker { flex: 1 1 260px; min-width: 0; height: 36px; border: 1.5px solid #e8c97a; border-radius: 8px; padding: 0 8px; font: 600 13px "Manrope"; background: white; color: var(--ink); }
+.admin-fudo-match { flex: 1 1 100%; font: 600 11px "Manrope"; color: #2a7a2a; }
+.admin-fudo-match.missing { color: #a04020; }
+.admin-fudo-serving { padding-bottom: 8px; border-bottom: 1px dashed var(--line); }
+.admin-fudo-panel { margin: 0 0 16px; padding: 14px 16px; border: 1.5px solid #e8c97a; border-radius: 14px; background: #fffdf5; font: 500 13px "Manrope"; color: var(--ink); }
+.admin-fudo-panel header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.admin-fudo-panel header button { border: 0; background: none; font-size: 20px; line-height: 1; color: var(--muted); cursor: pointer; }
+.admin-fudo-panel p { margin: 8px 0 4px; }
+.admin-fudo-panel p.warn { color: #a04020; font-weight: 700; }
+.admin-fudo-panel ul { margin: 0; padding-left: 18px; max-height: 220px; overflow: auto; }
+.admin-fudo-new-group { margin-top: 10px; }
+.admin-fudo-new-group > p { margin: 0 0 4px; font: 800 11px "Manrope"; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+.admin-fudo-new-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.admin-fudo-new-row span { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.admin-fudo-new-row small { color: var(--muted); font-size: 11px; }
+.admin-fudo-new-row button { padding: 6px 12px; border: 1.5px solid #e8c97a; border-radius: 8px; background: white; font: 700 12px "Manrope"; cursor: pointer; white-space: nowrap; }
+.admin-fudo-new-row button:hover { background: #fff3cf; }
+.admin-heading-actions button:disabled { opacity: .55; cursor: default; }
+@media (max-width: 700px) {
+  .admin-heading-actions { flex-wrap: wrap; }
+  .admin-fudo-new-row { flex-wrap: wrap; }
+}
 .admin-promo-type { border: 1px solid var(--line); border-radius: 13px; padding: 14px; }
 .admin-promo-type legend { padding: 0 6px; font: 800 11px "Manrope"; color: var(--muted); }
 .admin-promo-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }

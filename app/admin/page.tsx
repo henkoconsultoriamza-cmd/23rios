@@ -22,16 +22,19 @@ import { AnalyticsEvent, getStoredEvents, clearStoredEvents } from "../analytics
 import { Banner } from "../banner-data";
 import { EventItem } from "../event-data";
 import {
-  getProducts, saveProducts,
+  getProducts, createProduct, patchProduct, deleteProductById,
   getMenuSettings, saveMenuSettings,
   getAppSettings, saveAppSettings,
   getBanners, saveBanners,
-  getPromos, savePromos,
+  getPromos, createPromo, patchPromo, deletePromoById,
   getEvents, saveEvents,
   getPortalSettings, savePortalSettings as savePortalToDb,
   getAdminCredentials, saveAdminCredentials,
+  getFudoCatalog, syncFromFudo,
   uploadImage,
 } from "../../db/config";
+import type { FudoCatalogItem } from "../../lib/fudo/qr-catalog";
+import { linkedFudoIds, type FudoSyncReport } from "../../lib/fudo/sync";
 
 type SettingsKey = keyof MenuSettings;
 type AdminTab = "products" | "filters" | "adjustments" | "analytics" | "banners" | "evento";
@@ -76,6 +79,50 @@ function formatPrice(value: number) {
 
 function slugify(value: string) {
   return value.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "producto";
+}
+
+// Campos que cambiaron respecto de la versión que se abrió para editar (null = se borró).
+// Se guarda solo eso, así una pestaña abierta hace rato no pisa lo que cambió otra.
+function changedFields<T extends object>(base: T, next: T): Record<string, unknown> {
+  const a = base as Record<string, unknown>;
+  const b = next as Record<string, unknown>;
+  const fields: Record<string, unknown> = {};
+  for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    if (key === "id") continue;
+    if (JSON.stringify(a[key]) !== JSON.stringify(b[key])) fields[key] = b[key] === undefined ? null : b[key];
+  }
+  return fields;
+}
+
+function groupFudoCatalog(catalog: FudoCatalogItem[]) {
+  const groups = new Map<string, FudoCatalogItem[]>();
+  for (const item of catalog) groups.set(item.categoryName, [...(groups.get(item.categoryName) ?? []), item]);
+  return [...groups];
+}
+
+function FudoPicker({ catalog, onPick }: { catalog: FudoCatalogItem[] | null; onPick: (item: FudoCatalogItem) => void }) {
+  if (!catalog) return null;
+  return (
+    <select className="admin-fudo-picker" value="" aria-label="Elegir producto de FUDO" onChange={(e) => {
+      const item = catalog.find((i) => i.id === e.target.value);
+      if (item) onPick(item);
+    }}>
+      <option value="">Elegir de FUDO…</option>
+      {groupFudoCatalog(catalog).map(([category, items]) => (
+        <optgroup key={category} label={category}>
+          {items.map((i) => <option key={i.id} value={i.id}>{i.name} · {formatPrice(i.price)} · ID {i.id}</option>)}
+        </optgroup>
+      ))}
+    </select>
+  );
+}
+
+function FudoMatch({ catalog, id }: { catalog: Map<string, FudoCatalogItem> | null; id?: string }) {
+  if (!catalog || !id) return null;
+  const item = catalog.get(String(id));
+  return item
+    ? <small className="admin-fudo-match">En FUDO: {item.name} · {formatPrice(item.price)} · categoría {item.categoryId}</small>
+    : <small className="admin-fudo-match missing">Este ID no está en el menú QR de FUDO: los pedidos con este producto fallan.</small>;
 }
 
 async function hashPassword(value: string) {
@@ -166,6 +213,13 @@ export default function AdminPage() {
   const [eventDraft, setEventDraft] = useState<EventItem | null>(null);
   const [analyticsEvents, setAnalyticsEvents] = useState<AnalyticsEvent[]>([]);
   const [dateRange, setDateRange] = useState<DateRange>("7d");
+  // Versión guardada del producto / promo abierto: se compara contra ella para guardar solo lo que cambió
+  const draftBase = useRef<Product | null>(null);
+  const promoBase = useRef<Promo | null>(null);
+  const [fudoCatalog, setFudoCatalog] = useState<FudoCatalogItem[] | null>(null);
+  const [fudoSyncing, setFudoSyncing] = useState(false);
+  const [fudoReport, setFudoReport] = useState<FudoSyncReport | null>(null);
+  const [showFudoNew, setShowFudoNew] = useState(false);
 
   useEffect(() => {
     // Verificar sesión server-side via cookie httpOnly
@@ -198,6 +252,7 @@ export default function AdminPage() {
       if (loadedProducts[0]) {
         setSelectedId(loadedProducts[0].id);
         setDraft(structuredClone(loadedProducts[0]));
+        draftBase.current = structuredClone(loadedProducts[0]);
         setIsNew(false);
       } else {
         setDraft(createEmptyProduct("Cocina", loadedSettings));
@@ -207,6 +262,18 @@ export default function AdminPage() {
 
     getStoredEvents().then(setAnalyticsEvents);
   }, []);
+
+  useEffect(() => {
+    if (!authenticated) return;
+    getFudoCatalog().then(setFudoCatalog).catch(() => setFudoCatalog(null));
+  }, [authenticated]);
+
+  const fudoById = useMemo(() => fudoCatalog ? new Map(fudoCatalog.map((item) => [item.id, item])) : null, [fudoCatalog]);
+  const fudoNew = useMemo(() => {
+    if (!fudoCatalog) return [];
+    const linked = linkedFudoIds(products, promos);
+    return fudoCatalog.filter((item) => !linked.has(item.id));
+  }, [fudoCatalog, products, promos]);
 
   const filteredProducts = useMemo(() => {
     const term = query.trim().toLocaleLowerCase("es");
@@ -317,6 +384,7 @@ export default function AdminPage() {
   function selectProduct(product: Product) {
     setSelectedId(product.id);
     setDraft(structuredClone(product));
+    draftBase.current = structuredClone(product);
     setDescriptorText((product.beerProfile?.descriptors ?? []).join(", "));
     setIsNew(false);
     setNotice("Editando producto. Guardá para aplicar los cambios.");
@@ -325,9 +393,55 @@ export default function AdminPage() {
   function startNew(category: Product["category"] = "Cocina") {
     setSelectedId(null);
     setDraft(createEmptyProduct(category, settings));
+    draftBase.current = null;
     setIsNew(true);
     setTab("products");
     setNotice("Completá la información del nuevo producto.");
+  }
+
+  function applyServerProducts(list: Product[]) {
+    setProducts(mergeDefaultNutrition(list));
+  }
+
+  // Producto nuevo de FUDO: arranca con nombre, precio, ID y categoría ya cargados
+  function startNewFromFudo(item: FudoCatalogItem) {
+    const top = item.categoryName.split(" › ")[0].toLocaleLowerCase("es");
+    const category: Product["category"] = top.includes("cerveza") ? "Cervezas"
+      : /sin tacc/i.test(item.categoryName) ? "Sin TACC"
+      : /bebida|trago/.test(top) ? "Bebidas"
+      : "Cocina";
+    startNew(category);
+    setDraft((current) => ({ ...current, name: item.name, price: item.price, fudoData: { productId: item.id, categoryId: item.categoryId } }));
+    setShowFudoNew(false);
+    setNotice(`Completá foto, descripción y tipo de «${item.name}» y guardalo.`);
+  }
+
+  function runFudoSync() {
+    if (fudoSyncing) return;
+    setFudoSyncing(true);
+    setNotice("Actualizando desde FUDO…");
+    syncFromFudo()
+      .then(({ products: list, promos: promoList, catalog, report }) => {
+        const merged = mergeDefaultNutrition(list);
+        setProducts(merged);
+        setPromos(promoList);
+        setFudoCatalog(catalog);
+        setFudoReport(report);
+        // Lo que está abierto se recarga con los datos de FUDO
+        const open = !isNew && selectedId ? merged.find((p) => p.id === selectedId) : undefined;
+        if (open) {
+          draftBase.current = structuredClone(open);
+          setDraft(structuredClone(open));
+        }
+        const openPromo = promoDraft ? promoList.find((p) => p.id === promoDraft.id) : undefined;
+        if (openPromo) {
+          promoBase.current = structuredClone(openPromo);
+          setPromoDraft(structuredClone(openPromo));
+        }
+        setNotice(report.changes.length ? `FUDO: ${report.changes.length} cambios aplicados ✓` : "Todo coincide con FUDO ✓");
+      })
+      .catch((err: Error) => setNotice(`No se pudo actualizar desde FUDO: ${err.message}`))
+      .finally(() => setFudoSyncing(false));
   }
 
   function updateDraft<K extends keyof Product>(key: K, value: Product[K]) {
@@ -341,34 +455,45 @@ export default function AdminPage() {
     }));
   }
 
-  function persistProducts(next: Product[]) {
-    setProducts(next);
-    saveProducts(next).catch(() => setNotice("Error al guardar en la base de datos."));
-    return true;
-  }
-
   function saveProduct() {
     if (!draft.name.trim() || !draft.group.trim()) {
       setNotice("Completá el nombre y el tipo antes de guardar.");
       return;
     }
-    const baseId = isNew ? slugify(draft.name) : draft.id;
-    let id = baseId;
-    if (isNew && products.some((product) => product.id === id)) id = `${baseId}-${Date.now().toString().slice(-4)}`;
     const normalized: Product = {
       ...draft,
-      id,
+      id: isNew ? slugify(draft.name) : draft.id,
       name: draft.name.trim(),
       description: draft.description.trim(),
       price: Math.max(0, Number(draft.price) || 0),
       image: draft.image?.trim() || "",
     };
-    const next = isNew ? [normalized, ...products] : products.map((product) => product.id === selectedId ? normalized : product);
-    if (!persistProducts(next)) return;
-    setDraft(structuredClone(normalized));
-    setSelectedId(normalized.id);
-    setIsNew(false);
-    setNotice("Producto guardado. Ya está disponible en el menú general.");
+    setNotice("Guardando…");
+    if (isNew) {
+      createProduct(normalized)
+        .then(({ products: list, product }) => {
+          applyServerProducts(list);
+          const created = structuredClone(product ?? normalized);
+          draftBase.current = structuredClone(created);
+          setDraft(created);
+          setSelectedId(created.id);
+          setIsNew(false);
+          setNotice("Producto guardado. Ya está disponible en el menú general.");
+        })
+        .catch((err: Error) => setNotice(`No se pudo guardar: ${err.message}`));
+      return;
+    }
+    const base = draftBase.current ?? normalized;
+    draftBase.current = structuredClone(normalized);
+    patchProduct(normalized.id, changedFields(base, normalized))
+      .then(({ products: list }) => {
+        applyServerProducts(list);
+        setNotice("Producto guardado. Ya está disponible en el menú general.");
+      })
+      .catch((err: Error) => {
+        draftBase.current = base;
+        setNotice(`No se pudo guardar: ${err.message}`);
+      });
   }
 
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -391,9 +516,20 @@ export default function AdminPage() {
         price: Math.max(0, Number(draft.price) || 0),
         image: draft.image?.trim() || "",
       };
-      const next = products.map((p) => p.id === selectedId ? normalized : p);
-      setProducts(next);
-      saveProducts(next).then(() => setNotice("Guardado automaticamente ✓")).catch(() => setNotice("Error al guardar."));
+      const base = draftBase.current;
+      if (!base || base.id !== normalized.id) return;
+      const fields = changedFields(base, normalized);
+      if (!Object.keys(fields).length) return; // abrir un producto no guarda nada
+      draftBase.current = structuredClone(normalized);
+      patchProduct(normalized.id, fields)
+        .then(({ products: list }) => {
+          applyServerProducts(list);
+          setNotice("Guardado automaticamente ✓");
+        })
+        .catch((err: Error) => {
+          draftBase.current = base;
+          setNotice(`No se pudo guardar: ${err.message}`);
+        });
     }, 1200);
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
   }, [draft]);
@@ -402,9 +538,20 @@ export default function AdminPage() {
     if (!promoDraft) return;
     if (promoSaveTimer.current) clearTimeout(promoSaveTimer.current);
     promoSaveTimer.current = setTimeout(() => {
-      const next = promos.map((p) => p.id === promoDraft.id ? promoDraft : p);
-      setPromos(next);
-      savePromos(next).then(() => setNotice("Promocion guardada automaticamente ✓")).catch(() => undefined);
+      const base = promoBase.current;
+      if (!base || base.id !== promoDraft.id) return;
+      const fields = changedFields(base, promoDraft);
+      if (!Object.keys(fields).length) return; // abrir una promo no guarda nada
+      promoBase.current = structuredClone(promoDraft);
+      patchPromo(promoDraft.id, fields)
+        .then(({ promos: list }) => {
+          setPromos(list);
+          setNotice("Promocion guardada automaticamente ✓");
+        })
+        .catch((err: Error) => {
+          promoBase.current = base;
+          setNotice(`No se pudo guardar la promoción: ${err.message}`);
+        });
     }, 1000);
     return () => { if (promoSaveTimer.current) clearTimeout(promoSaveTimer.current); };
   }, [promoDraft]);
@@ -444,11 +591,15 @@ export default function AdminPage() {
     if (isNew || !selectedId) return;
     const current = products.find((product) => product.id === selectedId);
     if (!current || !window.confirm(`¿Eliminar "${current.name}" del menú?`)) return;
-    const next = products.filter((product) => product.id !== selectedId).map((product) => ({ ...product, relatedIds: product.relatedIds.filter((id) => id !== selectedId) }));
-    if (!persistProducts(next)) return;
-    const following = next[0];
-    if (following) selectProduct(following); else startNew();
-    setNotice("Producto eliminado del menú.");
+    deleteProductById(selectedId)
+      .then(({ products: list }) => {
+        const merged = mergeDefaultNutrition(list);
+        setProducts(merged);
+        const following = merged[0];
+        if (following) selectProduct(following); else startNew();
+        setNotice("Producto eliminado del menú.");
+      })
+      .catch((err: Error) => setNotice(`No se pudo eliminar: ${err.message}`));
   }
 
   function handlePhoto(event: ChangeEvent<HTMLInputElement>) {
@@ -568,26 +719,39 @@ export default function AdminPage() {
     persistBanners(next);
   }
 
-  function persistPromos(next: Promo[]) {
-    setPromos(next);
-    savePromos(next).catch(() => setNotice("No se pudieron guardar las promociones."));
+  function savePromoChange(request: Promise<{ promos: Promo[] }>, okMessage?: string) {
+    request
+      .then(({ promos: list }) => {
+        setPromos(list);
+        if (okMessage) setNotice(okMessage);
+      })
+      .catch((err: Error) => setNotice(`No se pudieron guardar las promociones: ${err.message}`));
+  }
+
+  function openPromo(promo: Promo | null) {
+    promoBase.current = promo ? structuredClone(promo) : null;
+    setPromoDraft(promo ? structuredClone(promo) : null);
   }
 
   function addPromo() {
     const promo: Promo = { id: `promo-${Date.now()}`, targetType: "producto", targetValue: products[0]?.id ?? "", type: "2x1", days: [], active: true };
-    persistPromos([...promos, promo]);
-    setPromoDraft(promo);
+    setPromos([...promos, promo]);
+    savePromoChange(createPromo(promo));
+    openPromo(promo);
   }
 
   function deletePromo(id: string) {
     if (!window.confirm("¿Eliminar esta promoción?")) return;
-    persistPromos(promos.filter((p) => p.id !== id));
-    if (promoDraft?.id === id) setPromoDraft(null);
-    setNotice("Promoción eliminada.");
+    setPromos(promos.filter((p) => p.id !== id));
+    savePromoChange(deletePromoById(id), "Promoción eliminada.");
+    if (promoDraft?.id === id) openPromo(null);
   }
 
   function togglePromoActive(id: string) {
-    persistPromos(promos.map((p) => p.id === id ? { ...p, active: !p.active } : p));
+    const current = promos.find((p) => p.id === id);
+    if (!current) return;
+    setPromos(promos.map((p) => p.id === id ? { ...p, active: !p.active } : p));
+    savePromoChange(patchPromo(id, { active: !current.active }));
   }
 
   function updatePromoDraft<K extends keyof Promo>(key: K, value: Promo[K]) {
@@ -811,7 +975,11 @@ export default function AdminPage() {
         <section className="admin-content">
           <div className="admin-heading">
             <div><p>{appSettings.businessName.toLocaleUpperCase("es")} · EXPERIENCIA DIGITAL</p><h1>{tab === "products" ? "Productos del menú" : tab === "filters" ? "Filtros y clasificaciones" : tab === "banners" ? "Novedades y banners" : tab === "analytics" ? "Analíticas del menú" : tab === "evento" ? "Menú Evento" : "Ajustes del sistema"}</h1><span>{tab === "products" ? "Editá lo que el cliente ve al abrir cada producto." : tab === "filters" ? "Definí las opciones que aparecen en los filtros y formularios." : tab === "banners" ? "Creá y publicá banners visibles en la carta. El cliente los ve al abrir el menú." : tab === "analytics" ? "Seguimiento de interacciones, conversiones y comportamiento de los clientes." : tab === "evento" ? "Activá la carta reducida para eventos especiales. Solo se muestran los productos marcados." : "Administrá la identidad, los datos del negocio y las credenciales."}</span></div>
-            {tab === "products" ? <button className="admin-primary-action" onClick={() => startNew()}>＋ Nuevo producto</button> : tab === "banners" ? <div className="admin-heading-actions"><button className="admin-primary-action" onClick={addPromo}>＋ Nueva promoción</button><button className="admin-primary-action admin-action-outline" onClick={addEvent}>＋ Nuevo evento</button><button className="admin-primary-action admin-action-outline" onClick={addBanner}>＋ Nuevo banner</button></div> : tab === "analytics" ? <button className="admin-primary-action" onClick={refreshAnalytics}>↺ Actualizar</button> : null}
+            {tab === "products" ? <div className="admin-heading-actions">
+              <button className="admin-primary-action admin-action-outline" onClick={runFudoSync} disabled={fudoSyncing} title="Trae de FUDO el precio y la categoría de cada producto vinculado">{fudoSyncing ? "Actualizando…" : "↻ Actualizar desde FUDO"}</button>
+              <button className="admin-primary-action admin-action-outline" onClick={() => setShowFudoNew((open) => !open)} disabled={!fudoCatalog} title="Productos del menú QR de FUDO que todavía no están en el menú">Nuevos en FUDO{fudoCatalog ? ` (${fudoNew.length})` : ""}</button>
+              <button className="admin-primary-action" onClick={() => startNew()}>＋ Nuevo producto</button>
+            </div> : tab === "banners" ? <div className="admin-heading-actions"><button className="admin-primary-action" onClick={addPromo}>＋ Nueva promoción</button><button className="admin-primary-action admin-action-outline" onClick={addEvent}>＋ Nuevo evento</button><button className="admin-primary-action admin-action-outline" onClick={addBanner}>＋ Nuevo banner</button></div> : tab === "analytics" ? <button className="admin-primary-action" onClick={refreshAnalytics}>↺ Actualizar</button> : null}
           </div>
 
           {(tab === "products" || tab === "evento") && (() => {
@@ -827,6 +995,29 @@ export default function AdminPage() {
               <article className="admin-notice"><small>ESTADO</small><p>{notice}</p></article>
             </div>;
           })()}
+
+          {tab === "products" && fudoReport && <section className="admin-fudo-panel">
+            <header><strong>Actualización desde FUDO</strong><button type="button" onClick={() => setFudoReport(null)} aria-label="Cerrar">×</button></header>
+            {fudoReport.changes.length
+              ? <><p>Cambios aplicados ({fudoReport.changes.length}):</p><ul>{fudoReport.changes.map((c, i) => <li key={i}>{c}</li>)}</ul></>
+              : <p>Los precios y las categorías ya coincidían con FUDO.</p>}
+            {fudoReport.missing.length > 0 && <><p className="warn">No están en el menú QR de FUDO. Los pedidos con estos productos fallan hasta habilitarlos en FUDO:</p><ul>{fudoReport.missing.map((c, i) => <li key={i}>{c}</li>)}</ul></>}
+            {fudoReport.unmapped.length > 0 && <><p className="warn">Sin ID de FUDO. No llegan a cocina:</p><ul>{fudoReport.unmapped.map((c, i) => <li key={i}>{c}</li>)}</ul></>}
+          </section>}
+
+          {tab === "products" && showFudoNew && fudoCatalog && <section className="admin-fudo-panel">
+            <header><strong>En FUDO pero no en el menú ({fudoNew.length})</strong><button type="button" onClick={() => setShowFudoNew(false)} aria-label="Cerrar">×</button></header>
+            {fudoNew.length === 0
+              ? <p>Todos los productos del menú QR de FUDO ya están en el menú.</p>
+              : groupFudoCatalog(fudoNew).map(([category, items]) => <div key={category} className="admin-fudo-new-group">
+                <p>{category}</p>
+                {items.map((item) => <div key={item.id} className="admin-fudo-new-row">
+                  <span><strong>{item.name}</strong><small>ID {item.id} · categoría {item.categoryId}{item.available ? "" : " · no disponible en FUDO"}</small></span>
+                  <b>{formatPrice(item.price)}</b>
+                  <button type="button" onClick={() => startNewFromFudo(item)}>Agregar al menú</button>
+                </div>)}
+              </div>)}
+          </section>}
 
           {tab === "products" ? <div className="admin-product-workspace">
             <section className="admin-product-list">
@@ -931,12 +1122,20 @@ export default function AdminPage() {
                   <span>🔗</span>
                   <div>
                     <h3>Datos de Fudo</h3>
-                    <p>ID del producto en el POS. Sin este dato el pedido no llega a Fudo.</p>
+                    <p>ID del producto en el POS. Sin este dato el pedido no llega a Fudo. Elegilo de la lista de FUDO y se completan solos el ID, la categoría y el precio.</p>
                   </div>
                 </div>
 
                 {/* Producto sin servings: un solo ID */}
-                {!(draft.servings && draft.servings.length > 0) && (
+                {!(draft.servings && draft.servings.length > 0) && (<>
+                  <div className="admin-fudo-ref">
+                    <FudoPicker catalog={fudoCatalog} onPick={(item) => setDraft((d) => ({
+                      ...d,
+                      price: item.price,
+                      fudoData: { ...d.fudoData, productId: item.id, categoryId: item.categoryId },
+                    }))}/>
+                    <FudoMatch catalog={fudoById} id={draft.fudoData?.productId}/>
+                  </div>
                   <div className="admin-fudo-row">
                     <label className="admin-fudo-label">ID producto Fudo</label>
                     <input
@@ -969,14 +1168,27 @@ export default function AdminPage() {
                       ? <span className="admin-fudo-badge ok">✓ categoría ok</span>
                       : <span className="admin-fudo-badge missing">sin categoría</span>}
                   </div>
-                )}
+                </>)}
 
                 {/* Producto con servings (cervezas): un ID por tamaño + categoría compartida */}
                 {draft.servings && draft.servings.length > 0 && (
                   <div className="admin-fudo-servings">
                     <p className="admin-fudo-hint">Cada tamaño es un producto distinto en Fudo. Completar el ID de cada uno.</p>
                     {draft.servings.map((s) => (
-                      <div key={s.label} className="admin-fudo-row">
+                      <div key={s.label} className="admin-fudo-serving">
+                      <div className="admin-fudo-ref">
+                        <FudoPicker catalog={fudoCatalog} onPick={(item) => setDraft((d) => ({
+                          ...d,
+                          servings: (d.servings ?? []).map((sv) => sv.label === s.label ? { ...sv, price: item.price } : sv),
+                          fudoData: {
+                            ...d.fudoData,
+                            servingIds: { ...(d.fudoData?.servingIds ?? {}), [s.label]: item.id },
+                            categoryId: item.categoryId,
+                          },
+                        }))}/>
+                        <FudoMatch catalog={fudoById} id={draft.fudoData?.servingIds?.[s.label]}/>
+                      </div>
+                      <div className="admin-fudo-row">
                         <label className="admin-fudo-label">{s.label}</label>
                         <input
                           className="admin-fudo-input"
@@ -998,6 +1210,7 @@ export default function AdminPage() {
                         {draft.fudoData?.servingIds?.[s.label]
                           ? <span className="admin-fudo-badge ok">✓</span>
                           : <span className="admin-fudo-badge missing">—</span>}
+                      </div>
                       </div>
                     ))}
                     <div className="admin-fudo-row" style={{ marginTop: 8 }}>
@@ -1237,7 +1450,7 @@ export default function AdminPage() {
                       </div>
                       <div className="admin-banner-actions">
                         <button onClick={() => togglePromoActive(promo.id)}>{promo.active ? "Desactivar" : "Activar"}</button>
-                        <button onClick={() => setPromoDraft(promoDraft?.id === promo.id ? null : structuredClone(promo))}>Editar</button>
+                        <button onClick={() => openPromo(promoDraft?.id === promo.id ? null : promo)}>Editar</button>
                         <button className="admin-delete-inline" onClick={() => deletePromo(promo.id)}>×</button>
                       </div>
                     </header>
@@ -1364,7 +1577,7 @@ export default function AdminPage() {
                       </label>
                       <label>Hora de inicio<input type="time" value={promoDraft.timeStart ?? ""} onChange={(e) => updatePromoDraft("timeStart", e.target.value || undefined)}/></label>
                       <label>Hora de fin<input type="time" value={promoDraft.timeEnd ?? ""} onChange={(e) => updatePromoDraft("timeEnd", e.target.value || undefined)}/></label>
-                      <div className="wide"><button className="admin-save" onClick={() => setPromoDraft(null)}>Listo ✓</button></div>
+                      <div className="wide"><button className="admin-save" onClick={() => openPromo(null)}>Listo ✓</button></div>
                     </div>}
                   </article>;
                 })}
@@ -1725,9 +1938,13 @@ export default function AdminPage() {
                           </summary>
                           {groupProducts.map((p) => <label key={p.id} className="admin-event-product-row">
                             <input type="checkbox" checked={!!p.eventoMenu} onChange={() => {
-                              const next = products.map((prod) => prod.id === p.id ? { ...prod, eventoMenu: !prod.eventoMenu } : prod);
-                              persistProducts(next);
-                              setNotice(`"${p.name}" ${!p.eventoMenu ? "agregado al" : "quitado del"} menú evento.`);
+                              setProducts(products.map((prod) => prod.id === p.id ? { ...prod, eventoMenu: !prod.eventoMenu } : prod));
+                              patchProduct(p.id, { eventoMenu: !p.eventoMenu })
+                                .then(({ products: list }) => {
+                                  applyServerProducts(list);
+                                  setNotice(`"${p.name}" ${!p.eventoMenu ? "agregado al" : "quitado del"} menú evento.`);
+                                })
+                                .catch((err: Error) => setNotice(`No se pudo guardar: ${err.message}`));
                             }}/>
                             {p.image ? <img src={p.image} alt=""/> : <span className="admin-image-placeholder">CN</span>}
                             <span><strong>{p.name}</strong></span>
