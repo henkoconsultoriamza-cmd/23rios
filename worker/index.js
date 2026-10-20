@@ -9,8 +9,21 @@ const { createClient } = require("@supabase/supabase-js");
 
 const FUDO_MENU_URL = "https://menu.fu.do/23rios/self-service";
 const FUDO_ORDERS_URL = "https://integrations.fu.do/fudo/orders/";
+// Lista de productos que usa el menú QR de FUDO: trae el precio vigente de cada uno
+const FUDO_PRODUCTS_URL = "https://integrations.fu.do/fudo/products/?a=23rios";
+const FUDO_PRODUCTS_TTL_MS = 5 * 60_000;
 const POLL_INTERVAL_MS = 3_000;
 const LEASE_MS = 120_000;
+
+const FUDO_HEADERS = {
+  "Content-Type": "application/json",
+  "fudo-app": "self-service",
+  "fudo-account-id": "MjNyaW9z",
+  "origin": "https://menu.fu.do",
+  "referer": "https://menu.fu.do/",
+  "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+  "accept": "application/json, text/plain, */*",
+};
 
 // productId → { categoryId, price } — datos capturados de payloads reales de FUDO
 const FUDO_CATALOG = {
@@ -168,6 +181,40 @@ async function getWarmPage() {
   return warmPage;
 }
 
+// ── Precios FUDO ───────────────────────────────────────────────────────────────
+// FUDO rechaza el pedido (invalidPrice) si el precio no coincide con el suyo,
+// así que el precio se toma siempre de FUDO y no del menú.
+let fudoProductsCache = null; // { byId: Map<string, producto>, fetchedAt }
+
+async function getFudoProducts() {
+  if (fudoProductsCache && Date.now() - fudoProductsCache.fetchedAt < FUDO_PRODUCTS_TTL_MS) {
+    return fudoProductsCache.byId;
+  }
+  try {
+    const res = await fetch(FUDO_PRODUCTS_URL, { headers: FUDO_HEADERS });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const { products } = await res.json();
+    if (!Array.isArray(products)) throw new Error("respuesta sin lista de productos");
+    fudoProductsCache = { byId: new Map(products.map(p => [String(p.id), p])), fetchedAt: Date.now() };
+    return fudoProductsCache.byId;
+  } catch (err) {
+    console.error("[worker] Error leyendo productos FUDO:", err instanceof Error ? err.message : err);
+    return fudoProductsCache?.byId ?? null; // si falla, usar la última lista conocida
+  }
+}
+
+function resolveFudoPrice(pid, menuPrice, fallback, fudoProducts) {
+  const fp = fudoProducts?.get(pid);
+  if (!fp) {
+    if (fudoProducts) console.warn(`[worker] ⚠ producto ${pid} no figura en el menú QR de FUDO`);
+    return { price: menuPrice || fallback.price, categoryId: fallback.categoryId };
+  }
+  if (menuPrice && menuPrice !== fp.price) {
+    console.warn(`[worker] ⚠ precio desactualizado en el menú: ${fp.name} (${pid}) menú $${menuPrice} · FUDO $${fp.price}`);
+  }
+  return { price: fp.price, categoryId: fp.productCategoryId };
+}
+
 // ── Polling ────────────────────────────────────────────────────────────────────
 async function poll() {
   const now = new Date().toISOString();
@@ -201,7 +248,9 @@ async function poll() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`[worker] ✗ ${item.order_id}: ${msg}`);
-      await supabase.from("order_outbox").update({ status: "ERROR", leased_until: null, error_message: msg }).eq("id", item.id);
+      // El CHECK de order_outbox solo acepta PENDING · PROCESSING · DONE · FAILED
+      const { error: updErr } = await supabase.from("order_outbox").update({ status: "FAILED", leased_until: null, error_message: msg }).eq("id", item.id);
+      if (updErr) console.error(`[worker] No se pudo marcar ${item.order_id} como FAILED: ${updErr.message}`);
       errors++;
     }
   }));
@@ -252,6 +301,7 @@ async function processOrder(orderId) {
 
   const COMBO_SUBITEM_GROUPS = { "49": 4, "148": 6 };
 
+  const fudoProducts = await getFudoProducts();
   const grouped = {};
   const fudoItems = [];
 
@@ -268,26 +318,27 @@ async function processOrder(orderId) {
         productId: parseInt(c.fudo_product_id),
         quantity: 1,
       }));
+      const { price, categoryId } = resolveFudoPrice(pid, hhData.price, hhData, fudoProducts);
       for (let i = 0; i < l.quantity; i++) {
-        fudoItems.push({ subitems, price: hhData.price, productCategoryId: hhData.categoryId, productId: parseInt(pid), quantity: 1 });
+        fudoItems.push({ subitems, price, productCategoryId: categoryId, productId: parseInt(pid), quantity: 1 });
       }
     } else if (l.comment) {
       // Producto con comentario (ej: "Sin tomate"): enviar por separado para preservar la nota
       const cat = FUDO_CATALOG[pid] || { categoryId: 0, price: 0 };
-      const price = l.unit_price || cat.price;
+      const { price, categoryId } = resolveFudoPrice(pid, l.unit_price, cat, fudoProducts);
       for (let i = 0; i < l.quantity; i++) {
-        fudoItems.push({ subitems: [], price, productCategoryId: cat.categoryId, productId: parseInt(pid), quantity: 1, comment: l.comment });
+        fudoItems.push({ subitems: [], price, productCategoryId: categoryId, productId: parseInt(pid), quantity: 1, comment: l.comment });
       }
     } else {
       // Producto regular o combo: agrupar por productId
       if (!grouped[pid]) {
         const cat = FUDO_CATALOG[pid] || { categoryId: 0, price: 0 };
-        const price = l.unit_price || cat.price;
+        const { price, categoryId } = resolveFudoPrice(pid, l.unit_price, cat, fudoProducts);
         const productGroupId = COMBO_SUBITEM_GROUPS[pid];
         const firstChild = productGroupId ? (childByParent[l.line_id] || []).find(c => c.fudo_product_id) : null;
         grouped[pid] = {
           productId: parseInt(pid),
-          categoryId: cat.categoryId,
+          categoryId,
           price,
           quantity: 0,
           subitems: firstChild
@@ -334,17 +385,6 @@ async function processOrder(orderId) {
     }
   };
 
-
-  const FUDO_HEADERS = {
-    "Content-Type": "application/json",
-    "fudo-app": "self-service",
-    "fudo-account-id": "MjNyaW9z",
-    "origin": "https://menu.fu.do",
-    "referer": "https://menu.fu.do/",
-    "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-    "accept": "application/json, text/plain, */*",
-  };
-
   const res = await fetch(FUDO_ORDERS_URL, {
     method: "POST",
     headers: FUDO_HEADERS,
@@ -353,7 +393,9 @@ async function processOrder(orderId) {
 
   if (res.status < 200 || res.status >= 300) {
     const resBody = await res.json().catch(() => ({}));
-    throw new Error(`FUDO HTTP ${res.status}: ${JSON.stringify(resBody).slice(0, 150)}`);
+    // Si FUDO cambió algo (precio, categoría), releer su lista en el próximo pedido
+    if (res.status === 400) fudoProductsCache = null;
+    throw new Error(`FUDO HTTP ${res.status}: ${JSON.stringify(resBody).slice(0, 600)}`);
   }
 
   await supabase.from("orders").update({ status: "REGISTERED" }).eq("id", orderId);
