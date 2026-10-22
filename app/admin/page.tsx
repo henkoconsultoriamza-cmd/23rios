@@ -1105,10 +1105,10 @@ export default function AdminPage() {
               </div>
 
               {(draft.category === "Cocina" || draft.category === "Sin TACC") && <div className="admin-form-section">
-                <div className="admin-section-title"><span>{isCraftBeer ? "06" : "05"}</span><div><h3>Ingredientes editables</h3><p>El cliente puede pedir que se saquen estos ingredientes al momento de pedir.</p></div></div>
+                <div className="admin-section-title"><span>{isCraftBeer ? "06" : "05"}</span><div><h3>Ingredientes editables</h3><p>Opciones que el cliente puede tocar al pedir. Llegan a cocina tal cual las escribís.</p></div></div>
                 <div className="admin-ingredients-editor">
                   <div className="admin-option-list">{(draft.removableIngredients ?? []).map((item) => <span key={item}>{item}<button type="button" onClick={() => updateDraft("removableIngredients", (draft.removableIngredients ?? []).filter((i) => i !== item))} aria-label={`Eliminar ${item}`}>×</button></span>)}</div>
-                  <form className="admin-add-ingredient" onSubmit={(e) => { e.preventDefault(); const input = (e.currentTarget.elements.namedItem("ingredient") as HTMLInputElement); const val = input.value.trim(); if (!val || (draft.removableIngredients ?? []).includes(val)) return; updateDraft("removableIngredients", [...(draft.removableIngredients ?? []), val]); input.value = ""; }}><input name="ingredient" placeholder="Ej. Mayonesa, Aceitunas, Cebolla…"/><button type="submit">Agregar</button></form>
+                  <form className="admin-add-ingredient" onSubmit={(e) => { e.preventDefault(); const input = (e.currentTarget.elements.namedItem("ingredient") as HTMLInputElement); const val = input.value.trim(); if (!val || (draft.removableIngredients ?? []).includes(val)) return; updateDraft("removableIngredients", [...(draft.removableIngredients ?? []), val]); input.value = ""; }}><input name="ingredient" placeholder="Ej. Sin cebolla, Sin mayonesa, Extra queso…"/><button type="submit">Agregar</button></form>
                 </div>
               </div>}
 

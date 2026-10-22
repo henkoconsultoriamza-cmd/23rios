@@ -938,6 +938,8 @@ textarea, select { font: inherit; }
 .ingredient-chip span { font-size: 11px; width: 16px; height: 16px; border-radius: 50%; background: var(--line); display: grid; place-items: center; transition: .15s; }
 .ingredient-chip.removed { border-color: #e05a3a; color: #e05a3a; text-decoration: line-through; }
 .ingredient-chip.removed span { background: #e05a3a; color: white; }
+.ingredient-chip.selected { border-color: #3a9ad9; background: #eaf5fc; color: var(--ink); }
+.ingredient-chip.selected span { background: #3a9ad9; color: white; }
 .customize-summary { margin: 0; padding: 10px 14px; border-radius: 12px; background: #fdf0ec; color: #b03d23; font: 700 12px/1.4 "Manrope"; }
 .customize-confirm { min-height: 50px; border: 0; border-radius: 14px; background: #3a9ad9; color: white; font: 800 15px "Manrope"; cursor: pointer; margin-top: 4px; }
 .customize-modal-btn { width: 100%; min-height: 46px; margin-bottom: 10px; border: 2px solid rgba(58,154,217,.35); border-radius: 14px; background: transparent; color: #3a9ad9; font: 700 14px/1 "Manrope"; cursor: pointer; }

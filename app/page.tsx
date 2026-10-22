@@ -675,7 +675,7 @@ export default function Home() {
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       comment: [
-        ...(item.removedIngredients ?? []).map((r) => `Sin ${r}`),
+        ...(item.removedIngredients ?? []), // van a cocina tal cual se cargaron en el admin
         item.customNote ?? "",
       ].filter(Boolean).join(", ") || undefined,
       modifiers: item.modifiers,
@@ -1069,7 +1069,7 @@ export default function Home() {
                   <strong>{tr(item.name)}</strong>
                   {item.serving && <small>{tr(item.serving)} · {item.volume}</small>}
                   {item.modifiers?.length ? <small className="removed-ingredients">{item.modifiers.map(m => m.name).join(", ")}</small> : null}
-                  {item.removedIngredients?.length ? <small className="removed-ingredients">Sin: {item.removedIngredients.join(", ")}</small> : null}
+                  {item.removedIngredients?.length ? <small className="removed-ingredients">{item.removedIngredients.join(", ")}</small> : null}
                   {item.customNote ? <small className="removed-ingredients">📝 {item.customNote}</small> : null}
                   <b>{displayPrice(item.unitPrice)}</b>
                 </div>
@@ -1106,10 +1106,10 @@ export default function Home() {
             <p className="eyebrow">PERSONALIZAR PEDIDO</p>
             <h2>{tr(item?.name ?? "")}{item?.serving ? <small> · {item.serving}</small> : ""}</h2>
             {ingredients.length > 0
-              ? <><p className="customize-hint">Tocá lo que querés sacar del plato.</p><div className="customize-ingredient-list">{ingredients.map(ing => <button key={ing} className={removed.includes(ing) ? "ingredient-chip removed" : "ingredient-chip"} onClick={() => toggle(ing)}>{removed.includes(ing) ? <span>✕</span> : <span>✓</span>}{ing}</button>)}</div></>
+              ? <><p className="customize-hint">Tocá las opciones que querés para este plato.</p><div className="customize-ingredient-list">{ingredients.map(ing => <button key={ing} className={removed.includes(ing) ? "ingredient-chip selected" : "ingredient-chip"} onClick={() => toggle(ing)} aria-pressed={removed.includes(ing)}>{removed.includes(ing) ? <span>✓</span> : <span>+</span>}{ing}</button>)}</div></>
               : <p className="customize-hint">Este producto no tiene ingredientes editables cargados todavía.</p>
             }
-            {removed.length > 0 && <p className="customize-summary">Sin: {removed.join(", ")}</p>}
+            {removed.length > 0 && <p className="customize-summary">Elegiste: {removed.join(", ")}</p>}
             <button className="customize-confirm" onClick={() => setCustomizeItemKey(null)}>Listo</button>
           </section>
         </div>;
