@@ -535,16 +535,17 @@ footer img { width: 80px; height: 58px; object-fit: contain; mix-blend-mode: scr
 .cross-sell-grid strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 14px/1.2 "Manrope"; }
 .cross-sell-grid small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
 .quick-action-dialog { width: min(520px, 100%); padding: 42px; border-radius: 22px; background: var(--ink); color: white; position: relative; border: 1px solid rgba(248,206,54,.38); box-shadow: 0 35px 100px rgba(0,0,0,.5); }
-.table-dialog { width: min(480px, 100%); padding: 38px; border-radius: 22px; background: var(--ink); color: white; position: relative; border: 1px solid rgba(248,206,54,.38); box-shadow: 0 35px 100px rgba(0,0,0,.5); }
-.table-dialog-number { width: 68px; height: 68px; margin-bottom: 22px; border-radius: 18px; background: var(--yellow); color: var(--ink); display: grid; place-items: center; font: 800 25px "Manrope"; }
-.table-dialog h2 { margin: 0; font: 800 31px/1.08 "Manrope"; letter-spacing: -.04em; }
+.table-dialog { width: min(480px, 100%); max-height: calc(100vh - 40px); max-height: calc(100dvh - 40px); overflow-y: auto; overscroll-behavior: contain; padding: 30px 30px 0; border-radius: 22px; background: var(--ink); color: white; position: relative; border: 1px solid rgba(248,206,54,.38); box-shadow: 0 35px 100px rgba(0,0,0,.5); }
+.table-dialog-number { width: 52px; height: 52px; margin-bottom: 14px; border-radius: 14px; background: var(--yellow); color: var(--ink); display: grid; place-items: center; font: 800 21px "Manrope"; }
+.table-dialog h2 { margin: 0; font: 800 26px/1.08 "Manrope"; letter-spacing: -.04em; }
 .table-dialog > p:not(.eyebrow) { color: rgba(255,255,255,.58); font-size: 12px; line-height: 1.55; }
-.table-dialog form { display: grid; gap: 10px; margin-top: 20px; }
+.table-dialog form { display: grid; gap: 8px; margin-top: 14px; }
 .table-dialog label { display: flex; flex-direction: column; gap: 7px; color: rgba(255,255,255,.65); font-size: 9px; font-weight: 800; }
-.table-dialog input { width: 100%; min-height: 54px; padding: 10px 14px; border: 1px solid rgba(255,255,255,.24); border-radius: 12px; outline: 0; background: rgba(255,255,255,.08); color: white; font: 800 20px "Manrope"; }
+.table-dialog input { width: 100%; min-height: 46px; padding: 10px 14px; border: 1px solid rgba(255,255,255,.24); border-radius: 12px; outline: 0; background: rgba(255,255,255,.08); color: white; font: 800 18px "Manrope"; }
 .table-dialog input:focus { border-color: var(--yellow); box-shadow: 0 0 0 3px rgba(58,154,217,.1); }
 .table-dialog input:read-only { color: var(--yellow); opacity: .8; }
 .table-dialog form small { color: rgba(255,255,255,.42); font-size: 8px; line-height: 1.4; }
+.table-dialog form button[type="submit"] { position: sticky; bottom: 0; z-index: 1; margin: 6px -30px 0; border-radius: 0 0 22px 22px; box-shadow: 0 -14px 18px var(--ink); }
 .table-dialog form button { min-height: 50px; margin-top: 4px; border: 0; border-radius: 12px; background: var(--yellow); color: var(--ink); font-weight: 800; cursor: pointer; }
 .table-dialog form button:disabled { opacity: .38; cursor: default; }
 .modal-close.light { background: rgba(255,255,255,.09); }
@@ -689,7 +690,8 @@ footer img { width: 80px; height: 58px; object-fit: contain; mix-blend-mode: scr
   .detail-section-heading { align-items: flex-start; }
   .cross-sell-grid > button { min-height: 64px; }
   .quick-action-dialog { width: 100%; padding: 35px 22px 26px; border-radius: 16px 16px 0 0; }
-  .table-dialog { width: 100%; padding: 34px 20px 25px; border-radius: 16px 16px 0 0; }
+  .table-dialog { width: 100%; max-height: 94vh; max-height: 94dvh; padding: 30px 20px 0; border-radius: 16px 16px 0 0; }
+  .table-dialog form button[type="submit"] { margin-inline: -20px; border-radius: 0; min-height: 56px; }
   .order-panel { width: 100%; max-height: 94svh; border-radius: 16px 16px 0 0; }
   .history-panel { width: 100%; max-height: 94svh; border-radius: 16px 16px 0 0; }
   .order-panel-header { padding: 23px 18px; }
