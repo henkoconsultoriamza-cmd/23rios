@@ -478,11 +478,23 @@ export default function Home() {
   }
 
   // Opciones elegidas, con repetidas (ej. dos Golden en el Happy Hour), en orden estable para la key del carrito
+  // Producto del menú que corresponde a una opción de FUDO, para mostrarla con su foto y su nombre
+  function menuMatchForOption(option: { name: string; fudoProductId: string }) {
+    for (const p of catalogProducts) {
+      if (p.category === "Promociones") continue;
+      if (p.fudoData?.productId === option.fudoProductId) return { label: tr(p.name), image: p.image };
+      const serving = Object.entries(p.fudoData?.servingIds ?? {}).find(([, id]) => id === option.fudoProductId)?.[0];
+      if (serving) return { label: `${tr(p.name)} · ${tr(serving)}`, image: p.image };
+    }
+    return { label: option.name, image: undefined };
+  }
+
   function chosenModifiersOf(product: Product) {
     const options = product.fudoData?.modifierOptions ?? [];
     return [...selectedModifiers].sort()
       .map((id) => options.find((o) => o.fudoProductId === id))
-      .filter((o): o is { name: string; fudoProductId: string } => Boolean(o));
+      .filter((o): o is { name: string; fudoProductId: string } => Boolean(o))
+      .map((o) => ({ name: menuMatchForOption(o).label, fudoProductId: o.fudoProductId }));
   }
 
   function addSelectedToOrder() {
@@ -886,7 +898,7 @@ export default function Home() {
                 <div className="order-item-copy">
                   <strong>{tr(item.name)}</strong>
                   {item.serving && <small>{tr(item.serving)} · {item.volume}</small>}
-                  {item.modifiers?.length ? <small className="removed-ingredients">{item.modifiers.map(m => m.name).join(", ")}</small> : null}
+                  {item.modifiers?.length ? <small className="removed-ingredients">{Object.entries(item.modifiers.reduce<Record<string, number>>((acc, m) => { acc[m.name] = (acc[m.name] ?? 0) + 1; return acc; }, {})).map(([name, n]) => n > 1 ? `${n}× ${name}` : name).join(", ")}</small> : null}
                   {item.removedIngredients?.length ? <small className="removed-ingredients">{item.removedIngredients.join(", ")}</small> : null}
                   {item.customNote ? <small className="removed-ingredients">📝 {item.customNote}</small> : null}
                   <b>{displayPrice(item.unitPrice)}</b>
@@ -1054,30 +1066,27 @@ export default function Home() {
                       {tr("Elegí")} {modMin === modMax ? modMin : `${modMin}–${modMax}`} {modMin === 1 && modMax === 1 ? tr("opción") : tr("opciones")}
                       {chosenMods.length > 0 && <span className="modifier-count"> ({chosenMods.length}/{modMax})</span>}
                     </p>
-                    <div className="modifier-options">
+                    <div className="combo-beer-options">
                       {modOptions.map((opt) => {
                         const count = selectedModifiers.filter((id) => id === opt.fudoProductId).length;
                         const full = selectedModifiers.length >= modMax;
-                        const label = <>{count > 0 && <span className="modifier-check">{modMax > 1 ? `${count}× ` : "✓ "}</span>}{opt.name}</>;
-                        if (modMax === 1) {
-                          return (
-                            <button key={opt.fudoProductId} className={`modifier-option${count ? " chosen" : ""}`}
-                              onClick={() => setSelectedModifiers(count ? [] : [opt.fudoProductId])}>
-                              {label}
-                            </button>
-                          );
-                        }
-                        // Se puede elegir la misma opción más de una vez, hasta completar el máximo
+                        const blocked = modMax > 1 && full && !count;
+                        const { label, image } = menuMatchForOption(opt);
                         return (
-                          <span key={opt.fudoProductId} className="modifier-option-wrap">
-                            <button className={`modifier-option${count ? " chosen" : ""}${full && !count ? " disabled" : ""}`}
-                              disabled={full} onClick={() => setSelectedModifiers((prev) => [...prev, opt.fudoProductId])}
-                              aria-label={`Sumar ${opt.name}`}>
-                              {label}
+                          <div key={opt.fudoProductId} className="combo-beer-option-wrap">
+                            <button className={`combo-beer-option${count ? " selected" : ""}${blocked ? " maxed" : ""}`} disabled={blocked}
+                              aria-label={modMax > 1 ? `Sumar ${label}` : label} aria-pressed={count > 0}
+                              onClick={() => modMax === 1
+                                ? setSelectedModifiers(count ? [] : [opt.fudoProductId])
+                                : !full && setSelectedModifiers((prev) => [...prev, opt.fudoProductId])}>
+                              {image && <img src={image} alt=""/>}
+                              <span>{label}</span>
+                              {count > 0 && <i>{modMax > 1 ? `${count}×` : "✓"}</i>}
                             </button>
-                            {count > 0 && <button className="modifier-remove" aria-label={`Quitar una ${opt.name}`}
+                            {/* Se puede elegir la misma opción más de una vez; con «−» se saca una */}
+                            {modMax > 1 && count > 0 && <button className="combo-beer-remove" aria-label={`Quitar una ${label}`}
                               onClick={() => setSelectedModifiers((prev) => { const i = prev.lastIndexOf(opt.fudoProductId); return prev.filter((_, idx) => idx !== i); })}>−</button>}
-                          </span>
+                          </div>
                         );
                       })}
                     </div>
