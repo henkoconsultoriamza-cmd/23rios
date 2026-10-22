@@ -1,7 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import type { Product } from "@/app/menu-data";
+import { processOutbox } from "@/lib/fudo/send-order";
 import { isScheduleActive } from "@/lib/promo-schedule";
+
+export const maxDuration = 60;
 
 // ─── Rate limiting simple en memoria ─────────────────────────────────────────
 // Para producción con múltiples instancias usar Upstash Redis.
@@ -283,6 +286,10 @@ export async function POST(req: Request) {
 
   // Insertar en outbox
   await sb.from("order_outbox").insert({ order_id: order.id, status: "PENDING" });
+
+  // Se manda a FUDO apenas se responde al cliente (y de paso sale cualquier otro pendiente).
+  // Si algo falla, lo reintenta /api/fudo-worker, que Supabase llama cada minuto.
+  after(() => processOutbox().catch((err) => console.error("[fudo] Error enviando pedidos:", err)));
 
   return NextResponse.json({ orderId: order.id, status: "RECEIVED" }, { status: 202 });
 }
