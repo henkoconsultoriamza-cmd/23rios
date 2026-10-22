@@ -872,6 +872,7 @@ export default function Home() {
           <button className={category === "Cervezas" ? "active" : ""} onClick={() => changeCategory("Cervezas")}>{tr("Bebida")}</button>
           <button className={category === "SinTACC" ? "active" : ""} onClick={() => changeCategory("SinTACC")}>{tr("Sin TACC")}</button>
           {(activeCombos.length > 0 || activeHappyHours.length > 0 || activePromoProducts.length > 0) && <button className={category === ("Promociones" as any) ? "active" : ""} onClick={() => setCategory("Promociones" as any)}>🏷️ {tr("Promociones")}</button>}
+          {events.some((e) => e.active) && <button onClick={() => { trackEvent("events_open"); setEventsOpen(true); }}>📅 {tr("Eventos")}</button>}
         </div>
 
         <div className="menu-layout">
