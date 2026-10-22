@@ -451,6 +451,7 @@ export default function Home() {
   const orderCount = orderItems.reduce((total, item) => total + item.quantity, 0);
   const orderTotal = orderItems.reduce((total, item) => total + (item.unitPrice * item.quantity), 0);
   const launchedTotal = launchedOrders.reduce((total, order) => total + order.total, 0);
+  const tablePeople = launchedOrders[launchedOrders.length - 1]?.guestCount;
   const tr = (text: string) => translate(language, text);
 
   function toggleListValue(value: string, setter: Dispatch<SetStateAction<string[]>>) {
@@ -623,20 +624,6 @@ export default function Home() {
     setLaunchedOrders((current) => current.map((order) => ({ ...order, status: "Cuenta solicitada" })));
     setBillRequested(true);
     setHistoryOpen(true);
-  }
-
-  function settleBill() {
-    if (!window.confirm("¿Confirmar que la cuenta fue cobrada? En producción esta acción la realizará el personal del local.")) return;
-    setOrderItems([]);
-    setLaunchedOrders([]);
-    setOrderStatus("idle");
-    setActiveOrderId(null);
-    setTableNumber("");
-    setTableDraft("");
-    setBillRequested(false);
-    setOrderOpen(false);
-    setHistoryOpen(false);
-    setOrderFeedback("");
   }
 
   function answer(label: string, text: string, ids: string[]) {
@@ -971,13 +958,11 @@ export default function Home() {
           </header>
           {cartDisabled ? <div className="history-empty"><span><Icon name="receipt" size={28}/></span><h3>Hoy no hay servicio a mesa</h3><p>Podés ver nuestra carta y consultarle a un mozo.</p></div> : launchedOrders.length ? <><div className={billRequested ? "history-bill-summary requested" : "history-bill-summary"}><div><small>CUENTA DE LA MESA</small><strong>Mesa {tableNumber || launchedOrders[0]?.tableNumber}</strong><span>{launchedOrders.length} {launchedOrders.length === 1 ? "pedido lanzado" : "pedidos lanzados"}</span></div><b>{displayPrice(launchedTotal)}</b></div><div className="launched-orders">
             {launchedOrders.map((order) => <article key={order.id}>
-              <header><div><strong>Pedido #{order.id} · Mesa {order.tableNumber || tableNumber}</strong>{(order.guestName || order.guestCount) && <small>{order.guestName}{order.guestName && order.guestCount ? " · " : ""}{order.guestCount ? `${order.guestCount} personas` : ""}</small>}<time dateTime={order.launchedAt}>{formatOrderDate(order.launchedAt, language)}</time></div><span className={order.status === "Cerrado" ? "closed" : order.status === "Cuenta solicitada" ? "requested" : ""}>{tr(order.status)}</span></header>
+              <header><div><strong>Pedido · Mesa {order.tableNumber || tableNumber}</strong>{(order.guestName || order.guestCount) && <small>{order.guestName}{order.guestName && order.guestCount ? " · " : ""}{order.guestCount ? `${order.guestCount} ${order.guestCount === 1 ? "persona" : "personas"}` : ""}</small>}<time dateTime={order.launchedAt}>{formatOrderDate(order.launchedAt, language)}</time></div><span className={order.status === "Cerrado" ? "closed" : order.status === "Cuenta solicitada" ? "requested" : ""}>{tr(order.status)}</span></header>
               <div className="launched-order-items">{order.items.map((item) => <p key={item.key}><span><b>{item.quantity}×</b> {tr(item.name)}{item.serving ? ` · ${tr(item.serving)} (${item.volume})` : ""}</span><strong>{displayPrice(item.unitPrice * item.quantity)}</strong></p>)}</div>
               <div className="launched-order-total"><span>{order.items.reduce((total, item) => total + item.quantity, 0)} {tr("productos")}</span><strong>{displayPrice(order.total)}</strong></div>
-              {order.guestCount && order.guestCount > 1 && <div className="launched-order-per-person"><span>Por persona ({order.guestCount})</span><strong>{displayPrice(Math.ceil(order.total / order.guestCount))}</strong></div>}
             </article>)}
-          </div><div className="history-account-actions">{!billRequested && <button className="request-bill-history" onClick={requestBill}>Solicitar la cuenta · {displayPrice(launchedTotal)}</button>}<button className="provisional-paid-button" onClick={settleBill}><small>ACCIÓN PROVISIONAL</small><strong>✓ Cuenta cobrada</strong><span>Reiniciar mesa y carrito</span></button></div></> : <div className="history-empty"><span><Icon name="receipt" size={28}/></span><h3>{tr("Todavía no lanzaste pedidos")}</h3><p>Cuando cierres un carrito y lo lances, aparecerá acá con su estado y detalle completo.</p></div>}
-          <p className="order-panel-note">Al confirmarse el cobro, los pedidos desaparecen y la mesa queda libre para una nueva cuenta.</p>
+          </div><div className="history-account-actions">{tablePeople ? <div className="launched-order-per-person"><span>Por persona · {tablePeople} {tablePeople === 1 ? "persona" : "personas"}</span><strong>{displayPrice(Math.ceil(launchedTotal / tablePeople))}</strong></div> : null}{!billRequested && <button className="request-bill-history" onClick={requestBill}>Solicitar la cuenta · {displayPrice(launchedTotal)}</button>}</div></> : <div className="history-empty"><span><Icon name="receipt" size={28}/></span><h3>{tr("Todavía no lanzaste pedidos")}</h3><p>Cuando cierres un carrito y lo lances, aparecerá acá con su estado y detalle completo.</p></div>}
         </section>
       </div>}
 
