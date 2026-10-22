@@ -2,11 +2,12 @@
 
 import { CSSProperties, Dispatch, Fragment, FormEvent, SetStateAction, useEffect, useMemo, useRef, useState } from "react";
 import { Language, languageOptions, translate } from "./translations";
-import { AppSettings, DEFAULT_APP_SETTINGS, DEFAULT_MENU_SETTINGS, DEFAULT_PRODUCTS, MenuSettings, Product, Promo, ComboItem, isPromoActive, promoMatchesProduct, mergeDefaultNutrition } from "./menu-data";
+import { AppSettings, DEFAULT_APP_SETTINGS, DEFAULT_MENU_SETTINGS, DEFAULT_PRODUCTS, MenuSettings, Product, mergeDefaultNutrition } from "./menu-data";
+import { isScheduleActive } from "../lib/promo-schedule";
 import { trackEvent } from "./analytics";
 import { Banner, DEFAULT_BANNERS } from "./banner-data";
 import { EventItem } from "./event-data";
-import { getProducts, getMenuSettings, getAppSettings, getBanners, getPromos, getEvents, subscribeToConfig } from "../db/config";
+import { getProducts, getMenuSettings, getAppSettings, getBanners, getEvents, subscribeToConfig } from "../db/config";
 
 type Message = { id: number; role: "assistant" | "user"; text: string };
 type OrderStatus = "idle" | "draft" | "sent";
@@ -247,7 +248,7 @@ export default function Home() {
   const [langOpen, setLangOpen] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
-  const [category, setCategory] = useState<"Cocina" | "Cervezas" | "SinTACC">("Cocina");
+  const [category, setCategory] = useState<"Cocina" | "Cervezas" | "SinTACC" | "Promociones">("Cocina");
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [selectedPreferences, setSelectedPreferences] = useState<string[]>([]);
   const [excludedAllergens, setExcludedAllergens] = useState<string[]>([]);
@@ -275,11 +276,10 @@ export default function Home() {
   const [customizeItemKey, setCustomizeItemKey] = useState<string | null>(null);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [eventsOpen, setEventsOpen] = useState(false);
-  const [comboBeerPicker, setComboBeerPicker] = useState<{ combo: Promo; selections: Record<number, string[]> } | null>(null);
-  const [happyHourPicker, setHappyHourPicker] = useState<{ promo: Promo; selected: string[] } | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
-  const [promos, setPromos] = useState<Promo[]>([]);
+  // Hora actual para las promociones programadas: se refresca cada minuto
+  const [now, setNow] = useState(() => new Date());
   const [events, setEvents] = useState<EventItem[]>([]);
   const [urlToken] = useState<string>(() => {
     if (typeof window === "undefined") return "";
@@ -329,8 +329,7 @@ export default function Home() {
       getProducts(),
       getMenuSettings(),
       getAppSettings(),
-      getPromos(),
-    ]).then(([products, menuSetts, appSetts, proms]) => {
+    ]).then(([products, menuSetts, appSetts]) => {
       if (products) { setCatalogProducts(mergeDefaultNutrition(products)); setProductsReady(true); } else { setCatalogProducts(DEFAULT_PRODUCTS); setProductsReady(true); }
       if (menuSetts) setMenuSettings(menuSetts);
       if (appSetts) {
@@ -340,7 +339,6 @@ export default function Home() {
         if (savedLanguage && languageOptions.some((o) => o.code === savedLanguage)) setLanguage(savedLanguage);
         else if (languageOptions.some((o) => o.code === merged.defaultLanguage)) setLanguage(merged.defaultLanguage as Language);
       }
-      if (proms) setPromos(proms);
       setOrderHydrated(true);
     });
 
@@ -390,7 +388,6 @@ export default function Home() {
       if (key === "menu_settings") setMenuSettings(value as MenuSettings);
       if (key === "app_settings") setAppSettings({ ...DEFAULT_APP_SETTINGS, ...(value as AppSettings) });
       if (key === "banners") setBanners(value as Banner[]);
-      if (key === "promos") setPromos(value as Promo[]);
       if (key === "events") setEvents(value as EventItem[]);
     });
     return () => { channel.unsubscribe(); };
@@ -402,124 +399,30 @@ export default function Home() {
   const displayPrice = (value: number) => formatPrice(value, appSettings.currency);
 
   const cartDisabled = appSettings.cartDisabled ?? false;
-  const activePromos = useMemo(() => appSettings.eventModeActive ? [] : promos.filter(isPromoActive), [promos, appSettings.eventModeActive]);
-  const activeCombos = useMemo(() => activePromos.filter(p => p.type === "combo" && (p.comboItems?.length ?? 0) > 0 && p.comboPrice != null), [activePromos]);
-  const activeHappyHours = useMemo(() => activePromos.filter(p => p.type === "happy-hour"), [activePromos]);
-  const activePromoProducts = useMemo(() => {
-    const discountTypes = new Set(["precio", "2x1", "porcentaje"]);
-    const seen = new Set<string>();
-    const result: Array<{ product: Product; promo: Promo }> = [];
-    for (const promo of activePromos) {
-      if (!discountTypes.has(promo.type)) continue;
-      for (const p of catalogProducts) {
-        if (!seen.has(p.id) && promoMatchesProduct(promo, p)) {
-          seen.add(p.id);
-          result.push({ product: p, promo });
-        }
-      }
-    }
-    return result;
-  }, [activePromos, catalogProducts]);
-
-  function getPromoForProduct(product: Product): Promo | undefined {
-    return activePromos.find(p => p.type !== "combo" && p.type !== "happy-hour" && promoMatchesProduct(p, product));
-  }
-
-  function promoPrice(product: Product): number {
-    const promo = getPromoForProduct(product);
-    if (!promo) return product.price;
-    if (promo.type === "precio" && promo.promoPrice != null) return promo.promoPrice;
-    if (promo.type === "porcentaje" && promo.promoPercent != null) return Math.round(product.price * (1 - promo.promoPercent / 100));
-    return product.price;
-  }
-
-  function addComboToCart(combo: Promo) {
-    if (!combo.comboItems?.length || combo.comboPrice == null) return;
-    const needsPicker = combo.comboItems.some(ci => ci.anyBeer || (ci.optionIds?.length ?? 0) > 0);
-    if (needsPicker) {
-      setComboBeerPicker({ combo, selections: {} });
-      return;
-    }
-    commitComboToCart(combo, {});
-  }
-
-  function commitComboToCart(combo: Promo, beerSelections: Record<number, string[]>) {
-    if (!combo.comboItems?.length || combo.comboPrice == null) return;
-    const stamp = Date.now();
-
-    // Armar modificadores: 1 entrada por cada producto elegido del combo
-    const modifiers: Array<{ name: string; fudoProductId: string }> = [];
-
-    combo.comboItems.forEach((ci, idx) => {
-      if (ci.anyBeer || (ci.optionIds?.length ?? 0) > 0) {
-        const chosen = beerSelections[idx] ?? [];
-        chosen.forEach(id => {
-          const prod = catalogProducts.find(p => p.id === id);
-          if (prod) modifiers.push({ name: prod.name, fudoProductId: prod.fudoData?.productId ?? "" });
-        });
-      } else {
-        const prod = catalogProducts.find(p => p.id === ci.productId);
-        if (prod) {
-          for (let i = 0; i < ci.quantity; i++) {
-            modifiers.push({ name: prod.name, fudoProductId: prod.fudoData?.productId ?? "" });
-          }
-        }
-      }
-    });
-
-    setOrderItems(prev => [...prev, {
-      key: `combo-${combo.id}-${stamp}`,
-      productId: combo.id,
-      fudoProductId: combo.fudoProductId,
-      name: combo.comboTitle ?? "Combo",
-      image: combo.comboImageUrl,
-      unitPrice: combo.comboPrice!,
-      quantity: 1,
-      modifiers: modifiers.length > 0 ? modifiers : undefined,
-    }]);
-    setOrderStatus("draft");
-    setOrderFeedback(combo.comboTitle ?? "Combo agregado");
-    setComboBeerPicker(null);
-  }
-
-  function addHappyHourToCart(promo: Promo) {
-    const hasOptions = (promo.happyHourOptions?.length ?? 0) > 0;
-    if (hasOptions) {
-      setHappyHourPicker({ promo, selected: [] });
-    } else {
-      commitHappyHourToCart(promo, []);
-    }
-  }
-
-  function commitHappyHourToCart(promo: Promo, selected: string[]) {
-    const stamp = Date.now();
-    const modifiers = selected.map(fudoProductId => {
-      const opt = promo.happyHourOptions?.find(o => o.fudoProductId === fudoProductId);
-      return { name: opt?.name ?? fudoProductId, fudoProductId };
-    });
-    setOrderItems(prev => [...prev, {
-      key: `hh-${promo.id}-${stamp}`,
-      productId: promo.id,
-      fudoProductId: promo.happyHourFudoProductId,
-      name: promo.happyHourTitle ?? "Happy Hour",
-      image: promo.happyHourImageUrl,
-      unitPrice: promo.happyHourPrice ?? 0,
-      quantity: 1,
-      modifiers: modifiers.length > 0 ? modifiers : undefined,
-    }]);
-    setOrderStatus("draft");
-    setOrderFeedback(promo.happyHourTitle ?? "Happy Hour agregado");
-    setHappyHourPicker(null);
-  }
 
   const activePool = appSettings.eventModeActive
     ? catalogProducts.filter((p) => p.eventoMenu)
     : catalogProducts;
+  // Promociones: solo las que están dentro de su día y horario programados
+  const activePromoProducts = activePool.filter((p) => p.category === "Promociones" && isScheduleActive(p.schedule, now));
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+  // Si terminó el horario de todas las promos, se vuelve a Comida
+  useEffect(() => {
+    if (category === "Promociones" && activePromoProducts.length === 0) setCategory("Cocina");
+  }, [category, activePromoProducts.length]);
 
   const visibleProducts = useMemo(() => {
     const term = query.trim().toLocaleLowerCase("es");
     return activePool.filter((product) => {
-      const matchesCategory = category === "SinTACC"
+      const matchesCategory = category === "Promociones"
+        ? product.category === "Promociones" && isScheduleActive(product.schedule, now)
+        : product.category === "Promociones"
+        ? false
+        : category === "SinTACC"
         ? product.category === "Sin TACC" || product.attributes.includes("Sin TACC")
         : category === "Cervezas"
         ? product.category === "Cervezas" || product.category === "Bebidas"
@@ -531,7 +434,7 @@ export default function Home() {
       const matchesBeerStyle = selectedBeerStyles.length === 0 || (product.beerStyle ? selectedBeerStyles.includes(product.beerStyle) : false);
       return matchesCategory && matchesGroup && matchesPreferences && avoidsAllergens && matchesBeerStyle && (!term || content.includes(term));
     });
-  }, [activePool, category, excludedAllergens, query, selectedBeerStyles, selectedGroups, selectedPreferences]);
+  }, [activePool, category, excludedAllergens, now, query, selectedBeerStyles, selectedGroups, selectedPreferences]);
 
   const relatedProducts = selected
     ? selected.relatedIds
@@ -544,7 +447,7 @@ export default function Home() {
 
   const selectedServingOption = selected?.servings?.find((serving) => serving.label === selectedServing);
   const selectedBasePrice = selectedServingOption?.price ?? selected?.price ?? 0;
-  const selectedPrice = selected && !selectedServingOption ? promoPrice(selected) : selectedBasePrice;
+  const selectedPrice = selectedBasePrice;
   const orderCount = orderItems.reduce((total, item) => total + item.quantity, 0);
   const orderTotal = orderItems.reduce((total, item) => total + (item.unitPrice * item.quantity), 0);
   const launchedTotal = launchedOrders.reduce((total, order) => total + order.total, 0);
@@ -554,7 +457,7 @@ export default function Home() {
     setter((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value]);
   }
 
-  function changeCategory(next: "Cocina" | "Cervezas" | "SinTACC") {
+  function changeCategory(next: "Cocina" | "Cervezas" | "SinTACC" | "Promociones") {
     trackEvent("category_switch", { filterType: next });
     setCategory(next);
     setSelectedGroups([]);
@@ -574,13 +477,20 @@ export default function Home() {
     setFavorites((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   }
 
+  // Opciones elegidas, con repetidas (ej. dos Golden en el Happy Hour), en orden estable para la key del carrito
+  function chosenModifiersOf(product: Product) {
+    const options = product.fudoData?.modifierOptions ?? [];
+    return [...selectedModifiers].sort()
+      .map((id) => options.find((o) => o.fudoProductId === id))
+      .filter((o): o is { name: string; fudoProductId: string } => Boolean(o));
+  }
+
   function addSelectedToOrder() {
     if (!selected || orderStatus === "sent") return;
     trackEvent("cart_add", { productId: selected.id });
 
     // Para combos con modificadores, la key incluye las opciones elegidas para permitir distintas selecciones
-    const modOptions = selected.fudoData?.modifierOptions ?? [];
-    const chosenMods = modOptions.filter((o) => selectedModifiers.includes(o.fudoProductId));
+    const chosenMods = chosenModifiersOf(selected);
     const modKey = chosenMods.length > 0 ? `:mods:${chosenMods.map((m) => m.fudoProductId).join(",")}` : "";
     const key = selectedServingOption
       ? `${selected.id}:${selectedServingOption.label}`
@@ -871,99 +781,13 @@ export default function Home() {
           <button className={category === "Cocina" ? "active" : ""} onClick={() => changeCategory("Cocina")}>{tr("Comida")}</button>
           <button className={category === "Cervezas" ? "active" : ""} onClick={() => changeCategory("Cervezas")}>{tr("Bebida")}</button>
           <button className={category === "SinTACC" ? "active" : ""} onClick={() => changeCategory("SinTACC")}>{tr("Sin TACC")}</button>
-          {(activeCombos.length > 0 || activeHappyHours.length > 0 || activePromoProducts.length > 0) && <button className={category === ("Promociones" as any) ? "active" : ""} onClick={() => setCategory("Promociones" as any)}>🏷️ {tr("Promociones")}</button>}
+          {activePromoProducts.length > 0 && <button className={category === "Promociones" ? "active" : ""} onClick={() => changeCategory("Promociones")}>🏷️ {tr("Promociones")}</button>}
           {events.some((e) => e.active) && <button onClick={() => { trackEvent("events_open"); setEventsOpen(true); }}>📅 {tr("Eventos")}</button>}
         </div>
 
         <div className="menu-layout">
           <div className="menu-results">
 
-            {(category as string) === "Promociones" ? (
-              <div className="product-grid">
-                {activeHappyHours.map(hh => (
-                  <article className="product-card combo-product-card" key={hh.id}>
-                    <div className="product-visual-wrap">
-                      <div className="product-visual combo-visual">
-                        {hh.happyHourImageUrl
-                          ? <img src={hh.happyHourImageUrl} alt={hh.happyHourTitle ?? "Happy Hour"} />
-                          : <span className="photo-pending combo-no-image"><strong>🍺 HAPPY HOUR</strong></span>}
-                        <span className="product-tag combo-card-tag" style={{ background: "#e07b00" }}>HAPPY HOUR</span>
-                      </div>
-                    </div>
-                    <div className="product-info">
-                      <div className="product-title"><span><h3>{hh.happyHourTitle || "Happy Hour"}</h3></span></div>
-                      <p className="combo-items-inline">{(hh.happyHourOptions ?? []).map(o => o.name).join(" · ")}</p>
-                      <div className="product-footer">
-                        <strong>{displayPrice(hh.happyHourPrice ?? 0)}</strong>
-                        {!cartDisabled && <button className="add-to-cart-btn" onClick={() => addHappyHourToCart(hh)}>Lo quiero <Icon name="plus" size={15}/></button>}
-                      </div>
-                    </div>
-                  </article>
-                ))}
-                {activeCombos.map(combo => {
-                  const items = combo.comboItems ?? [];
-                  const normalTotal = items.reduce((sum, ci) => {
-                    const prod = catalogProducts.find(p => p.id === ci.productId);
-                    return sum + (prod?.price ?? 0) * ci.quantity;
-                  }, 0);
-                  return (
-                    <article className="product-card combo-product-card" key={combo.id}>
-                      <div className="product-visual-wrap">
-                        <div className="product-visual combo-visual">
-                          {combo.comboImageUrl
-                            ? <img src={combo.comboImageUrl} alt={combo.comboTitle ?? "Combo"} />
-                            : <span className="photo-pending combo-no-image"><strong>🎁 COMBO</strong></span>}
-                          <span className="product-tag combo-card-tag">COMBO</span>
-                        </div>
-                      </div>
-                      <div className="product-info">
-                        <div className="product-title"><span><h3>{combo.comboTitle || "Combo especial"}</h3></span></div>
-                        <p className="combo-items-inline">{items.map((ci, idx) => {
-                          const prod = catalogProducts.find(p => p.id === ci.productId);
-                          return `${ci.quantity > 1 ? ci.quantity + "× " : ""}${prod?.name ?? ci.productId}`;
-                        }).join(" · ")}</p>
-                        <div className="product-footer">
-                          <span>
-                            {normalTotal > (combo.comboPrice ?? 0) && <s className="price-original">{displayPrice(normalTotal)}</s>}
-                            <strong>{displayPrice(combo.comboPrice ?? 0)}</strong>
-                          </span>
-                          {!cartDisabled && <button className="add-to-cart-btn" onClick={() => addComboToCart(combo)}>Lo quiero <Icon name="plus" size={15}/></button>}
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
-                {activePromoProducts.map(({ product, promo }) => {
-                  const discountedPrice = promoPrice(product);
-                  const label = promo.type === "2x1" ? "2×1" : promo.type === "porcentaje" ? `-${promo.promoPercent}%` : "Oferta";
-                  return (
-                    <article className={`product-card${product.outOfStock ? " out-of-stock" : ""}`} key={product.id}>
-                      <div className="product-visual-wrap">
-                        <button className="product-visual" onClick={() => setSelected(product)}>
-                          {product.image ? <img src={product.image} alt={product.name} /> : <span className="photo-pending"><Icon name="expand" size={20}/><strong>{tr("Foto real pendiente")}</strong></span>}
-                          <span className="product-tag">{label}</span>
-                          <span className="expand-label"><Icon name="expand" size={14}/> {tr("Ver detalle")}</span>
-                        </button>
-                        <span className="promo-badge-image">{label}</span>
-                      </div>
-                      <div className="product-info">
-                        <div className="product-title"><button onClick={() => setSelected(product)}><h3>{tr(product.name)}</h3></button></div>
-                        <p>{tr(product.description)}</p>
-                        <div className="product-footer">
-                          <span>
-                            {discountedPrice !== product.price && <s className="price-original">{displayPrice(product.price)}</s>}
-                            <strong>{displayPrice(discountedPrice)}</strong>
-                          </span>
-                          {!cartDisabled && <button className="add-to-cart-btn" onClick={() => setSelected(product)}>Lo quiero <Icon name="plus" size={15}/></button>}
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            ) : null}
-
-            {(category as string) !== "Promociones" && <>
             {!productsReady ? <div className="results-summary"><span>Cargando...</span></div> : <>
             <div className="results-summary"><span>{visibleProducts.length} {tr(visibleProducts.length === 1 ? "resultado" : "resultados")}</span></div>
 
@@ -981,19 +805,14 @@ export default function Home() {
                           <span className="product-tag">{product.tag}</span>
                           <span className="expand-label"><Icon name="expand" size={14}/> {tr("Ver detalle")}</span>
                         </button>
-                        {product.outOfStock
-                          ? <span className="out-of-stock-badge">Sin stock</span>
-                          : (() => { const p = getPromoForProduct(product); if (!p) return null; const label = p.type === "2x1" ? "2×1" : p.type === "porcentaje" ? `-${p.promoPercent}%` : "Oferta"; return <span className="promo-badge-image">{label}</span>; })()}
+                        {product.outOfStock && <span className="out-of-stock-badge">Sin stock</span>}
                       </div>
                       <div className="product-info">
 
                         <div className="product-title"><button onClick={() => setSelected(product)}><h3>{tr(product.name)}</h3></button><button className={favorites.includes(product.id) ? "favorite active" : "favorite"} onClick={() => toggleFavorite(product.id)} aria-label={`Guardar ${tr(product.name)}`}><Icon name="heart" size={18}/></button></div>
                         <p>{tr(product.description)}</p>
                         {(() => {
-                          const activePromo = getPromoForProduct(product);
-                          const cardPrice = product.servings ? Math.min(...product.servings.map(s => s.price)) : promoPrice(product);
-                          const originalPrice = product.servings ? null : product.price;
-                          const hasDiscount = !product.servings && activePromo && cardPrice !== originalPrice;
+                          const cardPrice = product.servings ? Math.min(...product.servings.map(s => s.price)) : product.price;
                           const cartQty = !product.servings ? (orderItems.find(i => i.key === product.id)?.quantity ?? 0) : 0;
                           const btnLabel = product.outOfStock
                             ? <>{tr("Sin stock")}</>
@@ -1005,11 +824,10 @@ export default function Home() {
                           return (
                             <div className="product-footer">
                               <span>
-                                {hasDiscount && <s className="price-original">{displayPrice(originalPrice!)}</s>}
                                 <small>{product.servings ? tr("Desde") : ""}</small>
                                 <strong>{displayPrice(cardPrice)}</strong>
                               </span>
-                              {!cartDisabled && <button disabled={product.outOfStock} className={product.outOfStock ? "add-to-cart-btn out-of-stock-btn" : cartQty > 0 && !product.servings ? "add-to-cart-btn in-cart" : "add-to-cart-btn"} onClick={(e) => { e.stopPropagation(); if (product.outOfStock) return; if (product.servings || product.fudoData?.modifierOptions?.length) { setSelected(product); } else { const cardUnitPrice = promoPrice(product); setOrderItems(prev => { const key = product.id; const existing = prev.find(i => i.key === key); return existing ? prev.map(i => i.key === key ? {...i, quantity: i.quantity + 1, unitPrice: cardUnitPrice} : i) : [...prev, { key, productId: product.id, fudoProductId: product.fudoData?.productId, fudoCategoryId: product.fudoData?.categoryId !== undefined ? String(product.fudoData.categoryId) : undefined, name: product.name, image: product.image, unitPrice: cardUnitPrice, quantity: 1 }]; }); setOrderStatus("draft"); } }}>{btnLabel}</button>}
+                              {!cartDisabled && <button disabled={product.outOfStock} className={product.outOfStock ? "add-to-cart-btn out-of-stock-btn" : cartQty > 0 && !product.servings ? "add-to-cart-btn in-cart" : "add-to-cart-btn"} onClick={(e) => { e.stopPropagation(); if (product.outOfStock) return; if (product.servings || product.fudoData?.modifierOptions?.length) { setSelected(product); } else { const cardUnitPrice = product.price; setOrderItems(prev => { const key = product.id; const existing = prev.find(i => i.key === key); return existing ? prev.map(i => i.key === key ? {...i, quantity: i.quantity + 1, unitPrice: cardUnitPrice} : i) : [...prev, { key, productId: product.id, fudoProductId: product.fudoData?.productId, fudoCategoryId: product.fudoData?.categoryId !== undefined ? String(product.fudoData.categoryId) : undefined, name: product.name, image: product.image, unitPrice: cardUnitPrice, quantity: 1 }]; }); setOrderStatus("draft"); } }}>{btnLabel}</button>}
                             </div>
                           );
                         })()}
@@ -1019,7 +837,7 @@ export default function Home() {
                 </Fragment>
               ))}
             </div> : <div className="empty-state"><h3>No hay resultados con esos filtros</h3><p>Probá desmarcar una opción o limpiar los filtros.</p><button onClick={clearSidebarFilters}>Limpiar filtros</button></div>}
-            </>}</>}
+            </>}
           </div>
         </div>
       </section>
@@ -1186,7 +1004,7 @@ export default function Home() {
                   <b>{displayPrice(serving.price)}</b>
                 </button>)}
               </div>
-            </section> : <div className="single-price">{(() => { const promo = getPromoForProduct(selected); const effPrice = promoPrice(selected); return <><span>{tr("Precio")}</span>{promo && effPrice !== selected.price && <s className="price-original">{displayPrice(selected.price)}</s>}<strong>{displayPrice(effPrice)}</strong></>; })()}</div>}
+            </section> : <div className="single-price"><span>{tr("Precio")}</span><strong>{displayPrice(selected.price)}</strong></div>}
 
             <section className="nutrition-card" aria-labelledby="nutrition-title">
               {(selected.category === "Cocina" || selected.category === "Sin TACC") && selected.showNutrition && <>
@@ -1205,7 +1023,7 @@ export default function Home() {
               const modOptions = selected.fudoData?.modifierOptions ?? [];
               const modMin = selected.fudoData?.modifierMin ?? (modOptions.length > 0 ? 1 : 0);
               const modMax = selected.fudoData?.modifierMax ?? (modOptions.length > 0 ? 1 : 0);
-              const chosenMods = modOptions.filter((o) => selectedModifiers.includes(o.fudoProductId));
+              const chosenMods = chosenModifiersOf(selected);
               const modKey = chosenMods.length > 0 ? `:mods:${chosenMods.map((m) => m.fudoProductId).join(",")}` : "";
               const modalKey = selectedServingOption
                 ? `${selected.id}:${selectedServingOption.label}`
@@ -1238,28 +1056,28 @@ export default function Home() {
                     </p>
                     <div className="modifier-options">
                       {modOptions.map((opt) => {
-                        const chosen = selectedModifiers.includes(opt.fudoProductId);
-                        const atMax = chosenMods.length >= modMax && !chosen;
+                        const count = selectedModifiers.filter((id) => id === opt.fudoProductId).length;
+                        const full = selectedModifiers.length >= modMax;
+                        const label = <>{count > 0 && <span className="modifier-check">{modMax > 1 ? `${count}× ` : "✓ "}</span>}{opt.name}</>;
+                        if (modMax === 1) {
+                          return (
+                            <button key={opt.fudoProductId} className={`modifier-option${count ? " chosen" : ""}`}
+                              onClick={() => setSelectedModifiers(count ? [] : [opt.fudoProductId])}>
+                              {label}
+                            </button>
+                          );
+                        }
+                        // Se puede elegir la misma opción más de una vez, hasta completar el máximo
                         return (
-                          <button
-                            key={opt.fudoProductId}
-                            className={`modifier-option${chosen ? " chosen" : ""}${atMax ? " disabled" : ""}`}
-                            disabled={atMax}
-                            onClick={() => {
-                              if (chosen) {
-                                setSelectedModifiers((prev) => prev.filter((id) => id !== opt.fudoProductId));
-                              } else if (!atMax) {
-                                if (modMax === 1) {
-                                  setSelectedModifiers([opt.fudoProductId]);
-                                } else {
-                                  setSelectedModifiers((prev) => [...prev, opt.fudoProductId]);
-                                }
-                              }
-                            }}
-                          >
-                            {chosen && <span className="modifier-check">✓ </span>}
-                            {opt.name}
-                          </button>
+                          <span key={opt.fudoProductId} className="modifier-option-wrap">
+                            <button className={`modifier-option${count ? " chosen" : ""}${full && !count ? " disabled" : ""}`}
+                              disabled={full} onClick={() => setSelectedModifiers((prev) => [...prev, opt.fudoProductId])}
+                              aria-label={`Sumar ${opt.name}`}>
+                              {label}
+                            </button>
+                            {count > 0 && <button className="modifier-remove" aria-label={`Quitar una ${opt.name}`}
+                              onClick={() => setSelectedModifiers((prev) => { const i = prev.lastIndexOf(opt.fudoProductId); return prev.filter((_, idx) => idx !== i); })}>−</button>}
+                          </span>
                         );
                       })}
                     </div>
@@ -1311,161 +1129,6 @@ export default function Home() {
         </section>
       </div>}
 
-      {comboBeerPicker && (() => {
-        const { combo, selections } = comboBeerPicker;
-        const anyBeerSlots = (combo.comboItems ?? []).map((ci, idx) => (ci.anyBeer || (ci.optionIds?.length ?? 0) > 0) ? { ci, idx } : null).filter(Boolean) as { ci: ComboItem; idx: number }[];
-        const beers = catalogProducts.filter(p => p.category === "Cervezas" && !p.outOfStock);
-        const allSelected = anyBeerSlots.every(({ ci, idx }) => (selections[idx]?.length ?? 0) === ci.quantity);
-
-        function toggleBeer(slotIdx: number, beerId: string, max: number) {
-          setComboBeerPicker(prev => {
-            if (!prev) return null;
-            const current = prev.selections[slotIdx] ?? [];
-            const count = current.filter(id => id === beerId).length;
-            const total = current.length;
-            let next: string[];
-            if (count > 0) {
-              // remove one instance
-              const pos = current.lastIndexOf(beerId);
-              next = current.filter((_, i) => i !== pos);
-            } else if (total < max) {
-              next = [...current, beerId];
-            } else {
-              return prev; // already at max, do nothing
-            }
-            return { ...prev, selections: { ...prev.selections, [slotIdx]: next } };
-          });
-        }
-
-        return (
-          <div className="overlay" onClick={() => setComboBeerPicker(null)}>
-            <div className="combo-beer-picker-modal" onClick={e => e.stopPropagation()}>
-              <button className="modal-close" onClick={() => setComboBeerPicker(null)}>✕</button>
-              <p className="combo-beer-picker-eyebrow">COMBO · {combo.comboTitle}</p>
-              <h3 className="combo-beer-picker-title">{anyBeerSlots.some(({ ci }) => ci.anyBeer) ? "¿Qué bebida querés?" : "¿Qué querés incluir?"}</h3>
-              <div className="combo-beer-picker-slots">
-                {anyBeerSlots.map(({ ci, idx }) => {
-                  const chosen = selections[idx] ?? [];
-                  const remaining = ci.quantity - chosen.length;
-                  const optionProds = (ci.optionIds ?? []).map(id => catalogProducts.find(p => p.id === id)).filter(Boolean) as typeof catalogProducts;
-                  return (
-                    <div key={idx} className="combo-beer-slot">
-                      <p className="combo-beer-slot-qty">
-                        {remaining > 0 ? `Elegí ${remaining} opción${remaining > 1 ? "es" : ""} más` : `✓ ${ci.quantity} opción${ci.quantity > 1 ? "es" : ""} elegida${ci.quantity > 1 ? "s" : ""}`}
-                      </p>
-                      <div className="combo-beer-options">
-                        {ci.anyBeer && beers.map(beer => {
-                          const count = chosen.filter(id => id === beer.id).length;
-                          return (
-                            <button key={beer.id} className={`combo-beer-option${count > 0 ? " selected" : ""}${remaining === 0 && count === 0 ? " maxed" : ""}`} onClick={() => toggleBeer(idx, beer.id, ci.quantity)}>
-                              {beer.image && <img src={beer.image} alt={beer.name}/>}
-                              <span>{beer.name}</span>
-                              {count > 0 && <i>{count > 1 ? `×${count}` : "✓"}</i>}
-                            </button>
-                          );
-                        })}
-                        {ci.anyBeer && optionProds.length > 0 && <p className="combo-picker-separator">— o también —</p>}
-                        {optionProds.map(prod => {
-                          const count = chosen.filter(id => id === prod.id).length;
-                          return (
-                            <button key={prod.id} className={`combo-beer-option${count > 0 ? " selected" : ""}${remaining === 0 && count === 0 ? " maxed" : ""}`} onClick={() => toggleBeer(idx, prod.id, ci.quantity)}>
-                              {prod.image && <img src={prod.image} alt={prod.name}/>}
-                              <span>{prod.name}</span>
-                              {count > 0 && <i>{count > 1 ? `×${count}` : "✓"}</i>}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <button
-                className={`combo-beer-confirm${allSelected ? "" : " disabled"}`}
-                disabled={!allSelected}
-                onClick={() => allSelected && commitComboToCart(combo, selections)}
-              >
-                {allSelected ? `Agregar combo · ${displayPrice(combo.comboPrice ?? 0)}` : `Elegí ${anyBeerSlots.reduce((s, { ci, idx }) => s + ci.quantity - (selections[idx]?.length ?? 0), 0)} cerveza${anyBeerSlots.reduce((s, { ci, idx }) => s + ci.quantity - (selections[idx]?.length ?? 0), 0) > 1 ? "s" : ""} más`}
-              </button>
-            </div>
-          </div>
-        );
-      })()}
-
-      {happyHourPicker && (() => {
-        const { promo, selected } = happyHourPicker;
-        const min = promo.happyHourMin ?? 1;
-        const max = promo.happyHourMax ?? 1;
-        const options = promo.happyHourOptions ?? [];
-        const remaining = max - selected.length;
-        const ready = selected.length >= min && selected.length <= max;
-
-        function toggleOption(fudoProductId: string) {
-          setHappyHourPicker(prev => {
-            if (!prev) return null;
-            const cur = prev.selected;
-            const idx = cur.indexOf(fudoProductId);
-            let next: string[];
-            if (idx >= 0) {
-              next = cur.filter((_, i) => i !== idx);
-            } else if (cur.length < max) {
-              next = [...cur, fudoProductId];
-            } else {
-              return prev;
-            }
-            return { ...prev, selected: next };
-          });
-        }
-
-        const productForOption = (fudoProductId: string) =>
-          catalogProducts.find(p =>
-            p.fudoData?.productId === fudoProductId ||
-            (p.fudoData?.servingIds && Object.values(p.fudoData.servingIds).includes(fudoProductId))
-          );
-
-        return (
-          <div className="overlay" onClick={() => setHappyHourPicker(null)}>
-            <div className="combo-beer-picker-modal" onClick={e => e.stopPropagation()}>
-              <button className="modal-close" onClick={() => setHappyHourPicker(null)}>✕</button>
-              <p className="combo-beer-picker-eyebrow">HAPPY HOUR · {promo.happyHourTitle}</p>
-              <h3 className="combo-beer-picker-title">
-                {remaining > 0 ? `Elegí ${remaining} cerveza${remaining > 1 ? "s" : ""} más` : "¡Listo!"}
-              </h3>
-              <div className="combo-beer-picker-slots">
-                <div className="combo-beer-slot">
-                  <div className="combo-beer-options">
-                    {options.map(opt => {
-                      const prod = productForOption(opt.fudoProductId);
-                      const isSelected = selected.includes(opt.fudoProductId);
-                      const maxed = !isSelected && selected.length >= max;
-                      return (
-                        <button
-                          key={opt.fudoProductId}
-                          className={`combo-beer-option${isSelected ? " selected" : ""}${maxed ? " maxed" : ""}`}
-                          onClick={() => toggleOption(opt.fudoProductId)}
-                        >
-                          {prod?.image && <img src={prod.image} alt={opt.name} />}
-                          <span>{opt.name}</span>
-                          {isSelected && <i>✓</i>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-              <button
-                className={`combo-beer-confirm${ready ? "" : " disabled"}`}
-                disabled={!ready}
-                onClick={() => ready && commitHappyHourToCart(promo, selected)}
-              >
-                {ready
-                  ? `Agregar · ${displayPrice(promo.happyHourPrice ?? 0)}`
-                  : `Elegí ${remaining} cerveza${remaining > 1 ? "s" : ""} más`}
-              </button>
-            </div>
-          </div>
-        );
-      })()}
     </main>
 
     {/* Drawer de filtros: fuera del site-shell para evitar stacking context */}

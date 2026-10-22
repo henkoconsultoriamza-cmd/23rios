@@ -1,5 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import type { Product } from "@/app/menu-data";
+import { isScheduleActive } from "@/lib/promo-schedule";
 
 // ─── Rate limiting simple en memoria ─────────────────────────────────────────
 // Para producción con múltiples instancias usar Upstash Redis.
@@ -150,29 +152,31 @@ export async function POST(req: Request) {
   const { idempotencyKey, mesaNumero, people, catalogRevision, customerName, customerPhone, customerEmail, lines } = validation.data;
   const sb = supabase();
 
-  // ── Validar modificadores de combos contra la definición guardada ─────────
-  const comboLines = lines.filter((l) => l.modifiers && l.modifiers.length > 0);
-  if (comboLines.length > 0) {
-    const { data: promosRow } = await sb
-      .from("restaurant_config")
-      .select("value")
-      .eq("key", "promos")
-      .single();
+  // ── Validar promociones (horario) y opciones elegidas contra el producto guardado ──
+  const { data: productsRow } = await sb
+    .from("restaurant_config")
+    .select("value")
+    .eq("key", "products")
+    .single();
+  const catalog: Product[] = Array.isArray(productsRow?.value) ? productsRow.value : [];
 
-    const promos: Array<{ id: string; comboItems?: Array<{ quantity: number }> }> =
-      Array.isArray(promosRow?.value) ? promosRow.value : [];
+  for (const line of lines) {
+    const product = catalog.find((p) => p.id === line.productId);
+    if (!product) continue; // producto desconocido — no bloqueamos, seguimos
 
-    for (const line of comboLines) {
-      const promo = promos.find((p) => p.id === line.productId);
-      if (!promo) continue; // promo no encontrada — no bloqueamos, seguimos
-
-      const maxModifiers = (promo.comboItems ?? []).reduce((sum, ci) => sum + ci.quantity, 0);
-      if ((line.modifiers?.length ?? 0) > maxModifiers) {
-        return NextResponse.json(
-          { error: `El combo "${line.productId}" permite máximo ${maxModifiers} opciones` },
-          { status: 400 }
-        );
-      }
+    if (product.category === "Promociones" && !isScheduleActive(product.schedule)) {
+      return NextResponse.json(
+        { error: `«${product.name}» ya no está disponible en este horario. Sacala del pedido para continuar.` },
+        { status: 409 }
+      );
+    }
+    const chosen = line.modifiers?.length ?? 0;
+    const { modifierMin, modifierMax, modifierOptions } = product.fudoData ?? {};
+    if (modifierOptions?.length && ((modifierMax !== undefined && chosen > modifierMax) || (modifierMin !== undefined && chosen < modifierMin))) {
+      return NextResponse.json(
+        { error: `«${product.name}» pide elegir entre ${modifierMin ?? 0} y ${modifierMax ?? chosen} opciones.` },
+        { status: 400 }
+      );
     }
   }
 
@@ -255,10 +259,11 @@ export async function POST(req: Request) {
       status: "PENDING",
       parent_line_id: null,
     });
-    for (const mod of l.modifiers ?? []) {
+    // Numeradas: una opción puede repetirse (ej. dos Golden en el Happy Hour)
+    for (const [index, mod] of (l.modifiers ?? []).entries()) {
       lineRows.push({
         order_id: order.id,
-        line_id: `${l.lineId}:mod:${mod.fudoProductId}`,
+        line_id: `${l.lineId}:mod:${index + 1}:${mod.fudoProductId}`,
         product_id: l.productId,
         fudo_product_id: mod.fudoProductId,
         quantity: 1,

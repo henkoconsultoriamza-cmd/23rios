@@ -1,9 +1,11 @@
 /**
- * Alinea el menú con el catálogo del menú QR de FUDO: precio e ID de categoría
- * de cada producto vinculado. No toca nombres, fotos ni descripciones.
- * Función pura: no lee ni escribe nada, devuelve las listas nuevas y el detalle.
+ * Alinea el menú con el catálogo del menú QR de FUDO: precio e ID de categoría de cada
+ * producto vinculado y, en las promociones, sus opciones para elegir. Los productos que en
+ * FUDO están en una categoría de promociones pasan a la categoría «Promociones» del menú.
+ * No toca nombres, fotos, descripciones ni la programación.
+ * Función pura: no lee ni escribe nada, devuelve la lista nueva y el detalle.
  */
-import type { Product, Promo } from "../../app/menu-data";
+import type { Product } from "../../app/menu-data";
 import type { FudoCatalogItem } from "./qr-catalog";
 
 export type FudoSyncReport = {
@@ -13,17 +15,30 @@ export type FudoSyncReport = {
   missing: string[];
   /** Sin ID de FUDO: no llegan a cocina */
   unmapped: string[];
+  /** Cosas para revisar a mano */
+  warnings: string[];
 };
 
 const money = (n: number) => `$${Number(n || 0).toLocaleString("es-AR")}`;
 
+/** Opciones del primer grupo de FUDO en el formato del menú (el menú maneja un grupo por producto). */
+export function fudoOptionsFor(item: FudoCatalogItem): Partial<NonNullable<Product["fudoData"]>> {
+  const group = item.groups[0];
+  if (!group) return { modifierGroupId: undefined, modifierOptions: undefined, modifierMin: undefined, modifierMax: undefined };
+  return {
+    modifierGroupId: group.id,
+    modifierOptions: group.options.map((o) => ({ name: o.name, fudoProductId: o.id })),
+    modifierMin: group.min,
+    modifierMax: group.max,
+  };
+}
+
 export function syncWithFudo(
   products: Product[],
-  promos: Promo[],
   catalog: FudoCatalogItem[],
-): { products: Product[]; promos: Promo[]; report: FudoSyncReport } {
+): { products: Product[]; report: FudoSyncReport } {
   const byId = new Map(catalog.map((item) => [item.id, item]));
-  const report: FudoSyncReport = { changes: [], missing: [], unmapped: [] };
+  const report: FudoSyncReport = { changes: [], missing: [], unmapped: [], warnings: [] };
 
   const nextProducts = products.map((product) => {
     const fudo = product.fudoData;
@@ -67,6 +82,26 @@ export function syncWithFudo(
         report.changes.push(`${product.name}: precio ${money(product.price)} → ${money(item.price)}`);
         next.price = item.price;
       }
+
+      // Promociones: la categoría del menú y las opciones salen de FUDO
+      if (item.promo && product.category !== "Promociones") {
+        report.changes.push(`${product.name}: pasa a Promociones (en FUDO está en «${item.categoryName}»)`);
+        next.category = "Promociones";
+        next.group = "Promociones";
+      } else if (!item.promo && product.category === "Promociones") {
+        report.warnings.push(`${product.name}: está en Promociones pero en FUDO ya no está en una categoría de promociones («${item.categoryName}»). Cambiale la categoría.`);
+      }
+      if (item.promo) {
+        const options = fudoOptionsFor(item);
+        const current = { modifierGroupId: fudo?.modifierGroupId, modifierOptions: fudo?.modifierOptions, modifierMin: fudo?.modifierMin, modifierMax: fudo?.modifierMax };
+        if (JSON.stringify(current) !== JSON.stringify(options)) {
+          report.changes.push(`${product.name}: opciones actualizadas desde FUDO${item.groups[0] ? ` («${item.groups[0].name}», ${item.groups[0].min} a ${item.groups[0].max})` : " (sin opciones)"}`);
+          next.fudoData = { ...next.fudoData, ...options };
+        }
+        if (item.groups.length > 1) {
+          report.warnings.push(`${product.name}: en FUDO tiene ${item.groups.length} grupos de opciones y el menú usa solo el primero («${item.groups[0].name}»).`);
+        }
+      }
     }
 
     if (categoryId !== undefined && fudo?.categoryId !== categoryId) {
@@ -76,40 +111,16 @@ export function syncWithFudo(
     return next;
   });
 
-  const nextPromos = promos.map((promo) => {
-    if (promo.type !== "happy-hour" || !promo.happyHourFudoProductId) return promo;
-    const title = promo.happyHourTitle ?? "Happy Hour";
-    const item = byId.get(String(promo.happyHourFudoProductId));
-    if (!item) {
-      report.missing.push(`Promo «${title}» (ID ${promo.happyHourFudoProductId})`);
-      return promo;
-    }
-    const next = { ...promo };
-    if (promo.happyHourPrice !== item.price) {
-      report.changes.push(`Promo «${title}»: precio ${money(promo.happyHourPrice ?? 0)} → ${money(item.price)}`);
-      next.happyHourPrice = item.price;
-    }
-    if (promo.happyHourFudoCategoryId !== item.categoryId) {
-      report.changes.push(`Promo «${title}»: categoría ${promo.happyHourFudoCategoryId ?? "—"} → ${item.categoryId}`);
-      next.happyHourFudoCategoryId = item.categoryId;
-    }
-    return next;
-  });
-
-  return { products: nextProducts, promos: nextPromos, report };
+  return { products: nextProducts, report };
 }
 
-/** IDs de FUDO que el menú ya usa: productos, tamaños, opciones de combos y happy hour. */
-export function linkedFudoIds(products: Product[], promos: Promo[]): Set<string> {
+/** IDs de FUDO que el menú ya usa: productos, tamaños y opciones de combos y promociones. */
+export function linkedFudoIds(products: Product[]): Set<string> {
   const ids = new Set<string>();
   for (const p of products) {
     if (p.fudoData?.productId) ids.add(String(p.fudoData.productId));
     for (const id of Object.values(p.fudoData?.servingIds ?? {})) if (id) ids.add(String(id));
     for (const o of p.fudoData?.modifierOptions ?? []) if (o.fudoProductId) ids.add(String(o.fudoProductId));
-  }
-  for (const promo of promos) {
-    if (promo.happyHourFudoProductId) ids.add(String(promo.happyHourFudoProductId));
-    for (const o of promo.happyHourOptions ?? []) if (o.fudoProductId) ids.add(String(o.fudoProductId));
   }
   return ids;
 }

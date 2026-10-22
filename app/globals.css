@@ -955,6 +955,8 @@ textarea, select { font: inherit; }
 .modifier-option { padding: 8px 14px; border-radius: 20px; border: 2px solid #ddd; background: white; font: 600 13px/1 "Manrope"; cursor: pointer; transition: border-color .15s, background .15s; }
 .modifier-option.chosen { border-color: var(--yellow); background: #fff8ee; color: #c26a00; }
 .modifier-option.disabled { opacity: .4; cursor: not-allowed; }
+.modifier-option-wrap { display: inline-flex; align-items: center; gap: 4px; }
+.modifier-remove { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--yellow); background: white; color: #c26a00; font: 800 16px/1 "Manrope"; cursor: pointer; }
 .modifier-check { font-size: 11px; }
 
 .admin-promo-stock { display: flex; flex-direction: column; gap: 18px; }
@@ -1088,6 +1090,13 @@ textarea, select { font: inherit; }
 .admin-days-selector { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; margin-bottom: 4px; }
 .admin-days-selector button { min-width: 44px; padding: 6px 10px; border: 1px solid #bcb3a5; border-radius: 8px; background: white; font: 700 11px "Manrope"; cursor: pointer; }
 .admin-days-selector button.active { background: #3a9ad9; color: white; border-color: #3a9ad9; }
+.admin-promo-schedule { border: 1.5px solid #9fcbed; border-radius: 14px; background: #f5fafe; }
+.admin-schedule-status { display: flex; flex-direction: column; gap: 2px; margin: 0 0 6px; font: 600 13px "Manrope"; }
+.admin-schedule-status small { color: var(--muted); font-weight: 600; }
+.admin-schedule-warning { margin: 0 0 8px; padding: 8px 10px; border-radius: 8px; background: #fbe3c8; color: #a04020; font: 700 12px "Manrope"; }
+.admin-fudo-promo-options { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 10px; font: 500 12px "Manrope"; }
+.admin-fudo-promo-options p { margin: 0; flex: 1 1 260px; }
+.admin-fudo-promo-options button { padding: 6px 12px; border: 1.5px solid #e8c97a; border-radius: 8px; background: white; font: 700 12px "Manrope"; cursor: pointer; }
 .admin-secondary-action { min-height: 46px; padding: 0 20px; border: 1px solid #bcb3a5; border-radius: 12px; background: white; font: 700 13px "Manrope"; cursor: pointer; margin-left: 8px; }
 .admin-heading-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .admin-heading-actions .admin-primary-action { margin: 0; }

@@ -215,6 +215,30 @@ function resolveFudoPrice(pid, menuPrice, fallback, fudoProducts) {
   return { price: fp.price, categoryId: fp.productCategoryId };
 }
 
+// Grupos de opciones de los combos de 2,25 L, por si FUDO no devuelve la ficha del producto
+const COMBO_SUBITEM_GROUPS = { "49": 4, "148": 6 };
+
+// Opciones elegidas en el menú (líneas hijas) → subitems de FUDO. El grupo sale de la ficha
+// del producto en FUDO. Una opción repetida (ej. dos Golden) va como un subitem con quantity 2.
+function buildSubitems(pid, children, fudoProducts) {
+  const groups = fudoProducts?.get(pid)?.productGroups ?? [];
+  const byProduct = new Map();
+  for (const c of children.filter(c => c.fudo_product_id)) {
+    const cid = parseInt(c.fudo_product_id);
+    const group = groups.find(g => g.productGroupProducts.some(o => o.productId === cid));
+    const productGroupId = group?.id ?? COMBO_SUBITEM_GROUPS[pid];
+    if (!productGroupId) {
+      console.warn(`[worker] ⚠ la opción ${cid} no está en ningún grupo del producto ${pid} en FUDO`);
+      continue;
+    }
+    const price = group?.productGroupProducts.find(o => o.productId === cid)?.price ?? 0;
+    const current = byProduct.get(cid);
+    if (current) current.quantity += 1;
+    else byProduct.set(cid, { price, productGroupId, productId: cid, quantity: 1 });
+  }
+  return [...byProduct.values()];
+}
+
 // ── Polling ────────────────────────────────────────────────────────────────────
 async function poll() {
   const now = new Date().toISOString();
@@ -285,68 +309,26 @@ async function processOrder(orderId) {
     childByParent[c.parent_line_id].push(c);
   }
 
-  // Cargar happy hours configurados para saber precio, categoría y grupo de modificadores
-  const { data: promosRow } = await supabase.from("restaurant_config").select("value").eq("key", "promos").single();
-  const promoList = Array.isArray(promosRow?.value) ? promosRow.value : [];
-  const happyHourByProductId = {};
-  for (const p of promoList) {
-    if (p.type === "happy-hour" && p.happyHourFudoProductId) {
-      happyHourByProductId[String(p.happyHourFudoProductId)] = {
-        categoryId: p.happyHourFudoCategoryId || 0,
-        price: p.happyHourPrice || 0,
-        groupId: parseInt(p.happyHourFudoGroupId || "0"),
-      };
-    }
-  }
-
-  const COMBO_SUBITEM_GROUPS = { "49": 4, "148": 6 };
-
   const fudoProducts = await getFudoProducts();
   const grouped = {};
   const fudoItems = [];
 
   for (const l of (lines || []).filter(l => l.fudo_product_id)) {
     const pid = String(l.fudo_product_id);
-    const hhData = happyHourByProductId[pid];
+    const cat = FUDO_CATALOG[pid] || { categoryId: 0, price: 0 };
+    const { price, categoryId } = resolveFudoPrice(pid, l.unit_price, cat, fudoProducts);
+    const subitems = buildSubitems(pid, childByParent[l.line_id] || [], fudoProducts);
 
-    if (hhData) {
-      // Happy hour: cada línea se envía por separado con TODOS sus hijos como subitems
-      const children = (childByParent[l.line_id] || []).filter(c => c.fudo_product_id);
-      const subitems = children.map(c => ({
-        price: 0,
-        productGroupId: hhData.groupId,
-        productId: parseInt(c.fudo_product_id),
-        quantity: 1,
-      }));
-      const { price, categoryId } = resolveFudoPrice(pid, hhData.price, hhData, fudoProducts);
-      for (let i = 0; i < l.quantity; i++) {
-        fudoItems.push({ subitems, price, productCategoryId: categoryId, productId: parseInt(pid), quantity: 1 });
-      }
-    } else if (l.comment) {
+    if (l.comment) {
       // Producto con comentario (ej: "Sin tomate"): enviar por separado para preservar la nota
-      const cat = FUDO_CATALOG[pid] || { categoryId: 0, price: 0 };
-      const { price, categoryId } = resolveFudoPrice(pid, l.unit_price, cat, fudoProducts);
       for (let i = 0; i < l.quantity; i++) {
-        fudoItems.push({ subitems: [], price, productCategoryId: categoryId, productId: parseInt(pid), quantity: 1, comment: l.comment });
+        fudoItems.push({ subitems, price, productCategoryId: categoryId, productId: parseInt(pid), quantity: 1, comment: l.comment });
       }
     } else {
-      // Producto regular o combo: agrupar por productId
-      if (!grouped[pid]) {
-        const cat = FUDO_CATALOG[pid] || { categoryId: 0, price: 0 };
-        const { price, categoryId } = resolveFudoPrice(pid, l.unit_price, cat, fudoProducts);
-        const productGroupId = COMBO_SUBITEM_GROUPS[pid];
-        const firstChild = productGroupId ? (childByParent[l.line_id] || []).find(c => c.fudo_product_id) : null;
-        grouped[pid] = {
-          productId: parseInt(pid),
-          categoryId,
-          price,
-          quantity: 0,
-          subitems: firstChild
-            ? [{ price: 0, productGroupId, productId: parseInt(firstChild.fudo_product_id), quantity: 1 }]
-            : [],
-        };
-      }
-      grouped[pid].quantity += l.quantity;
+      // Producto regular, combo o promo: agrupar por productId + opciones elegidas
+      const key = `${pid}:${subitems.map(s => `${s.productId}x${s.quantity}`).join(",")}`;
+      if (!grouped[key]) grouped[key] = { productId: parseInt(pid), categoryId, price, quantity: 0, subitems };
+      grouped[key].quantity += l.quantity;
     }
   }
 
@@ -366,7 +348,10 @@ async function processOrder(orderId) {
   if (fudoItems.length === 0) throw new Error(`Pedido ${orderId} sin productos mapeados`);
   console.log("[worker] fudoItems:", JSON.stringify(fudoItems));
 
-  const total = fudoItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const total = fudoItems.reduce(
+    (sum, i) => sum + (i.price + i.subitems.reduce((s, sub) => s + sub.price * sub.quantity, 0)) * i.quantity,
+    0
+  );
 
   const payload = {
     order: {

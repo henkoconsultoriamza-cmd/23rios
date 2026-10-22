@@ -1,7 +1,10 @@
-﻿export type Product = {
+﻿import type { PromoSchedule } from "../lib/promo-schedule";
+
+export type Product = {
   id: string;
   name: string;
-  category: "Cervezas" | "Bebidas" | "Cocina" | "Sin TACC";
+  // "Promociones": solo productos que en FUDO están en 120 Promociones o Happy Hour
+  category: "Cervezas" | "Bebidas" | "Cocina" | "Sin TACC" | "Promociones";
   description: string;
   image?: string;
   tag: string;
@@ -31,6 +34,7 @@
   eventoMenu?: boolean;
   outOfStock?: boolean;
   removableIngredients?: string[];
+  schedule?: PromoSchedule;              // Solo promociones: cuándo aparecen en el menú (sin programar = no aparecen)
   fudoData?: {
     categoryId?: number;                 // ID de categoría en Fudo (productCategoryId en el body del pedido)
     productId?: string;                  // ID numérico en Fudo (ej: "1476") — productos sin servings
@@ -41,62 +45,6 @@
     modifierMax?: number;                // Cantidad máxima de opciones a elegir (default: 1)
   };
 };
-
-export type ComboItem = { productId: string; quantity: number; anyBeer?: boolean; optionIds?: string[] };
-
-export type HappyHourOption = { name: string; fudoProductId: string };
-
-export type Promo = {
-  id: string;
-  targetType: "producto" | "grupo" | "categoria";
-  targetValue: string;  // product.id | product.group | product.category
-  type: "precio" | "2x1" | "porcentaje" | "combo" | "happy-hour";
-  promoPrice?: number;
-  promoPercent?: number;
-  // combo fields
-  comboTitle?: string;
-  comboItems?: ComboItem[];
-  comboPrice?: number;
-  comboImageUrl?: string;
-  fudoProductId?: string;
-  // happy-hour fields
-  happyHourTitle?: string;
-  happyHourPrice?: number;
-  happyHourImageUrl?: string;
-  happyHourFudoProductId?: string;
-  happyHourFudoGroupId?: string;
-  happyHourFudoCategoryId?: number;
-  happyHourMin?: number;
-  happyHourMax?: number;
-  happyHourOptions?: HappyHourOption[];
-  days: number[];       // 0=Dom 1=Lun … 6=Sab; vacío = todos los días
-  timeStart?: string;   // "18:00"
-  timeEnd?: string;     // "23:00"
-  active: boolean;
-};
-
-export function promoMatchesProduct(promo: Promo, product: Product): boolean {
-  if (promo.targetType === "producto") return product.id === promo.targetValue;
-  if (promo.targetType === "grupo") return product.group === promo.targetValue;
-  if (promo.targetType === "categoria") return product.category === promo.targetValue;
-  return false;
-}
-
-export function isPromoActive(promo: Promo): boolean {
-  if (!promo.active) return false;
-  const now = new Date();
-  const day = now.getDay();
-  if (promo.days.length > 0 && !promo.days.includes(day)) return false;
-  if (promo.timeStart && promo.timeEnd) {
-    const cur = now.getHours() * 60 + now.getMinutes();
-    const [sh, sm] = promo.timeStart.split(":").map(Number);
-    const [eh, em] = promo.timeEnd.split(":").map(Number);
-    const start = sh * 60 + sm;
-    const end = eh * 60 + em;
-    if (end > start ? (cur < start || cur >= end) : (cur < start && cur >= end)) return false;
-  }
-  return true;
-}
 
 export type MenuSettings = {
   foodGroups: string[];

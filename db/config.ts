@@ -1,5 +1,5 @@
 import { supabase } from "./index";
-import { Product, MenuSettings, AppSettings, Promo } from "../app/menu-data";
+import { Product, MenuSettings, AppSettings } from "../app/menu-data";
 import { Banner } from "../app/banner-data";
 import { EventItem } from "../app/event-data";
 import { PortalSettings } from "../app/portal-data";
@@ -50,7 +50,7 @@ export const deleteProductById = (id: string) =>
   adminPost<ProductsResponse>("/api/admin/products", { op: "delete", id });
 
 // ── FUDO: catálogo del menú QR y sincronización ──────────────────
-export type FudoSyncResponse = { products: Product[]; promos: Promo[]; catalog: FudoCatalogItem[]; report: FudoSyncReport };
+export type FudoSyncResponse = { products: Product[]; catalog: FudoCatalogItem[]; report: FudoSyncReport };
 export async function getFudoCatalog(): Promise<FudoCatalogItem[]> {
   const res = await fetch("/api/admin/fudo", { cache: "no-store" });
   const json = await res.json().catch(() => ({}));
@@ -70,13 +70,6 @@ export const saveAppSettings = (v: AppSettings) => setConfig("app_settings", v);
 // ── Banners ──────────────────────────────────────────────────────
 export const getBanners = () => getConfig<Banner[]>("banners");
 export const saveBanners = (v: Banner[]) => setConfig("banners", v);
-
-// ── Promos ───────────────────────────────────────────────────────
-export const getPromos = () => getConfig<Promo[]>("promos");
-export const createPromo = (promo: Promo) => adminPost<{ promos: Promo[] }>("/api/admin/promos", { op: "create", promo });
-export const patchPromo = (id: string, fields: Record<string, unknown>) =>
-  adminPost<{ promos: Promo[] }>("/api/admin/promos", { op: "patch", id, fields });
-export const deletePromoById = (id: string) => adminPost<{ promos: Promo[] }>("/api/admin/promos", { op: "delete", id });
 
 // ── Eventos ──────────────────────────────────────────────────────
 export const getEvents = () => getConfig<EventItem[]>("events");
