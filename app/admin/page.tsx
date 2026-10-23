@@ -431,6 +431,35 @@ export default function AdminPage() {
     setProducts(mergeDefaultNutrition(list));
   }
 
+  // Cambios de «Menú evento»: se ven al instante y se guardan de a uno, en orden. La lista del
+  // servidor se aplica recién cuando no queda nada pendiente, así un clic rápido no pisa al anterior.
+  const eventSaves = useRef({ queue: Promise.resolve(), pending: 0 });
+  function saveEventFields(productId: string, fields: Record<string, unknown>, notice: string) {
+    setProducts((current) => current.map((p) => {
+      if (p.id !== productId) return p;
+      const next = { ...p } as Record<string, unknown>;
+      for (const [key, value] of Object.entries(fields)) {
+        if (value === null) delete next[key];
+        else next[key] = value;
+      }
+      return next as Product;
+    }));
+    const saves = eventSaves.current;
+    saves.pending++;
+    saves.queue = saves.queue
+      .then(() => patchProduct(productId, fields))
+      .then(({ products: list }) => {
+        if (saves.pending === 1) applyServerProducts(list);
+        setNotice(notice);
+      })
+      .catch((err: Error) => {
+        setNotice(`No se pudo guardar: ${err.message}`);
+        // Se vuelve a lo que quedó guardado de verdad
+        if (saves.pending === 1) getProducts().then((list) => { if (list) applyServerProducts(list); }).catch(() => undefined);
+      })
+      .finally(() => { saves.pending--; });
+  }
+
   // Precio de evento de un producto o de uno de sus formatos (undefined = se borra)
   function saveEventPrice(product: Product, servingLabel: string | null, value: number | undefined) {
     let fields: Record<string, unknown>;
@@ -443,12 +472,7 @@ export default function AdminPage() {
       fields = { eventPrice: value ?? null };
     }
     const name = servingLabel ? `${product.name} · ${servingLabel}` : product.name;
-    patchProduct(product.id, fields)
-      .then(({ products: list }) => {
-        applyServerProducts(list);
-        setNotice(value ? `Precio de evento de «${name}»: ${formatPrice(value)} ✓` : `«${name}» vuelve a mostrar su precio normal en el evento.`);
-      })
-      .catch((err: Error) => setNotice(`No se pudo guardar: ${err.message}`));
+    saveEventFields(product.id, fields, value ? `Precio de evento de «${name}»: ${formatPrice(value)} ✓` : `«${name}» vuelve a mostrar su precio normal en el evento.`);
   }
 
   // Formatos que se venden en el evento (todos = se borra la lista). Siempre queda al menos uno.
@@ -458,12 +482,8 @@ export default function AdminPage() {
     const removing = current.includes(label);
     const next = removing ? current.filter((l) => l !== label) : all.filter((l) => l === label || current.includes(l));
     if (!next.length) return;
-    patchProduct(product.id, { eventServings: next.length === all.length ? null : next })
-      .then(({ products: list }) => {
-        applyServerProducts(list);
-        setNotice(`«${product.name} · ${label}» ${removing ? "no se vende" : "se vende"} en el evento.`);
-      })
-      .catch((err: Error) => setNotice(`No se pudo guardar: ${err.message}`));
+    saveEventFields(product.id, { eventServings: next.length === all.length ? null : next },
+      `«${product.name} · ${label}» ${removing ? "no se vende" : "se vende"} en el evento.`);
   }
 
   // Producto nuevo de FUDO: arranca con nombre, precio, ID y categoría ya cargados
@@ -1719,7 +1739,7 @@ export default function AdminPage() {
             </article>
 
             <article className="admin-adjustment-card">
-              <div className="admin-adjustment-heading"><span>03</span><div><small>PRODUCTOS DEL EVENTO</small><h2>Seleccioná qué aparece y a qué precio</h2><p>Marcá los productos que van a estar disponibles cuando el modo evento esté activo y cargá su precio de evento. El resto queda oculto. Estos precios se cargan a mano: «Actualizar desde FUDO» no los cambia.</p></div></div>
+              <div className="admin-adjustment-heading"><span>03</span><div><small>PRODUCTOS DEL EVENTO</small><h2>Seleccioná qué aparece y a qué precio</h2><p>Marcá los productos que van a estar disponibles cuando el modo evento esté activo y cargá su precio de evento. El resto queda oculto. Estos precios se cargan a mano: «Actualizar desde FUDO» no los cambia.</p><p>En las cervezas, cada formato tiene su tilde: tildado se vende en el evento; destildado queda en gris y no aparece. Siempre queda al menos uno.</p></div></div>
               <div className="admin-event-product-list">
                 {(["Cocina", "Bebida", "Sin TACC"] as const).map((cat) => {
                   const catProducts = products.filter((p) => cat === "Bebida" ? (p.category === "Cervezas" || p.category === "Bebidas") : p.category === cat);
@@ -1738,15 +1758,8 @@ export default function AdminPage() {
                           </summary>
                           {groupProducts.map((p) => <div key={p.id} className="admin-event-product">
                           <label className="admin-event-product-row">
-                            <input type="checkbox" checked={!!p.eventoMenu} onChange={() => {
-                              setProducts(products.map((prod) => prod.id === p.id ? { ...prod, eventoMenu: !prod.eventoMenu } : prod));
-                              patchProduct(p.id, { eventoMenu: !p.eventoMenu })
-                                .then(({ products: list }) => {
-                                  applyServerProducts(list);
-                                  setNotice(`"${p.name}" ${!p.eventoMenu ? "agregado al" : "quitado del"} menú evento.`);
-                                })
-                                .catch((err: Error) => setNotice(`No se pudo guardar: ${err.message}`));
-                            }}/>
+                            <input type="checkbox" checked={!!p.eventoMenu} onChange={() => saveEventFields(p.id, { eventoMenu: !p.eventoMenu },
+                              `"${p.name}" ${!p.eventoMenu ? "agregado al" : "quitado del"} menú evento.`)}/>
                             {p.image ? <img src={p.image} alt=""/> : <span className="admin-image-placeholder">CN</span>}
                             <span><strong>{p.name}</strong></span>
                             {p.eventoMenu && <span className="admin-event-badge">✓</span>}
