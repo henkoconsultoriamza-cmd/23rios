@@ -83,6 +83,18 @@ function formatPrice(value: number, currency: AppSettings["currency"]) {
   return `${symbol} ${value.toLocaleString("es-AR")}`;
 }
 
+type MenuCategory = "Cocina" | "Cervezas" | "SinTACC" | "Promociones";
+const MENU_CATEGORIES: MenuCategory[] = ["Cocina", "Cervezas", "SinTACC", "Promociones"];
+
+// Qué productos entran en cada solapa de la carta (las promos, solo dentro de su horario)
+function inCategory(product: Product, category: MenuCategory, now: Date) {
+  if (category === "Promociones") return product.category === "Promociones" && isScheduleActive(product.schedule, now);
+  if (product.category === "Promociones") return false;
+  if (category === "SinTACC") return product.category === "Sin TACC" || product.attributes.includes("Sin TACC");
+  if (category === "Cervezas") return product.category === "Cervezas" || product.category === "Bebidas";
+  return product.category === "Cocina";
+}
+
 function formatOrderDate(value: string, language: Language) {
   const locales: Record<Language, string> = { es: "es-AR", pt: "pt-BR", en: "en-US", fr: "fr-FR", it: "it-IT", de: "de-DE" };
   return new Intl.DateTimeFormat(locales[language], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
@@ -248,7 +260,7 @@ export default function Home() {
   const [langOpen, setLangOpen] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
-  const [category, setCategory] = useState<"Cocina" | "Cervezas" | "SinTACC" | "Promociones">("Cocina");
+  const [category, setCategory] = useState<MenuCategory>("Cocina");
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [selectedPreferences, setSelectedPreferences] = useState<string[]>([]);
   const [excludedAllergens, setExcludedAllergens] = useState<string[]>([]);
@@ -406,30 +418,26 @@ export default function Home() {
   const activePool = appSettings.eventModeActive
     ? catalogProducts.filter((p) => p.eventoMenu)
     : catalogProducts;
-  // Promociones: solo las que están dentro de su día y horario programados
-  const activePromoProducts = activePool.filter((p) => p.category === "Promociones" && isScheduleActive(p.schedule, now));
+  // Solo las solapas que tienen productos: promos fuera de horario o una carta de evento sin comida no aparecen
+  const shownCategories = productsReady
+    ? MENU_CATEGORIES.filter((cat) => activePool.some((p) => inCategory(p, cat, now)))
+    : MENU_CATEGORIES.slice(0, 3); // mientras carga, las de siempre
+  const shownKey = shownCategories.join(",");
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(timer);
   }, []);
-  // Si terminó el horario de todas las promos, se vuelve a Comida
+  // Si la solapa elegida se quedó sin productos (terminó la promo, carta de evento), se pasa a la primera que tenga
   useEffect(() => {
-    if (category === "Promociones" && activePromoProducts.length === 0) setCategory("Cocina");
-  }, [category, activePromoProducts.length]);
+    const shown = shownKey ? shownKey.split(",") as MenuCategory[] : [];
+    if (shown.length && !shown.includes(category)) setCategory(shown[0]);
+  }, [category, shownKey]);
 
   const visibleProducts = useMemo(() => {
     const term = query.trim().toLocaleLowerCase("es");
     return activePool.filter((product) => {
-      const matchesCategory = category === "Promociones"
-        ? product.category === "Promociones" && isScheduleActive(product.schedule, now)
-        : product.category === "Promociones"
-        ? false
-        : category === "SinTACC"
-        ? product.category === "Sin TACC" || product.attributes.includes("Sin TACC")
-        : category === "Cervezas"
-        ? product.category === "Cervezas" || product.category === "Bebidas"
-        : product.category === "Cocina";
+      const matchesCategory = inCategory(product, category, now);
       const content = `${product.name} ${product.description} ${product.tag}`.toLocaleLowerCase("es");
       const matchesGroup = selectedGroups.length === 0 || selectedGroups.includes(product.group);
       const matchesPreferences = selectedPreferences.every((preference) => product.attributes.includes(preference));
@@ -461,7 +469,7 @@ export default function Home() {
     setter((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value]);
   }
 
-  function changeCategory(next: "Cocina" | "Cervezas" | "SinTACC" | "Promociones") {
+  function changeCategory(next: MenuCategory) {
     trackEvent("category_switch", { filterType: next });
     setCategory(next);
     setSelectedGroups([]);
@@ -780,11 +788,12 @@ export default function Home() {
         {appSettings.eventModeActive && <div className="event-mode-banner"><span>🎉</span><div><strong>{tr("Carta de evento")}</strong><small>{tr("Esta noche mostramos una selección especial.")}</small></div></div>}
 
         <div className="category-tabs">
-          <button className={category === "Cocina" ? "active" : ""} onClick={() => changeCategory("Cocina")}>{tr("Comida")}</button>
-          <button className={category === "Cervezas" ? "active" : ""} onClick={() => changeCategory("Cervezas")}>{tr("Bebida")}</button>
-          <button className={category === "SinTACC" ? "active" : ""} onClick={() => changeCategory("SinTACC")}>{tr("Sin TACC")}</button>
-          {activePromoProducts.length > 0 && <button className={category === "Promociones" ? "active" : ""} onClick={() => changeCategory("Promociones")}>🏷️ {tr("Promociones")}</button>}
-          {events.some((e) => e.active) && <button onClick={() => { trackEvent("events_open"); setEventsOpen(true); }}>📅 {tr("Eventos")}</button>}
+          {shownCategories.includes("Cocina") && <button className={category === "Cocina" ? "active" : ""} onClick={() => changeCategory("Cocina")}>{tr("Comida")}</button>}
+          {shownCategories.includes("Cervezas") && <button className={category === "Cervezas" ? "active" : ""} onClick={() => changeCategory("Cervezas")}>{tr("Bebida")}</button>}
+          {shownCategories.includes("SinTACC") && <button className={category === "SinTACC" ? "active" : ""} onClick={() => changeCategory("SinTACC")}>{tr("Sin TACC")}</button>}
+          {shownCategories.includes("Promociones") && <button className={category === "Promociones" ? "active" : ""} onClick={() => changeCategory("Promociones")}>🏷️ {tr("Promociones")}</button>}
+          {/* En la carta de evento, Eventos queda siempre */}
+          {(appSettings.eventModeActive || events.some((e) => e.active)) && <button onClick={() => { trackEvent("events_open"); setEventsOpen(true); }}>📅 {tr("Eventos")}</button>}
         </div>
 
         <div className="menu-layout">
@@ -1143,9 +1152,9 @@ export default function Home() {
         <button className="filter-drawer-close" onClick={() => setFilterDrawerOpen(false)} aria-label="Cerrar filtros">✕</button>
       </div>
       <div className="primary-filter-switch">
-        <button className={category === "Cocina" ? "active" : ""} onClick={() => changeCategory("Cocina")} aria-pressed={category === "Cocina"}>{tr("Comida")}</button>
-        <button className={category === "Cervezas" ? "active" : ""} onClick={() => changeCategory("Cervezas")} aria-pressed={category === "Cervezas"}>{tr("Bebida")}</button>
-        <button className={category === "SinTACC" ? "active" : ""} onClick={() => changeCategory("SinTACC")} aria-pressed={category === "SinTACC"}>{tr("Sin TACC")}</button>
+        {shownCategories.includes("Cocina") && <button className={category === "Cocina" ? "active" : ""} onClick={() => changeCategory("Cocina")} aria-pressed={category === "Cocina"}>{tr("Comida")}</button>}
+        {shownCategories.includes("Cervezas") && <button className={category === "Cervezas" ? "active" : ""} onClick={() => changeCategory("Cervezas")} aria-pressed={category === "Cervezas"}>{tr("Bebida")}</button>}
+        {shownCategories.includes("SinTACC") && <button className={category === "SinTACC" ? "active" : ""} onClick={() => changeCategory("SinTACC")} aria-pressed={category === "SinTACC"}>{tr("Sin TACC")}</button>}
       </div>
       {category === "Cocina" ? <>
         <div className="filter-family">
