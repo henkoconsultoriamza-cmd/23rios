@@ -123,6 +123,28 @@ function FudoMatch({ catalog, id }: { catalog: Map<string, FudoCatalogItem> | nu
     : <small className="admin-fudo-match missing">Este ID no está en el menú QR de FUDO: los pedidos con este producto fallan.</small>;
 }
 
+// Precio del modo evento: se guarda al salir del campo; vacío = se muestra el precio de siempre.
+// Se usa con key = valor guardado, así arranca de nuevo cuando el servidor confirma.
+function EventPriceInput({ label, value, normal, onSave }: { label: string; value?: number; normal: number; onSave: (value: number | undefined) => void }) {
+  const [text, setText] = useState(value ? String(value) : "");
+
+  function commit() {
+    const amount = Number(text.replace(/\D/g, ""));
+    const next = amount > 0 ? amount : undefined;
+    if (next !== value) onSave(next);
+  }
+
+  return (
+    <label className={value ? "admin-event-price" : "admin-event-price empty"}>
+      <span>{label}</span>
+      <input inputMode="numeric" value={text} placeholder={normal.toLocaleString("es-AR")} aria-label={`Precio de evento · ${label}`}
+        onChange={(e) => setText(e.target.value)} onBlur={commit}
+        onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}/>
+      <small>{value ? `Normal ${formatPrice(normal)}` : "Sin cargar: se ve el normal"}</small>
+    </label>
+  );
+}
+
 async function hashPassword(value: string) {
   const bytes = new TextEncoder().encode(`restaurant-template-admin:${value}`);
   const digest = await window.crypto.subtle.digest("SHA-256", bytes);
@@ -397,6 +419,26 @@ export default function AdminPage() {
 
   function applyServerProducts(list: Product[]) {
     setProducts(mergeDefaultNutrition(list));
+  }
+
+  // Precio de evento de un producto o de uno de sus formatos (undefined = se borra)
+  function saveEventPrice(product: Product, servingLabel: string | null, value: number | undefined) {
+    let fields: Record<string, unknown>;
+    if (servingLabel) {
+      const prices = { ...(product.eventServingPrices ?? {}) };
+      if (value === undefined) delete prices[servingLabel];
+      else prices[servingLabel] = value;
+      fields = { eventServingPrices: Object.keys(prices).length ? prices : null };
+    } else {
+      fields = { eventPrice: value ?? null };
+    }
+    const name = servingLabel ? `${product.name} · ${servingLabel}` : product.name;
+    patchProduct(product.id, fields)
+      .then(({ products: list }) => {
+        applyServerProducts(list);
+        setNotice(value ? `Precio de evento de «${name}»: ${formatPrice(value)} ✓` : `«${name}» vuelve a mostrar su precio normal en el evento.`);
+      })
+      .catch((err: Error) => setNotice(`No se pudo guardar: ${err.message}`));
   }
 
   // Producto nuevo de FUDO: arranca con nombre, precio, ID y categoría ya cargados
@@ -1638,21 +1680,21 @@ export default function AdminPage() {
             </div>
           </div> : tab === "evento" ? <div className="admin-adjustments-grid">
             <article className="admin-adjustment-card">
-              <div className="admin-adjustment-heading"><span>01</span><div><small>MODO EVENTO</small><h2>Activar carta de evento</h2><p>Cuando está activo, el menú público muestra únicamente los productos marcados como «Evento». Los filtros y las categorías se adaptan automáticamente.</p></div></div>
+              <div className="admin-adjustment-heading"><span>01</span><div><small>MODO EVENTO</small><h2>Activar carta de evento</h2><p>Cuando está activo, el menú público muestra únicamente los productos marcados, con su precio de evento. Es solo para ver: el carrito se apaga y no se pueden hacer pedidos.</p></div></div>
               <div className="admin-toggle-list">
-                <label><span><strong>Menú evento activo</strong><small>{appSettings.eventModeActive ? "Los clientes ven la carta reducida de evento." : "Los clientes ven el menú completo."}</small></span><input type="checkbox" checked={appSettings.eventModeActive} onChange={(e) => updateAppSetting("eventModeActive", e.target.checked)}/><i/></label>
+                <label><span><strong>Menú evento activo</strong><small>{appSettings.eventModeActive ? "Los clientes ven la carta de evento, sin carrito." : "Los clientes ven el menú completo."}</small></span><input type="checkbox" checked={appSettings.eventModeActive} onChange={(e) => updateAppSetting("eventModeActive", e.target.checked)}/><i/></label>
               </div>
             </article>
 
             <article className="admin-adjustment-card">
               <div className="admin-adjustment-heading"><span>02</span><div><small>CARRITO</small><h2>Desactivar pedidos</h2><p>Cuando está activo, los clientes solo pueden ver el menú. Los botones de agregar al carrito desaparecen y no se puede hacer ningún pedido.</p></div></div>
               <div className="admin-toggle-list">
-                <label><span><strong>Solo lectura (sin carrito)</strong><small>{appSettings.cartDisabled ? "Los clientes solo pueden ver el menú, no pedir." : "Los clientes pueden ver y pedir normalmente."}</small></span><input type="checkbox" checked={appSettings.cartDisabled ?? false} onChange={(e) => updateAppSetting("cartDisabled", e.target.checked)}/><i/></label>
+                <label className={appSettings.eventModeActive ? "locked" : undefined}><span><strong>Solo lectura (sin carrito)</strong><small>{appSettings.eventModeActive ? "Con el modo evento activo el carrito está siempre apagado." : appSettings.cartDisabled ? "Los clientes solo pueden ver el menú, no pedir." : "Los clientes pueden ver y pedir normalmente."}</small></span><input type="checkbox" checked={appSettings.eventModeActive || (appSettings.cartDisabled ?? false)} disabled={appSettings.eventModeActive} onChange={(e) => updateAppSetting("cartDisabled", e.target.checked)}/><i/></label>
               </div>
             </article>
 
             <article className="admin-adjustment-card">
-              <div className="admin-adjustment-heading"><span>03</span><div><small>PRODUCTOS DEL EVENTO</small><h2>Seleccioná qué aparece</h2><p>Marcá los productos que van a estar disponibles cuando el modo evento esté activo. El resto queda oculto automáticamente.</p></div></div>
+              <div className="admin-adjustment-heading"><span>03</span><div><small>PRODUCTOS DEL EVENTO</small><h2>Seleccioná qué aparece y a qué precio</h2><p>Marcá los productos que van a estar disponibles cuando el modo evento esté activo y cargá su precio de evento. El resto queda oculto. Estos precios se cargan a mano: «Actualizar desde FUDO» no los cambia.</p></div></div>
               <div className="admin-event-product-list">
                 {(["Cocina", "Bebida", "Sin TACC"] as const).map((cat) => {
                   const catProducts = products.filter((p) => cat === "Bebida" ? (p.category === "Cervezas" || p.category === "Bebidas") : p.category === cat);
@@ -1669,7 +1711,8 @@ export default function AdminPage() {
                             <span>{group}</span>
                             <small>{checkedCount}/{groupProducts.length}</small>
                           </summary>
-                          {groupProducts.map((p) => <label key={p.id} className="admin-event-product-row">
+                          {groupProducts.map((p) => <div key={p.id} className="admin-event-product">
+                          <label className="admin-event-product-row">
                             <input type="checkbox" checked={!!p.eventoMenu} onChange={() => {
                               setProducts(products.map((prod) => prod.id === p.id ? { ...prod, eventoMenu: !prod.eventoMenu } : prod));
                               patchProduct(p.id, { eventoMenu: !p.eventoMenu })
@@ -1682,7 +1725,13 @@ export default function AdminPage() {
                             {p.image ? <img src={p.image} alt=""/> : <span className="admin-image-placeholder">CN</span>}
                             <span><strong>{p.name}</strong></span>
                             {p.eventoMenu && <span className="admin-event-badge">✓</span>}
-                          </label>)}
+                          </label>
+                          {p.eventoMenu && <div className="admin-event-prices">
+                            {p.servings?.length
+                              ? p.servings.map((s) => <EventPriceInput key={`${s.label}:${p.eventServingPrices?.[s.label] ?? ""}`} label={s.label} normal={s.price} value={p.eventServingPrices?.[s.label]} onSave={(value) => saveEventPrice(p, s.label, value)}/>)
+                              : <EventPriceInput key={p.eventPrice ?? ""} label="Precio evento" normal={p.price} value={p.eventPrice} onSave={(value) => saveEventPrice(p, null, value)}/>}
+                          </div>}
+                          </div>)}
                         </details>
                       );
                     })}
@@ -1690,7 +1739,10 @@ export default function AdminPage() {
                 })}
               </div>
               <div className="admin-adjustment-actions">
-                <span>{products.filter((p) => p.eventoMenu).length} productos marcados para evento</span>
+                <span>{products.filter((p) => p.eventoMenu).length} productos marcados para evento{(() => {
+                  const missing = products.filter((p) => p.eventoMenu && (p.servings?.length ? p.servings.some((s) => !p.eventServingPrices?.[s.label]) : !p.eventPrice)).length;
+                  return missing ? ` · ${missing} sin precio de evento completo` : "";
+                })()}</span>
               </div>
             </article>
           </div> : <div className="admin-adjustments-grid">

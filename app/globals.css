@@ -1120,8 +1120,19 @@ textarea, select { font: inherit; }
 .admin-event-group-header::before { content: "▶"; font-size: 9px; margin-right: 8px; color: var(--muted); transition: transform .2s; display: inline-block; }
 details[open] .admin-event-group-header::before { transform: rotate(90deg); }
 .admin-event-group-header small { color: #2a9a6e; font-weight: 800; font-size: 11px; }
-.admin-event-group .admin-event-product-row { padding: 8px 14px; border-bottom: 1px solid var(--line); }
-.admin-event-group .admin-event-product-row:last-child { border-bottom: 0; }
+.admin-event-group .admin-event-product { border-bottom: 1px solid var(--line); }
+.admin-event-group .admin-event-product:last-child { border-bottom: 0; }
+.admin-event-group .admin-event-product-row { padding: 8px 14px; border-bottom: 0; }
+.admin-event-prices { display: flex; flex-wrap: wrap; gap: 10px; padding: 0 14px 12px 77px; }
+.admin-event-price { display: grid; gap: 4px; width: 128px; }
+.admin-event-price span { font: 800 8px/1 "Manrope"; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.admin-event-price input { width: 100%; min-height: 34px; padding: 6px 10px; border: 1px solid #cbc2b4; border-radius: 8px; outline: 0; background: white; font: 800 12px "Manrope"; }
+.admin-event-price input:focus { border-color: #3a9ad9; box-shadow: 0 0 0 3px rgba(58,154,217,.12); }
+.admin-event-price.empty input { border-style: dashed; border-color: #d99a3a; }
+.admin-event-price small { font: 400 9px/1.25 "Manrope"; color: var(--muted); }
+.admin-event-price.empty small { color: #b06d12; }
+.admin-toggle-list > label.locked { cursor: not-allowed; opacity: .75; }
+@media (max-width: 640px) { .admin-event-prices { padding-left: 14px; } }
 .admin-event-cat-label { font: 800 10px/1 "Manrope"; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
 .admin-event-product-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
 .admin-event-product-row img { width: 38px; height: 38px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }

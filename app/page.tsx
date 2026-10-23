@@ -2,7 +2,7 @@
 
 import { CSSProperties, Dispatch, Fragment, FormEvent, SetStateAction, useEffect, useMemo, useRef, useState } from "react";
 import { Language, languageOptions, translate } from "./translations";
-import { AppSettings, DEFAULT_APP_SETTINGS, DEFAULT_MENU_SETTINGS, DEFAULT_PRODUCTS, MenuSettings, Product, mergeDefaultNutrition } from "./menu-data";
+import { AppSettings, DEFAULT_APP_SETTINGS, DEFAULT_MENU_SETTINGS, DEFAULT_PRODUCTS, MenuSettings, Product, displayedPrice, mergeDefaultNutrition } from "./menu-data";
 import { isScheduleActive } from "../lib/promo-schedule";
 import { trackEvent } from "./analytics";
 import { Banner, DEFAULT_BANNERS } from "./banner-data";
@@ -398,7 +398,9 @@ export default function Home() {
   const heroImageUrl = appSettings.heroImageUrl.trim() || DEFAULT_APP_SETTINGS.heroImageUrl;
   const displayPrice = (value: number) => formatPrice(value, appSettings.currency);
 
-  const cartDisabled = appSettings.cartDisabled ?? false;
+  // En modo evento el menú es solo para ver: sin carrito, con los precios del evento
+  const cartDisabled = (appSettings.cartDisabled ?? false) || appSettings.eventModeActive;
+  const priceOf = (product: Product, servingLabel?: string) => displayedPrice(product, appSettings.eventModeActive, servingLabel);
 
   const activePool = appSettings.eventModeActive
     ? catalogProducts.filter((p) => p.eventoMenu)
@@ -438,7 +440,7 @@ export default function Home() {
 
   const relatedProducts = selected
     ? selected.relatedIds
-        .map((id) => catalogProducts.find((product) => product.id === id))
+        .map((id) => activePool.find((product) => product.id === id))
         .filter((product): product is Product => Boolean(product))
     : [];
 
@@ -811,7 +813,7 @@ export default function Home() {
                         <div className="product-title"><button onClick={() => setSelected(product)}><h3>{tr(product.name)}</h3></button><button className={favorites.includes(product.id) ? "favorite active" : "favorite"} onClick={() => toggleFavorite(product.id)} aria-label={`Guardar ${tr(product.name)}`}><Icon name="heart" size={18}/></button></div>
                         <p>{tr(product.description)}</p>
                         {(() => {
-                          const cardPrice = product.servings ? Math.min(...product.servings.map(s => s.price)) : product.price;
+                          const cardPrice = product.servings ? Math.min(...product.servings.map(s => priceOf(product, s.label))) : priceOf(product);
                           const cartQty = !product.servings ? (orderItems.find(i => i.key === product.id)?.quantity ?? 0) : 0;
                           const btnLabel = product.outOfStock
                             ? <>{tr("Sin stock")}</>
@@ -870,7 +872,7 @@ export default function Home() {
         <span className="order-status-total">{displayPrice(orderTotal)}<Icon name="arrow" size={17}/></span>
       </button>}
 
-      {orderOpen && <div className="overlay" onMouseDown={() => setOrderOpen(false)}>
+      {orderOpen && !cartDisabled && <div className="overlay" onMouseDown={() => setOrderOpen(false)}>
         <section className="order-panel" role="dialog" aria-modal="true" aria-labelledby="order-title" onMouseDown={(event) => event.stopPropagation()}>
           <header className="order-panel-header">
             <div><p>{tr(orderStatus === "sent" ? "PEDIDO LANZADO" : "CARRITO ABIERTO")}</p><h2 id="order-title">{tr(orderStatus === "sent" ? "Tu pedido está en marcha" : "Revisá antes de lanzarlo")}</h2></div>
@@ -932,7 +934,7 @@ export default function Home() {
         </div>;
       })()}
 
-      {tablePromptOpen && <div className="overlay" onMouseDown={() => setTablePromptOpen(false)}>
+      {tablePromptOpen && !cartDisabled && <div className="overlay" onMouseDown={() => setTablePromptOpen(false)}>
         <section className="table-dialog" role="dialog" aria-modal="true" aria-labelledby="table-dialog-title" onMouseDown={(event) => event.stopPropagation()}>
           <button className="modal-close light" onClick={() => setTablePromptOpen(false)} aria-label="Cerrar"><Icon name="close"/></button>
           <span className="table-dialog-number">{tableDraft || "—"}</span>
@@ -998,10 +1000,10 @@ export default function Home() {
               <div className="serving-options">
                 {selected.servings.map((serving) => <button key={serving.label} className={selectedServing === serving.label ? "active" : ""} onClick={() => { setSelectedServing(serving.label); setOrderFeedback(""); }} aria-pressed={selectedServing === serving.label}>
                   <span><strong>{tr(serving.label)}</strong><small>{serving.volume}</small></span>
-                  <b>{displayPrice(serving.price)}</b>
+                  <b>{displayPrice(priceOf(selected, serving.label))}</b>
                 </button>)}
               </div>
-            </section> : <div className="single-price"><span>{tr("Precio")}</span><strong>{displayPrice(selected.price)}</strong></div>}
+            </section> : <div className="single-price"><span>{tr("Precio")}</span><strong>{displayPrice(priceOf(selected))}</strong></div>}
 
             <section className="nutrition-card" aria-labelledby="nutrition-title">
               {(selected.category === "Cocina" || selected.category === "Sin TACC") && selected.showNutrition && <>
@@ -1045,7 +1047,7 @@ export default function Home() {
 
               return <>
                 {/* Selector de modificadores (combos/promos con grupos en Fudo) */}
-                {modOptions.length > 0 && (!modalItem || addingAnotherUnit) && (
+                {!cartDisabled && modOptions.length > 0 && (!modalItem || addingAnotherUnit) && (
                   <div className="modifier-selector">
                     <p className="modifier-selector-title">
                       {tr("Elegí")} {modMin === modMax ? modMin : `${modMin}–${modMax}`} {modMin === 1 && modMax === 1 ? tr("opción") : tr("opciones")}
@@ -1095,7 +1097,7 @@ export default function Home() {
                 )}
               </>;
             })()}
-            <section className="cross-sell" aria-labelledby="cross-sell-title">
+            {relatedProducts.length > 0 && <section className="cross-sell" aria-labelledby="cross-sell-title">
               <p>{tr("PARA COMPLETAR TU ELECCIÓN")}</p>
               <h3 id="cross-sell-title">{tr("Se puede acompañar con")}</h3>
               <div className="cross-sell-grid">
@@ -1105,7 +1107,7 @@ export default function Home() {
                   <Icon name="arrow" size={16}/>
                 </button>)}
               </div>
-            </section>
+            </section>}
           </div>
         </article>
       </div>}

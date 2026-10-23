@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { after, NextResponse } from "next/server";
-import type { Product } from "@/app/menu-data";
+import type { AppSettings, Product } from "@/app/menu-data";
 import { processOutbox } from "@/lib/fudo/send-order";
 import { isScheduleActive } from "@/lib/promo-schedule";
 
@@ -156,12 +156,23 @@ export async function POST(req: Request) {
   const sb = supabase();
 
   // ── Validar promociones (horario) y opciones elegidas contra el producto guardado ──
-  const { data: productsRow } = await sb
+  const { data: configRows } = await sb
     .from("restaurant_config")
-    .select("value")
-    .eq("key", "products")
-    .single();
-  const catalog: Product[] = Array.isArray(productsRow?.value) ? productsRow.value : [];
+    .select("key, value")
+    .in("key", ["products", "app_settings"]);
+  const configValue = (key: string) => configRows?.find((row) => row.key === key)?.value;
+
+  // Modo evento: el menú es solo para ver (el evento se cobra con otra cuenta de FUDO)
+  const appSettings = configValue("app_settings") as Partial<AppSettings> | undefined;
+  if (appSettings?.eventModeActive || appSettings?.cartDisabled) {
+    return NextResponse.json(
+      { error: "Ahora no se toman pedidos desde el menú. Pedile al mozo." },
+      { status: 409 }
+    );
+  }
+
+  const productsValue = configValue("products");
+  const catalog: Product[] = Array.isArray(productsValue) ? productsValue : [];
 
   for (const line of lines) {
     const product = catalog.find((p) => p.id === line.productId);
