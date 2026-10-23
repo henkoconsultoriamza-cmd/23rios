@@ -2,7 +2,7 @@
 
 import { CSSProperties, Dispatch, Fragment, FormEvent, SetStateAction, useEffect, useMemo, useRef, useState } from "react";
 import { Language, languageOptions, translate } from "./translations";
-import { AppSettings, DEFAULT_APP_SETTINGS, DEFAULT_MENU_SETTINGS, DEFAULT_PRODUCTS, MenuSettings, Product, displayedPrice, mergeDefaultNutrition } from "./menu-data";
+import { AppSettings, DEFAULT_APP_SETTINGS, DEFAULT_MENU_SETTINGS, DEFAULT_PRODUCTS, MenuSettings, Product, displayedPrice, mergeDefaultNutrition, offeredServings } from "./menu-data";
 import { isScheduleActive } from "../lib/promo-schedule";
 import { trackEvent } from "./analytics";
 import { Banner, DEFAULT_BANNERS } from "./banner-data";
@@ -401,6 +401,7 @@ export default function Home() {
   // En modo evento el menú es solo para ver: sin carrito, con los precios del evento
   const cartDisabled = (appSettings.cartDisabled ?? false) || appSettings.eventModeActive;
   const priceOf = (product: Product, servingLabel?: string) => displayedPrice(product, appSettings.eventModeActive, servingLabel);
+  const servingsOf = (product: Product) => offeredServings(product, appSettings.eventModeActive);
 
   const activePool = appSettings.eventModeActive
     ? catalogProducts.filter((p) => p.eventoMenu)
@@ -813,7 +814,7 @@ export default function Home() {
                         <div className="product-title"><button onClick={() => setSelected(product)}><h3>{tr(product.name)}</h3></button><button className={favorites.includes(product.id) ? "favorite active" : "favorite"} onClick={() => toggleFavorite(product.id)} aria-label={`Guardar ${tr(product.name)}`}><Icon name="heart" size={18}/></button></div>
                         <p>{tr(product.description)}</p>
                         {(() => {
-                          const cardPrice = product.servings ? Math.min(...product.servings.map(s => priceOf(product, s.label))) : priceOf(product);
+                          const cardPrice = product.servings ? Math.min(...servingsOf(product)!.map(s => priceOf(product, s.label))) : priceOf(product);
                           const cartQty = !product.servings ? (orderItems.find(i => i.key === product.id)?.quantity ?? 0) : 0;
                           const btnLabel = product.outOfStock
                             ? <>{tr("Sin stock")}</>
@@ -998,7 +999,7 @@ export default function Home() {
             {selected.servings ? <section className="serving-selector" aria-labelledby="serving-title">
               <div className="detail-section-heading"><div><p>{tr("FORMATO")}</p><h3 id="serving-title">{tr("¿Cómo la querés?")}</h3></div><small>{tr("Precio")}</small></div>
               <div className="serving-options">
-                {selected.servings.map((serving) => <button key={serving.label} className={selectedServing === serving.label ? "active" : ""} onClick={() => { setSelectedServing(serving.label); setOrderFeedback(""); }} aria-pressed={selectedServing === serving.label}>
+                {servingsOf(selected)!.map((serving) => <button key={serving.label} className={selectedServing === serving.label ? "active" : ""} onClick={() => { setSelectedServing(serving.label); setOrderFeedback(""); }} aria-pressed={selectedServing === serving.label}>
                   <span><strong>{tr(serving.label)}</strong><small>{serving.volume}</small></span>
                   <b>{displayPrice(priceOf(selected, serving.label))}</b>
                 </button>)}

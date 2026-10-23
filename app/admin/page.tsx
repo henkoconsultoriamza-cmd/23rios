@@ -125,8 +125,13 @@ function FudoMatch({ catalog, id }: { catalog: Map<string, FudoCatalogItem> | nu
 
 // Precio del modo evento: se guarda al salir del campo; vacío = se muestra el precio de siempre.
 // Se usa con key = valor guardado, así arranca de nuevo cuando el servidor confirma.
-function EventPriceInput({ label, value, normal, onSave }: { label: string; value?: number; normal: number; onSave: (value: number | undefined) => void }) {
+// Con `offered`, es un formato (Pinta, Growler…) que se puede sacar del evento con el tilde.
+function EventPriceInput({ label, value, normal, onSave, offered, lockOffered, onToggleOffered }: {
+  label: string; value?: number; normal: number; onSave: (value: number | undefined) => void;
+  offered?: boolean; lockOffered?: boolean; onToggleOffered?: () => void;
+}) {
   const [text, setText] = useState(value ? String(value) : "");
+  const hidden = offered === false;
 
   function commit() {
     const amount = Number(text.replace(/\D/g, ""));
@@ -135,13 +140,18 @@ function EventPriceInput({ label, value, normal, onSave }: { label: string; valu
   }
 
   return (
-    <label className={value ? "admin-event-price" : "admin-event-price empty"}>
-      <span>{label}</span>
-      <input inputMode="numeric" value={text} placeholder={normal.toLocaleString("es-AR")} aria-label={`Precio de evento · ${label}`}
+    <div className={`admin-event-price${hidden ? " off" : value ? "" : " empty"}`}>
+      {offered === undefined
+        ? <span>{label}</span>
+        : <label title={lockOffered ? "Tiene que quedar al menos un formato" : undefined}>
+            <input type="checkbox" checked={offered} disabled={lockOffered} onChange={onToggleOffered}/>
+            <span>{label}</span>
+          </label>}
+      <input inputMode="numeric" value={text} placeholder={normal.toLocaleString("es-AR")} aria-label={`Precio de evento · ${label}`} disabled={hidden}
         onChange={(e) => setText(e.target.value)} onBlur={commit}
         onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}/>
-      <small>{value ? `Normal ${formatPrice(normal)}` : "Sin cargar: se ve el normal"}</small>
-    </label>
+      <small>{hidden ? "No se vende en el evento" : value ? `Normal ${formatPrice(normal)}` : "Sin cargar: se ve el normal"}</small>
+    </div>
   );
 }
 
@@ -437,6 +447,21 @@ export default function AdminPage() {
       .then(({ products: list }) => {
         applyServerProducts(list);
         setNotice(value ? `Precio de evento de «${name}»: ${formatPrice(value)} ✓` : `«${name}» vuelve a mostrar su precio normal en el evento.`);
+      })
+      .catch((err: Error) => setNotice(`No se pudo guardar: ${err.message}`));
+  }
+
+  // Formatos que se venden en el evento (todos = se borra la lista). Siempre queda al menos uno.
+  function toggleEventServing(product: Product, label: string) {
+    const all = product.servings?.map((s) => s.label) ?? [];
+    const current = product.eventServings ?? all;
+    const removing = current.includes(label);
+    const next = removing ? current.filter((l) => l !== label) : all.filter((l) => l === label || current.includes(l));
+    if (!next.length) return;
+    patchProduct(product.id, { eventServings: next.length === all.length ? null : next })
+      .then(({ products: list }) => {
+        applyServerProducts(list);
+        setNotice(`«${product.name} · ${label}» ${removing ? "no se vende" : "se vende"} en el evento.`);
       })
       .catch((err: Error) => setNotice(`No se pudo guardar: ${err.message}`));
   }
@@ -1728,7 +1753,12 @@ export default function AdminPage() {
                           </label>
                           {p.eventoMenu && <div className="admin-event-prices">
                             {p.servings?.length
-                              ? p.servings.map((s) => <EventPriceInput key={`${s.label}:${p.eventServingPrices?.[s.label] ?? ""}`} label={s.label} normal={s.price} value={p.eventServingPrices?.[s.label]} onSave={(value) => saveEventPrice(p, s.label, value)}/>)
+                              ? p.servings.map((s, _, all) => {
+                                  const offered = !p.eventServings || p.eventServings.includes(s.label);
+                                  const offeredCount = all.filter((x) => !p.eventServings || p.eventServings.includes(x.label)).length;
+                                  return <EventPriceInput key={`${s.label}:${p.eventServingPrices?.[s.label] ?? ""}`} label={s.label} normal={s.price} value={p.eventServingPrices?.[s.label]} onSave={(value) => saveEventPrice(p, s.label, value)}
+                                    offered={offered} lockOffered={offered && offeredCount === 1} onToggleOffered={() => toggleEventServing(p, s.label)}/>;
+                                })
                               : <EventPriceInput key={p.eventPrice ?? ""} label="Precio evento" normal={p.price} value={p.eventPrice} onSave={(value) => saveEventPrice(p, null, value)}/>}
                           </div>}
                           </div>)}
@@ -1740,7 +1770,7 @@ export default function AdminPage() {
               </div>
               <div className="admin-adjustment-actions">
                 <span>{products.filter((p) => p.eventoMenu).length} productos marcados para evento{(() => {
-                  const missing = products.filter((p) => p.eventoMenu && (p.servings?.length ? p.servings.some((s) => !p.eventServingPrices?.[s.label]) : !p.eventPrice)).length;
+                  const missing = products.filter((p) => p.eventoMenu && (p.servings?.length ? p.servings.some((s) => (!p.eventServings || p.eventServings.includes(s.label)) && !p.eventServingPrices?.[s.label]) : !p.eventPrice)).length;
                   return missing ? ` · ${missing} sin precio de evento completo` : "";
                 })()}</span>
               </div>

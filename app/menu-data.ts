@@ -36,6 +36,7 @@ export type Product = {
   // «Actualizar desde FUDO» no los toca. Sin cargar = se muestra el precio de siempre.
   eventPrice?: number;
   eventServingPrices?: Record<string, number>; // por formato: { "Pinta": 6000, ... }
+  eventServings?: string[];                    // formatos que se venden en el evento (sin definir = todos)
   outOfStock?: boolean;
   removableIngredients?: string[];
   schedule?: PromoSchedule;              // Solo promociones: cuándo aparecen en el menú (sin programar = no aparecen)
@@ -56,6 +57,13 @@ export function displayedPrice(product: Product, eventMode: boolean, servingLabe
   const normal = serving?.price ?? product.price;
   if (!eventMode) return normal;
   return (serving ? product.eventServingPrices?.[serving.label] : product.eventPrice) || normal;
+}
+
+// Formatos que ve el cliente: con el modo evento activo, solo los elegidos para el evento
+export function offeredServings(product: Product, eventMode: boolean): Product["servings"] {
+  if (!eventMode || !product.eventServings || !product.servings) return product.servings;
+  const offered = product.servings.filter((s) => product.eventServings!.includes(s.label));
+  return offered.length ? offered : product.servings;
 }
 
 export type MenuSettings = {

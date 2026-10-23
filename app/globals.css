@@ -1126,9 +1126,13 @@ details[open] .admin-event-group-header::before { transform: rotate(90deg); }
 .admin-event-prices { display: flex; flex-wrap: wrap; gap: 10px; padding: 0 14px 12px 77px; }
 .admin-event-price { display: grid; gap: 4px; width: 128px; }
 .admin-event-price span { font: 800 8px/1 "Manrope"; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
-.admin-event-price input { width: 100%; min-height: 34px; padding: 6px 10px; border: 1px solid #cbc2b4; border-radius: 8px; outline: 0; background: white; font: 800 12px "Manrope"; }
-.admin-event-price input:focus { border-color: #3a9ad9; box-shadow: 0 0 0 3px rgba(58,154,217,.12); }
-.admin-event-price.empty input { border-style: dashed; border-color: #d99a3a; }
+.admin-event-price label { display: flex; align-items: center; gap: 6px; min-height: 12px; cursor: pointer; }
+.admin-event-price label input { width: 13px; height: 13px; margin: 0; accent-color: #3a9ad9; cursor: pointer; }
+.admin-event-price label input:disabled { cursor: not-allowed; }
+.admin-event-price > input { width: 100%; min-height: 34px; padding: 6px 10px; border: 1px solid #cbc2b4; border-radius: 8px; outline: 0; background: white; font: 800 12px "Manrope"; }
+.admin-event-price > input:focus { border-color: #3a9ad9; box-shadow: 0 0 0 3px rgba(58,154,217,.12); }
+.admin-event-price.empty > input { border-style: dashed; border-color: #d99a3a; }
+.admin-event-price.off > input { background: #f1ede6; color: var(--muted); opacity: .6; }
 .admin-event-price small { font: 400 9px/1.25 "Manrope"; color: var(--muted); }
 .admin-event-price.empty small { color: #b06d12; }
 .admin-toggle-list > label.locked { cursor: not-allowed; opacity: .75; }
