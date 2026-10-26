@@ -100,7 +100,7 @@ function formatOrderDate(value: string, language: Language) {
   return new Intl.DateTimeFormat(locales[language], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 }
 
-function BannerCard({ banner }: { banner: Banner }) {
+function BannerCard({ banner, tr }: { banner: Banner; tr: (k: string) => string }) {
   const ref = useRef<HTMLAnchorElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -130,7 +130,7 @@ function BannerCard({ banner }: { banner: Banner }) {
           <img src={banner.imageUrl} alt={banner.title} className="novedad-img" fetchPriority="high" loading="eager"/>
         </picture>
       )}
-      <span className="novedad-cta-btn">La quiero →</span>
+      <span className="novedad-cta-btn">{tr("La quiero →")}</span>
     </a>
   );
 }
@@ -169,7 +169,7 @@ function EventCard({ ev }: { ev: import("./event-data").EventItem }) {
   );
 }
 
-function NovedadesSlider({ banners }: { banners: Banner[] }) {
+function NovedadesSlider({ banners, tr }: { banners: Banner[]; tr: (k: string) => string }) {
   const [current, setCurrent] = useState(0);
   const touchStartX = useRef<number | null>(null);
 
@@ -190,7 +190,7 @@ function NovedadesSlider({ banners }: { banners: Banner[] }) {
   return (
     <section className="novedades-slider" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       <div className="novedades-slider-track" style={{ transform: `translateX(-${current * 100}%)` }}>
-        {banners.map((b) => <BannerCard key={b.id} banner={b} />)}
+        {banners.map((b) => <BannerCard key={b.id} banner={b} tr={tr} />)}
       </div>
       {banners.length > 1 && (
         <>
@@ -746,7 +746,7 @@ export default function Home() {
 
       <nav className="language-bar" aria-label="Seleccionar idioma">
         <div className="lang-picker">
-          <span className="lang-picker-label">Idioma</span>
+          <span className="lang-picker-label">{tr("Idioma")}</span>
           <div className="lang-picker-control">
             <button className="lang-picker-btn" onClick={() => setLangOpen(o => !o)} aria-expanded={langOpen}>
               {languageOptions.find(o => o.code === language)?.label ?? "Español"}
@@ -770,13 +770,13 @@ export default function Home() {
         <div className="hero-copy">
           <img className="hero-logo-carta" src={logoUrl} alt={brandName} />
           <div className="hero-welcome-banner">
-            <h1>{appSettings.heroTitle} <em>{appSettings.heroHighlight}</em></h1>
+            <h1>{tr(appSettings.heroTitle)} <em>{tr(appSettings.heroHighlight)}</em></h1>
           </div>
         </div>
       </section>
 
       {!appSettings.eventModeActive && banners.filter((b) => b.visible).length > 0 && (
-        <NovedadesSlider banners={banners.filter((b) => b.visible)} />
+        <NovedadesSlider banners={banners.filter((b) => b.visible)} tr={tr} />
       )}
 
       <section className="menu-section" id="carta">
@@ -799,7 +799,7 @@ export default function Home() {
         <div className="menu-layout">
           <div className="menu-results">
 
-            {!productsReady ? <div className="results-summary"><span>Cargando...</span></div> : <>
+            {!productsReady ? <div className="results-summary"><span>{tr("Cargando...")}</span></div> : <>
             <div className="results-summary"><span>{visibleProducts.length} {tr(visibleProducts.length === 1 ? "resultado" : "resultados")}</span></div>
 
             {visibleProducts.length ? <div className="product-grid">
@@ -813,10 +813,10 @@ export default function Home() {
                       <div className="product-visual-wrap">
                         <button className="product-visual" onClick={() => setSelected(product)} aria-label={`${tr("Ver detalle")} ${tr(product.name)}`}>
                           {product.image ? <img className={product.id === "filet-numa" ? "filet-numa-image" : undefined} src={product.image} alt={`${tr(product.name)} · ${brandName}`} /> : <span className="photo-pending"><Icon name="expand" size={20}/><strong>{tr("Foto real pendiente")}</strong></span>}
-                          <span className="product-tag">{product.tag}</span>
+                          <span className="product-tag">{tr(product.tag)}</span>
                           <span className="expand-label"><Icon name="expand" size={14}/> {tr("Ver detalle")}</span>
                         </button>
-                        {product.outOfStock && <span className="out-of-stock-badge">Sin stock</span>}
+                        {product.outOfStock && <span className="out-of-stock-badge">{tr("Sin stock")}</span>}
                       </div>
                       <div className="product-info">
 
@@ -847,7 +847,7 @@ export default function Home() {
                   ))}
                 </Fragment>
               ))}
-            </div> : <div className="empty-state"><h3>No hay resultados con esos filtros</h3><p>Probá desmarcar una opción o limpiar los filtros.</p><button onClick={clearSidebarFilters}>Limpiar filtros</button></div>}
+            </div> : <div className="empty-state"><h3>{tr("No hay resultados con esos filtros")}</h3><p>{tr("Probá desmarcar una opción o limpiar los filtros.")}</p><button onClick={clearSidebarFilters}>{tr("Limpiar filtros")}</button></div>}
             </>}
           </div>
         </div>
@@ -864,11 +864,11 @@ export default function Home() {
         </>;
       })()}
 
-      <footer><img src={logoUrl} alt={brandName}/><p>{brandName} · {appSettings.brandTagline} · La mesa se confirma al lanzar el pedido.</p></footer>
+      <footer><img src={logoUrl} alt={brandName}/><p>{brandName} · {tr(appSettings.brandTagline)} · {tr("La mesa se confirma al lanzar el pedido.")}</p></footer>
 
       {eventsOpen && <div className="overlay" onMouseDown={() => setEventsOpen(false)}>
         <section className="events-panel" role="dialog" aria-modal="true" aria-labelledby="events-title" onMouseDown={(e) => e.stopPropagation()}>
-          <header className="events-panel-header"><div><p>AGENDA · {brandName.toLocaleUpperCase("es")}</p><h2 id="events-title">{tr("Agenda de eventos")}</h2><span>Conocé las próximas experiencias del restaurante.</span></div><button onClick={() => setEventsOpen(false)} aria-label="Cerrar agenda"><Icon name="close"/></button></header>
+          <header className="events-panel-header"><div><p>{tr("AGENDA")} · {brandName.toLocaleUpperCase("es")}</p><h2 id="events-title">{tr("Agenda de eventos")}</h2><span>{tr("Conocé las próximas experiencias del restaurante.")}</span></div><button onClick={() => setEventsOpen(false)} aria-label="Cerrar agenda"><Icon name="close"/></button></header>
           <div className="events-list">
             {events.filter(e => e.active).map((ev) => <EventCard key={ev.id} ev={ev}/>)}
             <div className="events-coming-soon"><span>＋</span><div><strong>{tr("Más eventos próximamente")}</strong><p>{tr("La agenda está preparada para incorporar todas las fechas de cada mes.")}</p></div></div>
@@ -898,7 +898,7 @@ export default function Home() {
                   <strong>{tr(item.name)}</strong>
                   {item.serving && <small>{tr(item.serving)} · {item.volume}</small>}
                   {item.modifiers?.length ? <small className="removed-ingredients">{Object.entries(item.modifiers.reduce<Record<string, number>>((acc, m) => { acc[m.name] = (acc[m.name] ?? 0) + 1; return acc; }, {})).map(([name, n]) => n > 1 ? `${n}× ${name}` : name).join(", ")}</small> : null}
-                  {item.removedIngredients?.length ? <small className="removed-ingredients">{item.removedIngredients.join(", ")}</small> : null}
+                  {item.removedIngredients?.length ? <small className="removed-ingredients">{item.removedIngredients.map(tr).join(", ")}</small> : null}
                   {item.customNote ? <small className="removed-ingredients">📝 {item.customNote}</small> : null}
                   <b>{displayPrice(item.unitPrice)}</b>
                 </div>
@@ -919,7 +919,7 @@ export default function Home() {
               ? <button className="launch-order" onClick={launchOrder}><Icon name="arrow" size={19}/> {tr("Cerrar carrito y lanzar pedido")}</button>
               : <div className="order-blocked"><span>🔒</span><p>El pedido solo se puede lanzar desde adentro de la cervecería. Escaneá el QR de tu mesa para habilitarlo.</p></div>
           ) : <button className="close-order" onClick={requestBill}>{tr("Solicitar la cuenta")}</button>}
-          <p className="order-panel-note">Antes de lanzar el pedido te pediremos confirmar el número de mesa.</p>
+          <p className="order-panel-note">{tr("Antes de lanzar el pedido te pediremos confirmar el número de mesa.")}</p>
         </section>
       </div>}
 
@@ -932,14 +932,15 @@ export default function Home() {
         return <div className="overlay customize-overlay" onMouseDown={() => setCustomizeItemKey(null)}>
           <section className="customize-dialog" role="dialog" aria-modal="true" onMouseDown={e => e.stopPropagation()}>
             <button className="modal-close light" onClick={() => setCustomizeItemKey(null)} aria-label="Cerrar"><Icon name="close"/></button>
-            <p className="eyebrow">PERSONALIZAR PEDIDO</p>
-            <h2>{tr(item?.name ?? "")}{item?.serving ? <small> · {item.serving}</small> : ""}</h2>
+            <p className="eyebrow">{tr("PERSONALIZAR PEDIDO")}</p>
+            <h2>{tr(item?.name ?? "")}{item?.serving ? <small> · {tr(item.serving)}</small> : ""}</h2>
+            {/* Se muestran traducidas, pero a cocina van tal cual se cargaron en el admin */}
             {ingredients.length > 0
-              ? <><p className="customize-hint">Tocá las opciones que querés para este plato.</p><div className="customize-ingredient-list">{ingredients.map(ing => <button key={ing} className={removed.includes(ing) ? "ingredient-chip selected" : "ingredient-chip"} onClick={() => toggle(ing)} aria-pressed={removed.includes(ing)}>{removed.includes(ing) ? <span>✓</span> : <span>+</span>}{ing}</button>)}</div></>
-              : <p className="customize-hint">Este producto no tiene ingredientes editables cargados todavía.</p>
+              ? <><p className="customize-hint">{tr("Tocá las opciones que querés para este plato.")}</p><div className="customize-ingredient-list">{ingredients.map(ing => <button key={ing} className={removed.includes(ing) ? "ingredient-chip selected" : "ingredient-chip"} onClick={() => toggle(ing)} aria-pressed={removed.includes(ing)}>{removed.includes(ing) ? <span>✓</span> : <span>+</span>}{tr(ing)}</button>)}</div></>
+              : <p className="customize-hint">{tr("Este producto no tiene ingredientes editables cargados todavía.")}</p>
             }
-            {removed.length > 0 && <p className="customize-summary">Elegiste: {removed.join(", ")}</p>}
-            <button className="customize-confirm" onClick={() => setCustomizeItemKey(null)}>Listo</button>
+            {removed.length > 0 && <p className="customize-summary">{tr("Elegiste:")} {removed.map(tr).join(", ")}</p>}
+            <button className="customize-confirm" onClick={() => setCustomizeItemKey(null)}>{tr("Listo")}</button>
           </section>
         </div>;
       })()}
@@ -948,16 +949,16 @@ export default function Home() {
         <section className="table-dialog" role="dialog" aria-modal="true" aria-labelledby="table-dialog-title" onMouseDown={(event) => event.stopPropagation()}>
           <button className="modal-close light" onClick={() => setTablePromptOpen(false)} aria-label="Cerrar"><Icon name="close"/></button>
           <span className="table-dialog-number">{tableDraft || "—"}</span>
-          <p className="eyebrow">IDENTIFICAR PEDIDO</p>
-          <h2 id="table-dialog-title">¿Cuál es tu número de mesa?</h2>
-          <p>Lo necesitamos para que el personal reciba el pedido en el lugar correcto.</p>
+          <p className="eyebrow">{tr("IDENTIFICAR PEDIDO")}</p>
+          <h2 id="table-dialog-title">{tr("¿Cuál es tu número de mesa?")}</h2>
+          <p>{tr("Lo necesitamos para que el personal reciba el pedido en el lugar correcto.")}</p>
           <form onSubmit={confirmLaunchOrder}>
-            <label>Mesa número<input type="text" inputMode="numeric" pattern="[0-9]{1,3}" maxLength={3} value={tableDraft} onChange={(event) => setTableDraft(event.target.value.replace(/\D/g, ""))} readOnly={launchedOrders.length > 0} autoFocus aria-label="Número de mesa"/></label>
-            {launchedOrders.length > 0 && <small>La mesa queda fijada durante esta cuenta. Se libera después del cobro.</small>}
-            <label>Nombre y apellido<input type="text" value={guestNameDraft} onChange={(event) => setGuestNameDraft(event.target.value)} placeholder="Ej. María González" aria-label="Nombre y apellido"/></label>
-            <label>Teléfono<input type="tel" value={guestPhoneDraft} onChange={(event) => setGuestPhoneDraft(event.target.value)} placeholder="Ej. +54 9 261 000-0000" aria-label="Teléfono"/></label>
-            <label>Personas en la mesa<input type="text" inputMode="numeric" maxLength={2} value={guestCountDraft} onChange={(event) => setGuestCountDraft(event.target.value.replace(/\D/g, ""))} placeholder="Ej. 4" aria-label="Cantidad de personas"/></label>
-            <button type="submit" disabled={!/^\d{1,3}$/.test(tableDraft) || !isOnPremise}>Confirmar y lanzar pedido</button>
+            <label>{tr("Mesa número")}<input type="text" inputMode="numeric" pattern="[0-9]{1,3}" maxLength={3} value={tableDraft} onChange={(event) => setTableDraft(event.target.value.replace(/\D/g, ""))} readOnly={launchedOrders.length > 0} autoFocus aria-label={tr("Mesa número")}/></label>
+            {launchedOrders.length > 0 && <small>{tr("La mesa queda fijada durante esta cuenta. Se libera después del cobro.")}</small>}
+            <label>{tr("Nombre y apellido")}<input type="text" value={guestNameDraft} onChange={(event) => setGuestNameDraft(event.target.value)} placeholder={tr("Ej. María González")} aria-label={tr("Nombre y apellido")}/></label>
+            <label>{tr("Teléfono")}<input type="tel" value={guestPhoneDraft} onChange={(event) => setGuestPhoneDraft(event.target.value)} placeholder={tr("Ej. +54 9 261 000-0000")} aria-label={tr("Teléfono")}/></label>
+            <label>{tr("Personas en la mesa")}<input type="text" inputMode="numeric" maxLength={2} value={guestCountDraft} onChange={(event) => setGuestCountDraft(event.target.value.replace(/\D/g, ""))} placeholder={tr("Ej. 4")} aria-label={tr("Personas en la mesa")}/></label>
+            <button type="submit" disabled={!/^\d{1,3}$/.test(tableDraft) || !isOnPremise}>{tr("Confirmar y lanzar pedido")}</button>
           </form>
         </section>
       </div>}
@@ -968,37 +969,37 @@ export default function Home() {
             <div><p>{tr("HISTORIAL LOCAL")}</p><h2 id="history-title">{tr("Mis pedidos")}</h2></div>
             <button onClick={() => setHistoryOpen(false)} aria-label="Cerrar historial"><Icon name="close"/></button>
           </header>
-          {cartDisabled ? <div className="history-empty"><span><Icon name="receipt" size={28}/></span><h3>Hoy no hay servicio a mesa</h3><p>Podés ver nuestra carta y consultarle a un mozo.</p></div> : launchedOrders.length ? <><div className={billRequested ? "history-bill-summary requested" : "history-bill-summary"}><div><small>CUENTA DE LA MESA</small><strong>Mesa {tableNumber || launchedOrders[0]?.tableNumber}</strong><span>{launchedOrders.length} {launchedOrders.length === 1 ? "pedido lanzado" : "pedidos lanzados"}</span></div><b>{displayPrice(launchedTotal)}</b></div><div className="launched-orders">
+          {cartDisabled ? <div className="history-empty"><span><Icon name="receipt" size={28}/></span><h3>{tr("Hoy no hay servicio a mesa")}</h3><p>{tr("Podés ver nuestra carta y consultarle a un mozo.")}</p></div> : launchedOrders.length ? <><div className={billRequested ? "history-bill-summary requested" : "history-bill-summary"}><div><small>{tr("CUENTA DE LA MESA")}</small><strong>{tr("Mesa")} {tableNumber || launchedOrders[0]?.tableNumber}</strong><span>{launchedOrders.length} {tr(launchedOrders.length === 1 ? "pedido lanzado" : "pedidos lanzados")}</span></div><b>{displayPrice(launchedTotal)}</b></div><div className="launched-orders">
             {launchedOrders.map((order) => <article key={order.id}>
-              <header><div><strong>Pedido · Mesa {order.tableNumber || tableNumber}</strong>{(order.guestName || order.guestCount) && <small>{order.guestName}{order.guestName && order.guestCount ? " · " : ""}{order.guestCount ? `${order.guestCount} ${order.guestCount === 1 ? "persona" : "personas"}` : ""}</small>}<time dateTime={order.launchedAt}>{formatOrderDate(order.launchedAt, language)}</time></div><span className={order.status === "Cerrado" ? "closed" : order.status === "Cuenta solicitada" ? "requested" : ""}>{tr(order.status)}</span></header>
+              <header><div><strong>{tr("Pedido")} · {tr("Mesa")} {order.tableNumber || tableNumber}</strong>{(order.guestName || order.guestCount) && <small>{order.guestName}{order.guestName && order.guestCount ? " · " : ""}{order.guestCount ? `${order.guestCount} ${tr(order.guestCount === 1 ? "persona" : "personas")}` : ""}</small>}<time dateTime={order.launchedAt}>{formatOrderDate(order.launchedAt, language)}</time></div><span className={order.status === "Cerrado" ? "closed" : order.status === "Cuenta solicitada" ? "requested" : ""}>{tr(order.status)}</span></header>
               <div className="launched-order-items">{order.items.map((item) => <p key={item.key}><span><b>{item.quantity}×</b> {tr(item.name)}{item.serving ? ` · ${tr(item.serving)} (${item.volume})` : ""}</span><strong>{displayPrice(item.unitPrice * item.quantity)}</strong></p>)}</div>
               <div className="launched-order-total"><span>{order.items.reduce((total, item) => total + item.quantity, 0)} {tr("productos")}</span><strong>{displayPrice(order.total)}</strong></div>
             </article>)}
-          </div><div className="history-account-actions">{tablePeople ? <div className="launched-order-per-person"><span>Por persona · {tablePeople} {tablePeople === 1 ? "persona" : "personas"}</span><strong>{displayPrice(Math.ceil(launchedTotal / tablePeople))}</strong></div> : null}{!billRequested && <button className="request-bill-history" onClick={requestBill}>Solicitar la cuenta · {displayPrice(launchedTotal)}</button>}</div></> : <div className="history-empty"><span><Icon name="receipt" size={28}/></span><h3>{tr("Todavía no lanzaste pedidos")}</h3><p>Cuando cierres un carrito y lo lances, aparecerá acá con su estado y detalle completo.</p></div>}
+          </div><div className="history-account-actions">{tablePeople ? <div className="launched-order-per-person"><span>{tr("Por persona")} · {tablePeople} {tr(tablePeople === 1 ? "persona" : "personas")}</span><strong>{displayPrice(Math.ceil(launchedTotal / tablePeople))}</strong></div> : null}{!billRequested && <button className="request-bill-history" onClick={requestBill}>{tr("Solicitar la cuenta")} · {displayPrice(launchedTotal)}</button>}</div></> : <div className="history-empty"><span><Icon name="receipt" size={28}/></span><h3>{tr("Todavía no lanzaste pedidos")}</h3><p>{tr("Cuando cierres un carrito y lo lances, aparecerá acá con su estado y detalle completo.")}</p></div>}
         </section>
       </div>}
 
       {selected && <div className="overlay" onMouseDown={() => setSelected(null)}>
         <article className="detail-modal" role="dialog" aria-modal="true" aria-labelledby="product-title" data-style={selected.beerStyle?.toLowerCase().replace(/\s+/g, "-")} onMouseDown={(event) => event.stopPropagation()}>
           <button className="modal-close" onClick={() => setSelected(null)} aria-label="Cerrar"><Icon name="close"/></button>
-          <div className="detail-image">{selected.image ? <img className={selected.id === "filet-numa" ? "filet-numa-image" : undefined} src={selected.image} alt={`${selected.name} de ${brandName}, vista ampliada`}/> : <div className="detail-photo-pending"><Icon name="expand" size={28}/><strong>Fotografía real pendiente</strong><small>Este espacio se reemplazará por la imagen real del restaurante.</small></div>}</div>
+          <div className="detail-image">{selected.image ? <img className={selected.id === "filet-numa" ? "filet-numa-image" : undefined} src={selected.image} alt={`${selected.name} de ${brandName}, vista ampliada`}/> : <div className="detail-photo-pending"><Icon name="expand" size={28}/><strong>{tr("Fotografía real pendiente")}</strong><small>{tr("Este espacio se reemplazará por la imagen real del restaurante.")}</small></div>}</div>
           <div className="detail-copy">
             <h2 id="product-title">{tr(selected.name)}</h2>
             {selected.beerProfile && <section className="beer-profile" aria-label={`Características de ${selected.name}`}>
               {selected.beerStyle && <p className="beer-style-badge">{selected.beerStyle.toUpperCase()}</p>}
               <div className="beer-descriptors">{selected.beerProfile.descriptors.map((descriptor) => <span key={descriptor}>{tr(descriptor)}</span>)}</div>
               <div className="beer-metrics">
-                <div className="beer-metrics-header"><span>DATOS TÉCNICOS</span></div>
+                <div className="beer-metrics-header"><span>{tr("DATOS TÉCNICOS")}</span></div>
                 <span>
-                  <span className="beer-metric-info"><em>ALCOHOL %</em><small>Contenido alcohólico por volumen</small></span>
+                  <span className="beer-metric-info"><em>{tr("ALCOHOL %")}</em><small>{tr("Contenido alcohólico por volumen")}</small></span>
                   <strong>{selected.beerProfile.abv}</strong>
                 </span>
                 <span>
-                  <span className="beer-metric-info"><em>COLOR EBC</em><small>Escala europea de color — mayor valor, más oscura</small></span>
+                  <span className="beer-metric-info"><em>{tr("COLOR EBC")}</em><small>{tr("Escala europea de color — mayor valor, más oscura")}</small></span>
                   <strong>{selected.beerProfile.srm}</strong>
                 </span>
                 <span>
-                  <span className="beer-metric-info"><em>AMARGO IBU</em><small>Unidades de amargor — mayor valor, más amarga</small></span>
+                  <span className="beer-metric-info"><em>{tr("AMARGO IBU")}</em><small>{tr("Unidades de amargor — mayor valor, más amarga")}</small></span>
                   <strong>{selected.beerProfile.ibu}</strong>
                 </span>
               </div>
@@ -1017,7 +1018,7 @@ export default function Home() {
 
             <section className="nutrition-card" aria-labelledby="nutrition-title">
               {(selected.category === "Cocina" || selected.category === "Sin TACC") && selected.showNutrition && <>
-                <div className="detail-section-heading"><div><p>{tr("INFORMACIÓN NUTRICIONAL")}</p><h3 id="nutrition-title">{tr("Valores nutricionales")}</h3></div><small>Por 100 g</small></div>
+                <div className="detail-section-heading"><div><p>{tr("INFORMACIÓN NUTRICIONAL")}</p><h3 id="nutrition-title">{tr("Valores nutricionales")}</h3></div><small>{tr("Por 100 g")}</small></div>
                 <dl>
                   <div><dt>{tr("Calorías")}</dt><dd>{selected.nutrition.calories}</dd></div>
                   <div><dt>{tr("Grasas")}</dt><dd>{selected.nutrition.fats}</dd></div>
@@ -1026,7 +1027,7 @@ export default function Home() {
                   <div><dt>{tr("Azúcares")}</dt><dd>{selected.nutrition.sugars}</dd></div>
                 </dl>
               </>}
-              <div className="allergen-summary"><strong>{tr("Alérgenos")}</strong><div>{selected.allergens.length ? selected.allergens.map((allergen) => <span className="allergen-item" key={allergen}><i aria-hidden="true">{allergenIcons[allergen] ?? "•"}</i>{tr(allergen)}</span>) : <span className="allergen-item allergen-free"><i aria-hidden="true">✓</i>Sin alérgenos declarados</span>}</div></div>
+              <div className="allergen-summary"><strong>{tr("Alérgenos")}</strong><div>{selected.allergens.length ? selected.allergens.map((allergen) => <span className="allergen-item" key={allergen}><i aria-hidden="true">{allergenIcons[allergen] ?? "•"}</i>{tr(allergen)}</span>) : <span className="allergen-item allergen-free"><i aria-hidden="true">✓</i>{tr("Sin alérgenos declarados")}</span>}</div></div>
             </section>
             {(() => {
               const modOptions = selected.fudoData?.modifierOptions ?? [];
@@ -1077,7 +1078,7 @@ export default function Home() {
                                 ? setSelectedModifiers(count ? [] : [opt.fudoProductId])
                                 : !full && setSelectedModifiers((prev) => [...prev, opt.fudoProductId])}>
                               {image && <img src={image} alt=""/>}
-                              <span>{label}</span>
+                              <span>{tr(label)}</span>
                               {count > 0 && <i>{modMax > 1 ? `${count}×` : "✓"}</i>}
                             </button>
                             {/* Se puede elegir la misma opción más de una vez; con «−» se saca una */}
@@ -1093,7 +1094,7 @@ export default function Home() {
                 {!cartDisabled && (modalItem && modalItem.quantity > 0 && !addingAnotherUnit
                   ? <>
                       {selected.category === "Cocina" && <button className="customize-modal-btn" onClick={openCustomize}>{tr("Le quiero sacar...")}</button>}
-                      <div className="modal-quantity-control"><button onClick={() => changeOrderQuantity(modalKey, -1)} aria-label="Quitar uno">−</button><span>{modalItem.quantity} en el pedido</span><button onClick={() => { if (modOptions.length > 0) { setSelectedModifiers([]); setAddingAnotherUnit(true); } else { changeOrderQuantity(modalKey, 1); } }} aria-label="Agregar uno">+</button></div>
+                      <div className="modal-quantity-control"><button onClick={() => changeOrderQuantity(modalKey, -1)} aria-label="Quitar uno">−</button><span>{modalItem.quantity} {tr("en el pedido")}</span><button onClick={() => { if (modOptions.length > 0) { setSelectedModifiers([]); setAddingAnotherUnit(true); } else { changeOrderQuantity(modalKey, 1); } }} aria-label="Agregar uno">+</button></div>
                     </>
                   : <button
                       className="order-button"
@@ -1182,7 +1183,7 @@ export default function Home() {
       {(selectedGroups.length + selectedPreferences.length + excludedAllergens.length + selectedBeerStyles.length) > 0 && (
         <button className="clear-sidebar" onClick={() => { clearSidebarFilters(); setFilterDrawerOpen(false); }}>{tr("Limpiar filtros")}</button>
       )}
-      <p className="filter-demo-note">Datos demostrativos hasta validar la carta.</p>
+      <p className="filter-demo-note">{tr("Datos demostrativos hasta validar la carta.")}</p>
     </aside>
   </>
   );
