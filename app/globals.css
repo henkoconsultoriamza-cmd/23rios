@@ -1071,6 +1071,11 @@ textarea, select { font: inherit; }
 .admin-security-form { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
 .admin-security-form p { grid-column: 1 / -1; margin: 0; color: #81796d; font-size: 8px; line-height: 1.45; }
 .admin-security-form button { grid-column: 1 / -1; }
+.admin-qr-card label { grid-column: 1 / -1; }
+.admin-qr-card strong { color: var(--ink); word-break: break-all; }
+.admin-qr-status { color: #2a7a2a !important; font-weight: 700; }
+.admin-qr-test { grid-column: 1 / -1; justify-self: start; color: #a47c1d; font-size: 11px; font-weight: 800; text-decoration: none; }
+.admin-qr-test:hover { text-decoration: underline; }
 .admin-session-card { background: #20201b; color: white; }
 .admin-session-card .admin-adjustment-heading h2 { color: white; }
 .admin-session-card .admin-adjustment-heading p { color: rgba(255,255,255,.45); }

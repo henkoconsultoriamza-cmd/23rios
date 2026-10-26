@@ -6,6 +6,7 @@ import { PortalSettings } from "../app/portal-data";
 import { AnalyticsEvent } from "../app/analytics";
 import type { FudoCatalogItem } from "../lib/fudo/qr-catalog";
 import type { FudoSyncReport } from "../lib/fudo/sync";
+import { QR_DESTINATION_KEY } from "../lib/qr-destination";
 
 // ── Leer una clave de restaurant_config ──────────────────────────
 async function getConfig<T>(key: string): Promise<T | null> {
@@ -58,6 +59,10 @@ export async function getFudoCatalog(): Promise<FudoCatalogItem[]> {
   return json.catalog as FudoCatalogItem[];
 }
 export const syncFromFudo = () => adminPost<FudoSyncResponse>("/api/admin/fudo");
+
+// ── QR de las mesas: adónde redirige /qr (vacío = el menú) ───────
+export const getQrDestination = () => getConfig<string>(QR_DESTINATION_KEY);
+export const saveQrDestination = (destino: string) => adminPost<{ destino: string }>("/api/admin/qr", { destino });
 
 // ── Ajustes del menu ─────────────────────────────────────────────
 export const getMenuSettings = () => getConfig<MenuSettings>("menu_settings");

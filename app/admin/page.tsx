@@ -28,6 +28,7 @@ import {
   getPortalSettings, savePortalSettings as savePortalToDb,
   getAdminCredentials, saveAdminCredentials,
   getFudoCatalog, syncFromFudo,
+  getQrDestination, saveQrDestination,
   uploadImage,
 } from "../../db/config";
 import type { FudoCatalogItem } from "../../lib/fudo/qr-catalog";
@@ -222,6 +223,9 @@ export default function AdminPage() {
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS);
   const [portalSettings, setPortalSettings] = useState<PortalSettings>(() => cloneDefaultPortalSettings());
   const [securityUsername, setSecurityUsername] = useState(DEFAULT_ADMIN_USERNAME);
+  // QR de las mesas: el impreso apunta siempre a /qr; acá se elige adónde redirige
+  const [qrDestination, setQrDestination] = useState("");
+  const [qrStatus, setQrStatus] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -291,6 +295,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (!authenticated) return;
     getFudoCatalog().then(setFudoCatalog).catch(() => setFudoCatalog(null));
+    getQrDestination().then((destino) => setQrDestination(destino ?? "")).catch(() => undefined);
   }, [authenticated]);
 
   const fudoById = useMemo(() => fudoCatalog ? new Map(fudoCatalog.map((item) => [item.id, item])) : null, [fudoCatalog]);
@@ -926,6 +931,15 @@ export default function AdminPage() {
     savePortalToDb(portalSettings)
       .then(() => setNotice("Portal guardado. Los cambios ya estan disponibles en la portada publica."))
       .catch(() => setNotice("No se pudo guardar el portal."));
+  }
+
+  function saveQrSettings(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const destino = qrDestination.trim();
+    setQrStatus("Guardando…");
+    saveQrDestination(destino)
+      .then(() => setQrStatus(destino ? "Destino guardado ✓ El QR ya lleva ahí." : "Listo ✓ El QR lleva al menú."))
+      .catch((err: Error) => setQrStatus(`No se pudo guardar: ${err.message}`));
   }
 
   async function saveSecuritySettings(event: FormEvent<HTMLFormElement>) {
@@ -1800,6 +1814,17 @@ export default function AdminPage() {
               </div>
             </article>
 
+
+            <article className="admin-adjustment-card admin-qr-card">
+              <div className="admin-adjustment-heading"><span>02</span><div><small>QR DE LAS MESAS</small><h2>Adónde lleva el QR</h2><p>El QR impreso abre siempre <strong>{window.location.origin}/qr</strong>. Desde acá cambiás adónde redirige, sin reimprimir.</p></div></div>
+              <form className="admin-security-form" onSubmit={saveQrSettings}>
+                <label>Destino del QR<input type="url" inputMode="url" value={qrDestination} onChange={(event) => { setQrDestination(event.target.value); setQrStatus(""); }} placeholder={`${window.location.origin}/`}/></label>
+                <p>Vacío = lleva al menú ({window.location.origin}/). Tiene que empezar con https://. El cambio vale para el próximo escaneo.</p>
+                {qrStatus && <p className="admin-qr-status">{qrStatus}</p>}
+                <button type="submit">Guardar destino</button>
+                <a className="admin-qr-test" href="/qr" target="_blank" rel="noreferrer">Probar el QR ↗</a>
+              </form>
+            </article>
 
             <article className="admin-adjustment-card admin-security-card">
               <div className="admin-adjustment-heading"><span>05</span><div><small>SEGURIDAD</small><h2>Usuario y contraseña</h2><p>Cambiá las credenciales utilizadas para ingresar en este dispositivo.</p></div></div>
