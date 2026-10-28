@@ -292,6 +292,9 @@ export default function Home() {
   const [fudoAvailable, setFudoAvailable] = useState<Set<string> | null>(null);
   const [cartNotice, setCartNotice] = useState("");
   const [checkingCart, setCheckingCart] = useState(false);
+  const [launching, setLaunching] = useState(false);
+  // Clave del pedido que se está lanzando: si se corta la red y se reintenta, el servidor no lo duplica
+  const pendingOrderKey = useRef<string | null>(null);
   const [productsReady, setProductsReady] = useState(false);
   const [menuSettings, setMenuSettings] = useState<MenuSettings>(DEFAULT_MENU_SETTINGS);
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS);
@@ -611,7 +614,7 @@ export default function Home() {
   const isOnPremise = true;
 
   async function launchOrder() {
-    if (!orderItems.length || orderStatus !== "draft" || checkingCart) return;
+    if (!orderItems.length || orderStatus !== "draft" || checkingCart || launching) return;
     // Antes de lanzar se confirma con FUDO que todo siga disponible: si falta algo, FUDO rechaza el pedido entero
     setCheckingCart(true);
     const available = await fetchFudoAvailable(true);
@@ -644,9 +647,59 @@ export default function Home() {
     doLaunchOrder(tableDraft.trim(), guestNameDraft.trim(), guestPhoneDraft.trim(), guestCountDraft);
   }
 
-  function doLaunchOrder(confirmedTable: string, guestName: string, guestPhone: string, guestCount: string) {
+  async function doLaunchOrder(confirmedTable: string, guestName: string, guestPhone: string, guestCount: string) {
+    if (!/^\d{1,3}$/.test(confirmedTable) || launching) return;
     trackEvent("cart_send");
-    if (!/^\d{1,3}$/.test(confirmedTable)) return;
+
+    // Primero se guarda en el servidor; recién con su OK se vacía el carrito.
+    // Si lo rechaza, el pedido queda en el carrito con el motivo, para corregirlo y volver a lanzarlo.
+    pendingOrderKey.current ??= crypto.randomUUID();
+    const lines = orderItems.map((item) => ({
+      lineId: item.key,
+      productId: item.productId,
+      fudoProductId: item.fudoProductId,
+      fudoCategoryId: item.fudoCategoryId,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      comment: [
+        ...(item.removedIngredients ?? []), // van a cocina tal cual se cargaron en el admin
+        item.customNote ?? "",
+      ].filter(Boolean).join(", ") || undefined,
+      modifiers: item.modifiers,
+    }));
+    setLaunching(true);
+    let error = "";
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          idempotencyKey: pendingOrderKey.current,
+          mesaNumero: confirmedTable,
+          people: guestCount ? Number(guestCount) : 1,
+          customerName: guestName || undefined,
+          customerPhone: guestPhone || undefined,
+          lines,
+        }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        error = body.error || `Error ${res.status}`;
+        if (res.status < 500) pendingOrderKey.current = null; // no se guardó: el próximo intento es otro pedido
+      }
+    } catch {
+      error = tr("Revisá la conexión y probá de nuevo.");
+    }
+    setLaunching(false);
+    if (error) {
+      setTablePromptOpen(false);
+      setOrderOpen(true);
+      setCartNotice(`${tr("No pudimos lanzar el pedido:")} ${error}`);
+      return;
+    }
+    pendingOrderKey.current = null;
+    setCartNotice("");
+
     const id = `R${Date.now().toString().slice(-6)}`;
     const record: LaunchedOrder = {
       id,
@@ -668,35 +721,6 @@ export default function Home() {
     setTablePromptOpen(false);
     setOrderOpen(false);
     setOrderFeedback("");
-
-    // Persistir en Supabase para métricas y envío a FUDO (fire-and-forget)
-    const idempotencyKey = crypto.randomUUID();
-    const lines = record.items.map((item) => ({
-      lineId: item.key,
-      productId: item.productId,
-      fudoProductId: item.fudoProductId,
-      fudoCategoryId: item.fudoCategoryId,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      comment: [
-        ...(item.removedIngredients ?? []), // van a cocina tal cual se cargaron en el admin
-        item.customNote ?? "",
-      ].filter(Boolean).join(", ") || undefined,
-      modifiers: item.modifiers,
-    }));
-
-    fetch("/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        idempotencyKey,
-        mesaNumero: confirmedTable,
-        people: record.guestCount ?? 1,
-        customerName: record.guestName,
-        customerPhone: record.guestPhone,
-        lines,
-      }),
-    }).catch(() => { /* fallo silencioso — el pedido ya quedó en localStorage */ });
   }
 
   function requestBill() {
@@ -987,7 +1011,7 @@ export default function Home() {
           <div className="order-total"><span><small>{orderCount} {tr(orderCount === 1 ? "producto" : "productos")}</small><strong>{tr("Total")}</strong></span><b>{displayPrice(orderTotal)}</b></div>
           {orderStatus === "draft" ? (
             isOnPremise
-              ? <button className="launch-order" onClick={launchOrder} disabled={checkingCart}><Icon name="arrow" size={19}/> {tr(checkingCart ? "Revisando disponibilidad…" : "Cerrar carrito y lanzar pedido")}</button>
+              ? <button className="launch-order" onClick={launchOrder} disabled={checkingCart || launching}><Icon name="arrow" size={19}/> {tr(checkingCart ? "Revisando disponibilidad…" : launching ? "Lanzando pedido…" : "Cerrar carrito y lanzar pedido")}</button>
               : <div className="order-blocked"><span>🔒</span><p>El pedido solo se puede lanzar desde adentro de la cervecería. Escaneá el QR de tu mesa para habilitarlo.</p></div>
           ) : <button className="close-order" onClick={requestBill}>{tr("Solicitar la cuenta")}</button>}
           <p className="order-panel-note">{tr("Antes de lanzar el pedido te pediremos confirmar el número de mesa.")}</p>
@@ -1029,7 +1053,7 @@ export default function Home() {
             <label>{tr("Nombre y apellido")}<input type="text" value={guestNameDraft} onChange={(event) => setGuestNameDraft(event.target.value)} placeholder={tr("Ej. María González")} aria-label={tr("Nombre y apellido")}/></label>
             <label>{tr("Teléfono")}<input type="tel" value={guestPhoneDraft} onChange={(event) => setGuestPhoneDraft(event.target.value)} placeholder={tr("Ej. +54 9 261 000-0000")} aria-label={tr("Teléfono")}/></label>
             <label>{tr("Personas en la mesa")}<input type="text" inputMode="numeric" maxLength={2} value={guestCountDraft} onChange={(event) => setGuestCountDraft(event.target.value.replace(/\D/g, ""))} placeholder={tr("Ej. 4")} aria-label={tr("Personas en la mesa")}/></label>
-            <button type="submit" disabled={!/^\d{1,3}$/.test(tableDraft) || !isOnPremise}>{tr("Confirmar y lanzar pedido")}</button>
+            <button type="submit" disabled={!/^\d{1,3}$/.test(tableDraft) || !isOnPremise || launching}>{tr(launching ? "Lanzando pedido…" : "Confirmar y lanzar pedido")}</button>
           </form>
         </section>
       </div>}

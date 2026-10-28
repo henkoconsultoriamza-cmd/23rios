@@ -90,10 +90,10 @@ function validatePayload(body: unknown): { valid: true; data: CreateOrderPayload
     if (typeof l.lineId !== "string" || !l.lineId) return { valid: false, error: "lineId inválido" };
     if (typeof l.productId !== "string" || !l.productId) return { valid: false, error: "productId inválido" };
     if (typeof l.quantity !== "number" || !Number.isInteger(l.quantity) || l.quantity < 1 || l.quantity > 99) {
-      return { valid: false, error: "quantity inválido" };
+      return { valid: false, error: `Cantidad inválida en «${String(l.productId)}»` };
     }
     if (typeof l.unitPrice !== "number" || l.unitPrice < 0 || l.unitPrice > 10_000_000) {
-      return { valid: false, error: "unitPrice inválido" };
+      return { valid: false, error: `Precio inválido en «${String(l.productId)}»` };
     }
   }
 
@@ -149,6 +149,7 @@ export async function POST(req: Request) {
 
   const validation = validatePayload(rawBody);
   if (!validation.valid) {
+    console.warn("[orders] Pedido rechazado (400):", validation.error);
     return NextResponse.json({ error: validation.error }, { status: 400 });
   }
 
@@ -179,6 +180,7 @@ export async function POST(req: Request) {
     if (!product) continue; // producto desconocido — no bloqueamos, seguimos
 
     if (product.category === "Promociones" && !isScheduleActive(product.schedule)) {
+      console.warn("[orders] Pedido rechazado (409): promo fuera de horario", product.id);
       return NextResponse.json(
         { error: `«${product.name}» ya no está disponible en este horario. Sacala del pedido para continuar.` },
         { status: 409 }
@@ -187,6 +189,7 @@ export async function POST(req: Request) {
     const chosen = line.modifiers?.length ?? 0;
     const { modifierMin, modifierMax, modifierOptions } = product.fudoData ?? {};
     if (modifierOptions?.length && ((modifierMax !== undefined && chosen > modifierMax) || (modifierMin !== undefined && chosen < modifierMin))) {
+      console.warn("[orders] Pedido rechazado (400): opciones", product.id, `elegidas ${chosen}, pide ${modifierMin}–${modifierMax}`);
       return NextResponse.json(
         { error: `«${product.name}» pide elegir entre ${modifierMin ?? 0} y ${modifierMax ?? chosen} opciones.` },
         { status: 400 }
