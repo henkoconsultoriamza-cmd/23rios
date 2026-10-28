@@ -130,6 +130,11 @@ function servingInFudo(available: FudoAvailable | null, product: Product, label:
 function optionsInFudo(available: FudoAvailable | null, product: Product) {
   return (product.fudoData?.modifierOptions ?? []).filter((o) => optionInFudo(available, product.fudoData?.productId, o.fudoProductId));
 }
+/** Formatos sin ID de FUDO no se pueden pedir: si el producto tiene su propio ID, se vende por unidad (ej. una cerveza de 500 cc) */
+function withFudoServings(product: Product): Product {
+  const linked = Object.values(product.fudoData?.servingIds ?? {}).some(Boolean);
+  return product.servings?.length && !linked && product.fudoData?.productId ? { ...product, servings: undefined } : product;
+}
 function productInFudo(available: FudoAvailable | null, product: Product) {
   if (!available) return true;
   const linked = product.servings?.length && product.fudoData?.servingIds
@@ -481,7 +486,7 @@ export default function Home() {
 
   const activePool = useMemo(() => appSettings.eventModeActive
     ? catalogProducts.filter((p) => p.eventoMenu)
-    : catalogProducts.filter((p) => productInFudo(fudoAvailable, p)),
+    : catalogProducts.map(withFudoServings).filter((p) => productInFudo(fudoAvailable, p)),
   [appSettings.eventModeActive, catalogProducts, fudoAvailable]);
   // Solo las solapas que tienen productos: promos fuera de horario o una carta de evento sin comida no aparecen
   const shownCategories = productsReady
