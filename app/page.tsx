@@ -95,6 +95,42 @@ function inCategory(product: Product, category: MenuCategory, now: Date) {
   return product.category === "Cocina";
 }
 
+/**
+ * IDs de FUDO que se pueden pedir ahora. null = FUDO no respondió (no se oculta nada);
+ * undefined = falló la red. fresh = saltear la caché de la CDN (para el control antes de lanzar).
+ */
+async function fetchFudoAvailable(fresh: boolean): Promise<Set<string> | null | undefined> {
+  try {
+    const res = await fetch(`/api/fudo-disponibles${fresh ? `?t=${Date.now()}` : ""}`, { cache: "no-store" });
+    if (!res.ok) return undefined;
+    const { ids } = (await res.json()) as { ids: string[] | null };
+    return ids ? new Set(ids) : null;
+  } catch {
+    return undefined;
+  }
+}
+
+// Disponibilidad en FUDO. available = null: no se sabe (o modo evento) y no se oculta nada.
+// Lo desactivado, agotado o sin vínculo no se muestra: FUDO rechazaría el pedido entero.
+function idInFudo(available: Set<string> | null, id?: string) {
+  return !available || (!!id && available.has(String(id)));
+}
+function servingInFudo(available: Set<string> | null, product: Product, label: string) {
+  return !product.fudoData?.servingIds || idInFudo(available, product.fudoData.servingIds[label]);
+}
+function optionsInFudo(available: Set<string> | null, product: Product) {
+  return (product.fudoData?.modifierOptions ?? []).filter((o) => idInFudo(available, o.fudoProductId));
+}
+function productInFudo(available: Set<string> | null, product: Product) {
+  if (!available) return true;
+  const linked = product.servings?.length && product.fudoData?.servingIds
+    ? product.servings.some((s) => servingInFudo(available, product, s.label))
+    : idInFudo(available, product.fudoData?.productId);
+  const options = product.fudoData?.modifierOptions ?? [];
+  const needsOption = options.length > 0 && (product.fudoData?.modifierMin ?? 1) > 0;
+  return linked && (!needsOption || optionsInFudo(available, product).length > 0);
+}
+
 function formatOrderDate(value: string, language: Language) {
   const locales: Record<Language, string> = { es: "es-AR", pt: "pt-BR", en: "en-US", fr: "fr-FR", it: "it-IT", de: "de-DE" };
   return new Intl.DateTimeFormat(locales[language], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
@@ -252,6 +288,10 @@ function EventsBannerSlider({ events, brandName, onOpen, tr }: { events: EventIt
 
 export default function Home() {
   const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
+  // IDs que FUDO tiene disponibles ahora (null = no se sabe: no se oculta nada)
+  const [fudoAvailable, setFudoAvailable] = useState<Set<string> | null>(null);
+  const [cartNotice, setCartNotice] = useState("");
+  const [checkingCart, setCheckingCart] = useState(false);
   const [productsReady, setProductsReady] = useState(false);
   const [menuSettings, setMenuSettings] = useState<MenuSettings>(DEFAULT_MENU_SETTINGS);
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS);
@@ -405,6 +445,14 @@ export default function Home() {
     return () => { channel.unsubscribe(); };
   }, []);
 
+  useEffect(() => {
+    // Disponibilidad en FUDO: al abrir la carta y cada dos minutos
+    const load = () => fetchFudoAvailable(false).then((ids) => { if (ids !== undefined) setFudoAvailable(ids); });
+    load();
+    const timer = setInterval(load, 120_000);
+    return () => clearInterval(timer);
+  }, []);
+
   const brandName = appSettings.businessName.trim() || DEFAULT_APP_SETTINGS.businessName;
   const logoUrl = appSettings.logoUrl.trim() || DEFAULT_APP_SETTINGS.logoUrl;
   const heroImageUrl = appSettings.heroImageUrl.trim() || DEFAULT_APP_SETTINGS.heroImageUrl;
@@ -413,11 +461,16 @@ export default function Home() {
   // En modo evento el menú es solo para ver: sin carrito, con los precios del evento
   const cartDisabled = (appSettings.cartDisabled ?? false) || appSettings.eventModeActive;
   const priceOf = (product: Product, servingLabel?: string) => displayedPrice(product, appSettings.eventModeActive, servingLabel);
-  const servingsOf = (product: Product) => offeredServings(product, appSettings.eventModeActive);
+  // Lo que FUDO no tiene disponible no se muestra. En modo evento no aplica: no se toman pedidos.
+  const fudoCheck = appSettings.eventModeActive ? null : fudoAvailable;
+  const servingsOf = (product: Product) =>
+    offeredServings(product, appSettings.eventModeActive)?.filter((s) => servingInFudo(fudoCheck, product, s.label));
+  const optionsOf = (product: Product) => optionsInFudo(fudoCheck, product);
 
-  const activePool = appSettings.eventModeActive
+  const activePool = useMemo(() => appSettings.eventModeActive
     ? catalogProducts.filter((p) => p.eventoMenu)
-    : catalogProducts;
+    : catalogProducts.filter((p) => productInFudo(fudoAvailable, p)),
+  [appSettings.eventModeActive, catalogProducts, fudoAvailable]);
   // Solo las solapas que tienen productos: promos fuera de horario o una carta de evento sin comida no aparecen
   const shownCategories = productsReady
     ? MENU_CATEGORIES.filter((cat) => activePool.some((p) => inCategory(p, cat, now)))
@@ -456,7 +509,9 @@ export default function Home() {
   // Resetear modificadores elegidos cada vez que se abre un nuevo producto
   useEffect(() => { setSelectedModifiers([]); setAddingAnotherUnit(false); }, [selected]);
 
-  const selectedServingOption = selected?.servings?.find((serving) => serving.label === selectedServing);
+  // Si el formato marcado no se ofrece (ej. la Pinta no está disponible en FUDO), queda el primero que sí
+  const selectedOffered = selected ? servingsOf(selected) : undefined;
+  const selectedServingOption = selectedOffered?.find((serving) => serving.label === selectedServing) ?? selectedOffered?.[0];
   const selectedBasePrice = selectedServingOption?.price ?? selected?.price ?? 0;
   const selectedPrice = selectedBasePrice;
   const orderCount = orderItems.reduce((total, item) => total + item.quantity, 0);
@@ -555,8 +610,23 @@ export default function Home() {
 
   const isOnPremise = true;
 
-  function launchOrder() {
-    if (!orderItems.length || orderStatus !== "draft") return;
+  async function launchOrder() {
+    if (!orderItems.length || orderStatus !== "draft" || checkingCart) return;
+    // Antes de lanzar se confirma con FUDO que todo siga disponible: si falta algo, FUDO rechaza el pedido entero
+    setCheckingCart(true);
+    const available = await fetchFudoAvailable(true);
+    setCheckingCart(false);
+    if (available) {
+      setFudoAvailable(available);
+      const gone = orderItems.filter((item) =>
+        !available.has(String(item.fudoProductId ?? "")) || (item.modifiers ?? []).some((m) => !available.has(String(m.fudoProductId))));
+      if (gone.length) {
+        setOrderItems((current) => current.filter((item) => !gone.some((g) => g.key === item.key)));
+        setCartNotice(`${tr("Ya no está disponible y lo sacamos del pedido:")} ${gone.map((g) => tr(g.name)).join(", ")}. ${tr("Revisá el pedido y lanzalo de nuevo.")}`);
+        return;
+      }
+    }
+    setCartNotice("");
     // Si ya hay pedidos lanzados, reusar los datos existentes sin mostrar el prompt
     if (launchedOrders.length > 0 && tableNumber) {
       const prev = launchedOrders[0];
@@ -876,7 +946,7 @@ export default function Home() {
         </section>
       </div>}
 
-      {!cartDisabled && orderItems.length > 0 && <button className={orderStatus === "sent" ? "order-status-bar sent" : "order-status-bar"} onClick={() => setOrderOpen(true)} aria-label="Abrir carrito">
+      {!cartDisabled && orderItems.length > 0 && <button className={orderStatus === "sent" ? "order-status-bar sent" : "order-status-bar"} onClick={() => { setCartNotice(""); setOrderOpen(true); }} aria-label="Abrir carrito">
         <span className="order-status-icon"><Icon name={orderStatus === "sent" ? "receipt" : "plus"} size={20}/><b>{orderCount}</b></span>
         <span><small>{tr(orderStatus === "sent" ? "PEDIDO LANZADO" : "CARRITO ABIERTO")}</small><strong>{tr(orderStatus === "sent" ? "Ver estado del pedido" : "Revisar carrito")}</strong></span>
         <span className="order-status-total">{displayPrice(orderTotal)}<Icon name="arrow" size={17}/></span>
@@ -888,6 +958,7 @@ export default function Home() {
             <div><p>{tr(orderStatus === "sent" ? "PEDIDO LANZADO" : "CARRITO ABIERTO")}</p><h2 id="order-title">{tr(orderStatus === "sent" ? "Tu pedido está en marcha" : "Revisá antes de lanzarlo")}</h2></div>
             <button onClick={() => setOrderOpen(false)} aria-label="Cerrar resumen"><Icon name="close"/></button>
           </header>
+          {cartNotice && <div className="cart-unavailable-message" role="alert">{cartNotice}</div>}
           {orderStatus === "draft" && <div className="cart-open-message"><strong>{tr("El pedido todavía no fue lanzado.")}</strong><span>{tr("Podés seguir agregando productos o cerrar el carrito cuando esté completo.")}</span></div>}
           {orderStatus === "sent" && <div className="order-sent-message"><span><Icon name="receipt" size={23}/></span><div><strong>{tr("Pedido enviado correctamente")}</strong><p>Esta es una simulación. La confirmación real se conectará con el sistema del local y la mesa.</p></div></div>}
           <div className="order-items">
@@ -916,7 +987,7 @@ export default function Home() {
           <div className="order-total"><span><small>{orderCount} {tr(orderCount === 1 ? "producto" : "productos")}</small><strong>{tr("Total")}</strong></span><b>{displayPrice(orderTotal)}</b></div>
           {orderStatus === "draft" ? (
             isOnPremise
-              ? <button className="launch-order" onClick={launchOrder}><Icon name="arrow" size={19}/> {tr("Cerrar carrito y lanzar pedido")}</button>
+              ? <button className="launch-order" onClick={launchOrder} disabled={checkingCart}><Icon name="arrow" size={19}/> {tr(checkingCart ? "Revisando disponibilidad…" : "Cerrar carrito y lanzar pedido")}</button>
               : <div className="order-blocked"><span>🔒</span><p>El pedido solo se puede lanzar desde adentro de la cervecería. Escaneá el QR de tu mesa para habilitarlo.</p></div>
           ) : <button className="close-order" onClick={requestBill}>{tr("Solicitar la cuenta")}</button>}
           <p className="order-panel-note">{tr("Antes de lanzar el pedido te pediremos confirmar el número de mesa.")}</p>
@@ -1009,7 +1080,7 @@ export default function Home() {
             {selected.servings ? <section className="serving-selector" aria-labelledby="serving-title">
               <div className="detail-section-heading"><div><p>{tr("FORMATO")}</p><h3 id="serving-title">{tr("¿Cómo la querés?")}</h3></div><small>{tr("Precio")}</small></div>
               <div className="serving-options">
-                {servingsOf(selected)!.map((serving) => <button key={serving.label} className={selectedServing === serving.label ? "active" : ""} onClick={() => { setSelectedServing(serving.label); setOrderFeedback(""); }} aria-pressed={selectedServing === serving.label}>
+                {servingsOf(selected)!.map((serving) => <button key={serving.label} className={selectedServingOption?.label === serving.label ? "active" : ""} onClick={() => { setSelectedServing(serving.label); setOrderFeedback(""); }} aria-pressed={selectedServingOption?.label === serving.label}>
                   <span><strong>{tr(serving.label)}</strong><small>{serving.volume}</small></span>
                   <b>{displayPrice(priceOf(selected, serving.label))}</b>
                 </button>)}
@@ -1030,7 +1101,7 @@ export default function Home() {
               <div className="allergen-summary"><strong>{tr("Alérgenos")}</strong><div>{selected.allergens.length ? selected.allergens.map((allergen) => <span className="allergen-item" key={allergen}><i aria-hidden="true">{allergenIcons[allergen] ?? "•"}</i>{tr(allergen)}</span>) : <span className="allergen-item allergen-free"><i aria-hidden="true">✓</i>{tr("Sin alérgenos declarados")}</span>}</div></div>
             </section>
             {(() => {
-              const modOptions = selected.fudoData?.modifierOptions ?? [];
+              const modOptions = optionsOf(selected);
               const modMin = selected.fudoData?.modifierMin ?? (modOptions.length > 0 ? 1 : 0);
               const modMax = selected.fudoData?.modifierMax ?? (modOptions.length > 0 ? 1 : 0);
               const chosenMods = chosenModifiersOf(selected);
@@ -1128,7 +1199,7 @@ export default function Home() {
           <header className="chat-header"><div className="assistant-symbol small"><Icon name="spark" size={20}/></div><div><h2 id="chat-title">Mozo digital</h2><p><span/> Conoce el menú general</p></div><button onClick={() => setAssistantOpen(false)} aria-label="Cerrar"><Icon name="close"/></button></header>
           <div className="chat-body">
             {messages.map((item) => <div className={`message ${item.role}`} key={item.id}>{item.text}</div>)}
-            {recommended.length > 0 && <div className="recommendations">{recommended.map((id) => { const product = catalogProducts.find((item) => item.id === id); return product ? <button key={id} onClick={() => { setAssistantOpen(false); setSelected(product); }}>{product.image ? <img src={product.image} alt=""/> : <span className="recommendation-placeholder"/>}<span>{product.name}</span><Icon name="arrow" size={15}/></button> : null; })}</div>}
+            {recommended.length > 0 && <div className="recommendations">{recommended.map((id) => { const product = activePool.find((item) => item.id === id); return product ? <button key={id} onClick={() => { setAssistantOpen(false); setSelected(product); }}>{product.image ? <img src={product.image} alt=""/> : <span className="recommendation-placeholder"/>}<span>{product.name}</span><Icon name="arrow" size={15}/></button> : null; })}</div>}
             <div className="quick-prompts"><p>Probá preguntando</p><div>{quickSuggestions.map((suggestion) => <button key={suggestion.label} onClick={() => answer(suggestion.label, suggestion.answer, suggestion.ids)}>{suggestion.label}</button>)}</div></div>
           </div>
           <form className="chat-form" onSubmit={sendMessage}><input value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Ej: quiero algo para compartir..." aria-label="Escribir al mozo digital"/><button type="submit" aria-label="Enviar"><Icon name="arrow"/></button></form>

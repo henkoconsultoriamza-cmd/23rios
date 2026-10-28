@@ -121,7 +121,7 @@ function FudoMatch({ catalog, id }: { catalog: Map<string, FudoCatalogItem> | nu
   const item = catalog.get(String(id));
   return item
     ? <small className="admin-fudo-match">En FUDO: {item.name} · {formatPrice(item.price)} · categoría {item.categoryId}</small>
-    : <small className="admin-fudo-match missing">Este ID no está en el menú QR de FUDO: los pedidos con este producto fallan.</small>;
+    : <small className="admin-fudo-match missing">Este ID no está disponible en el menú QR de FUDO: el producto no se muestra en la carta hasta que lo habiliten en FUDO.</small>;
 }
 
 // Precio del modo evento: se guarda al salir del campo; vacío = se muestra el precio de siempre.

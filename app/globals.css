@@ -436,6 +436,8 @@ footer img { width: 80px; height: 58px; object-fit: contain; mix-blend-mode: scr
 .order-total > b { font: 800 25px "Manrope"; }
 .launch-order, .close-order { width: calc(100% - 48px); min-height: 53px; margin: 18px 24px 0; border: 0; border-radius: 12px; background: var(--yellow); color: var(--ink); display: flex; align-items: center; justify-content: center; gap: 11px; font-weight: 800; cursor: pointer; }
 .close-order { background: var(--ink); color: white; }
+.cart-unavailable-message { margin: 12px 24px 0; padding: 11px 13px; border-radius: 12px; background: #fbe7dc; color: #8a3a12; font-size: 12px; font-weight: 700; line-height: 1.4; }
+.launch-order:disabled { opacity: .65; cursor: default; }
 .order-panel-note { margin: 11px 24px 22px; color: #867f73; text-align: center; font-size: 8px; line-height: 1.4; }
 .launched-orders { padding: 19px 24px 3px; display: grid; gap: 12px; }
 .launched-orders > article { padding: 16px; border: 1px solid #c9c0b1; border-radius: 14px; background: #fbf8f1; }
