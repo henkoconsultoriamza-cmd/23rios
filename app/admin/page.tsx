@@ -1227,7 +1227,9 @@ export default function AdminPage() {
                     {draft.fudoData?.productId
                       ? <span className="admin-fudo-badge ok">✓ mapeado</span>
                       : <span className="admin-fudo-badge missing">sin mapear</span>}
-                    <label className="admin-fudo-label" style={{marginTop:8}}>ID categoría Fudo</label>
+                  </div>
+                  <div className="admin-fudo-row">
+                    <label className="admin-fudo-label">ID categoría Fudo</label>
                     <input
                       className="admin-fudo-input"
                       type="text"

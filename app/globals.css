@@ -983,6 +983,7 @@ textarea, select { font: inherit; }
 .admin-fudo-hint { font-size: 11px; color: var(--muted); margin: 0 0 10px; }
 .admin-fudo-servings { display: flex; flex-direction: column; gap: 8px; }
 .admin-fudo-row { display: flex; align-items: center; gap: 10px; }
+.admin-fudo-row + .admin-fudo-row { margin-top: 8px; }
 .admin-fudo-label { font: 700 11px "Manrope"; color: var(--muted); width: 110px; flex-shrink: 0; text-transform: uppercase; letter-spacing: .4px; }
 .admin-fudo-input { flex: 1; height: 36px; border: 1.5px solid var(--line); border-radius: 8px; padding: 0 10px; font: 600 13px "Manrope"; background: white; }
 .admin-fudo-input:focus { outline: none; border-color: #e8c97a; }

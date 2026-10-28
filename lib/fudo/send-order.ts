@@ -10,6 +10,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const FUDO_ORDERS_URL = "https://integrations.fu.do/fudo/orders/";
 const FUDO_PRODUCTS_URL = "https://integrations.fu.do/fudo/products/?a=23rios";
+const FUDO_ACCOUNT_URL = "https://integrations.fu.do/fudo/account/?a=23rios";
 const FUDO_ACCOUNT_ID = process.env.FUDO_ACCOUNT_ID ?? "MjNyaW9z"; // base64 de "23rios"
 const FUDO_HEADERS = {
   "Content-Type": "application/json",
@@ -97,6 +98,30 @@ function buildSubitems(pid: string, children: { fudo_product_id: string | null }
   return [...byProduct.values()];
 }
 
+// ── Teléfono del local ─────────────────────────────────────────────────────────
+// FUDO rechaza el pedido entero si el teléfono va vacío (minLength), y en la carta es opcional:
+// si el cliente no lo dejó, va el del local (Ajustes del admin o, si está vacío, el de contacto
+// del menú QR de FUDO).
+let venuePhoneCache: { phone: string; at: number } | null = null;
+
+async function venuePhone(sb: SupabaseClient): Promise<string> {
+  if (venuePhoneCache && Date.now() - venuePhoneCache.at < PRODUCTS_TTL_MS) return venuePhoneCache.phone;
+  const { data } = await sb.from("restaurant_config").select("value").eq("key", "app_settings").maybeSingle();
+  let phone = String((data?.value as { phone?: string } | undefined)?.phone ?? "").trim();
+  if (!phone) {
+    try {
+      const res = await fetch(FUDO_ACCOUNT_URL, { headers: FUDO_HEADERS, cache: "no-store" });
+      const json = res.ok ? await res.json() : null;
+      phone = String((json?.account ?? json)?.settings?.qrMenu?.contact?.phone ?? "").trim();
+    } catch {
+      // sin FUDO: queda el de reserva
+    }
+  }
+  phone ||= "0000000000";
+  venuePhoneCache = { phone, at: Date.now() };
+  return phone;
+}
+
 // ── Un pedido ──────────────────────────────────────────────────────────────────
 async function sendOrder(sb: SupabaseClient, orderId: string): Promise<void> {
   const { data: order } = await sb.from("orders")
@@ -143,7 +168,7 @@ async function sendOrder(sb: SupabaseClient, orderId: string): Promise<void> {
   const total = items.reduce((sum, i) => sum + (i.price + i.subitems.reduce((s, sub) => s + sub.price * sub.quantity, 0)) * i.quantity, 0);
   const payload = {
     order: {
-      customer: { dataCollectionEnabled: false, name: order.customer_name || "Cliente", phone: order.customer_phone || "" },
+      customer: { dataCollectionEnabled: false, name: order.customer_name || "Cliente", phone: order.customer_phone?.trim() || (await venuePhone(sb)) },
       items,
       payment: { total },
       people: session?.people || 1,
