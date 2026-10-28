@@ -223,6 +223,9 @@ export default function AdminPage() {
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS);
   const [portalSettings, setPortalSettings] = useState<PortalSettings>(() => cloneDefaultPortalSettings());
   const [securityUsername, setSecurityUsername] = useState(DEFAULT_ADMIN_USERNAME);
+  // Quién entró: el correo de la persona (usuario de Supabase Auth) o el usuario de respaldo «admin»
+  const [sessionUser, setSessionUser] = useState("");
+  const isStaffUser = sessionUser.includes("@");
   // QR de las mesas: el impreso apunta siempre a /qr; acá se elige adónde redirige
   const [qrDestination, setQrDestination] = useState("");
   const [qrStatus, setQrStatus] = useState("");
@@ -254,7 +257,10 @@ export default function AdminPage() {
 
   useEffect(() => {
     // Verificar sesión server-side via cookie httpOnly
-    fetch("/api/admin-auth/check").then((r) => setAuthenticated(r.ok));
+    fetch("/api/admin-auth/check").then(async (r) => {
+      setAuthenticated(r.ok);
+      if (r.ok) setSessionUser(((await r.json().catch(() => ({}))) as { user?: string }).user ?? "");
+    });
 
     Promise.all([
       getProducts(),
@@ -828,11 +834,13 @@ export default function AdminPage() {
       body: JSON.stringify({ username: loginUsername.trim(), password: loginPassword }),
     });
     if (!res.ok) {
-      setLoginError("El usuario o la contraseña no son correctos.");
+      setLoginError(res.status === 429
+        ? "Demasiados intentos. Esperá 15 minutos y probá de nuevo."
+        : "El correo, el usuario o la contraseña no son correctos.");
       return;
     }
     setAuthenticated(true);
-    setSecurityUsername(loginUsername.trim());
+    setSessionUser(loginUsername.trim());
     setLoginPassword("");
     setNotice("Sesión iniciada correctamente.");
   }
@@ -840,6 +848,7 @@ export default function AdminPage() {
   async function logout() {
     await fetch("/api/admin-auth", { method: "DELETE" });
     setAuthenticated(false);
+    setSessionUser("");
     setLoginPassword("");
     setCurrentPassword("");
     setNewPassword("");
@@ -979,7 +988,7 @@ export default function AdminPage() {
       <div className="admin-login-brand"><img src={appSettings.logoUrl} alt={appSettings.businessName}/><span><small>ACCESO PRIVADO</small><strong>Panel administrativo</strong></span></div>
       <div className="admin-login-copy"><p>GESTIÓN · PLANTILLA RESTAURANTE</p><h1>Bienvenido de nuevo.</h1><span>Ingresá con tu usuario y contraseña para administrar el menú.</span></div>
       <form onSubmit={handleLogin}>
-        <label>Usuario<input autoComplete="username" value={loginUsername} onChange={(event) => setLoginUsername(event.target.value)} placeholder="Tu usuario" autoFocus/></label>
+        <label>Correo o usuario<input autoComplete="username" value={loginUsername} onChange={(event) => setLoginUsername(event.target.value)} placeholder="tu@correo.com" autoFocus/></label>
         <label>Contraseña<div className="admin-password-field"><input type={showLoginPassword ? "text" : "password"} autoComplete="current-password" value={loginPassword} onChange={(event) => setLoginPassword(event.target.value)} placeholder="Tu contraseña"/><button type="button" onClick={() => setShowLoginPassword((current) => !current)}>{showLoginPassword ? "Ocultar" : "Ver"}</button></div></label>
         {loginError && <p className="admin-login-error">{loginError}</p>}
         <button className="admin-login-submit" type="submit">Ingresar al panel</button>
@@ -1828,7 +1837,12 @@ export default function AdminPage() {
               </form>
             </article>
 
-            <article className="admin-adjustment-card admin-security-card">
+            {isStaffUser ? <article className="admin-adjustment-card admin-security-card">
+              <div className="admin-adjustment-heading"><span>05</span><div><small>SEGURIDAD</small><h2>Usuarios del equipo</h2><p>Cada persona entra con su correo y su contraseña.</p></div></div>
+              <div className="admin-security-form">
+                <p>Los usuarios se manejan en Supabase › Authentication › Users: ahí se dan de alta, de baja y se cambian las contraseñas. Cualquier usuario cargado ahí puede entrar a este panel.</p>
+              </div>
+            </article> : <article className="admin-adjustment-card admin-security-card">
               <div className="admin-adjustment-heading"><span>05</span><div><small>SEGURIDAD</small><h2>Usuario y contraseña</h2><p>Cambiá las credenciales utilizadas para ingresar en este dispositivo.</p></div></div>
               <form className="admin-security-form" onSubmit={saveSecuritySettings}>
                 <label>Usuario<input autoComplete="username" value={securityUsername} onChange={(event) => setSecurityUsername(event.target.value)}/></label>
@@ -1838,11 +1852,11 @@ export default function AdminPage() {
                 <p>La contraseña nueva debe tener al menos 6 caracteres. Nunca se muestra ni se guarda como texto visible.</p>
                 <button type="submit">Actualizar acceso</button>
               </form>
-            </article>
+            </article>}
 
             <article className="admin-adjustment-card admin-session-card">
               <div className="admin-adjustment-heading"><span>06</span><div><small>SESIÓN ACTUAL</small><h2>Acceso del dispositivo</h2><p>La sesión permanece activa solamente en esta pestaña del navegador.</p></div></div>
-              <div className="admin-session-info"><span>Usuario conectado</span><strong>{securityUsername}</strong><small>Al cerrar sesión será necesario volver a ingresar la contraseña.</small></div>
+              <div className="admin-session-info"><span>Usuario conectado</span><strong>{sessionUser || securityUsername}</strong><small>Al cerrar sesión será necesario volver a ingresar la contraseña.</small></div>
               <button className="admin-session-logout" onClick={logout}>Cerrar sesión administrativa</button>
             </article>
           </div>}

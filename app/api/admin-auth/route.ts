@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { ADMIN_COOKIE, verifyPassword } from "@/lib/admin-auth";
+import { ADMIN_COOKIE, clearStaffCookies, setStaffCookies, signInStaff, verifyPassword } from "@/lib/admin-auth";
 
 // ─── Rate limiting estricto (brute force) ────────────────────────────────────
 // 5 intentos fallidos por IP en 15 minutos.
@@ -45,7 +45,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Faltan campos" }, { status: 400 });
   }
 
-  // Siempre buscar credenciales en Supabase (no hay fallback hardcodeado)
+  // Personas del equipo: usuario de Supabase Auth (Authentication › Users), ingresan con su correo
+  if (username.includes("@")) {
+    const session = await signInStaff(username.trim().toLowerCase(), password);
+    await new Promise((r) => setTimeout(r, 500));
+    if (!session) {
+      return NextResponse.json({ error: "Correo o contraseña incorrectos" }, { status: 401 });
+    }
+    await setStaffCookies(session);
+    return NextResponse.json({ ok: true });
+  }
+
+  // Usuario propio del admin (respaldo): tabla admin_credentials
   const sb = supabase();
   const { data: creds } = await sb
     .from("admin_credentials")
@@ -98,5 +109,6 @@ export async function DELETE() {
   }
 
   cookieStore.delete(ADMIN_COOKIE);
+  await clearStaffCookies();
   return NextResponse.json({ ok: true });
 }
