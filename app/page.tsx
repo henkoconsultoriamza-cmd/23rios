@@ -1213,6 +1213,17 @@ export default function Home() {
                       <span>{tr("Agregar al carrito")} · {displayPrice(selectedPrice)}</span>
                     </button>
                 )}
+                {/* Lanzar sin salir de la ficha: cierra el producto, abre el carrito y arranca el lanzamiento */}
+                {!cartDisabled && orderStatus === "draft" && orderItems.length > 0 && (
+                  <button
+                    className="order-button modal-launch-order"
+                    onClick={() => { setSelected(null); setOrderOpen(true); launchOrder(); }}
+                    disabled={checkingCart || launching}
+                  >
+                    <Icon name="arrow" size={19}/>
+                    <span>{tr("Cerrar carrito y lanzar pedido")} · {displayPrice(orderTotal)}</span>
+                  </button>
+                )}
               </>;
             })()}
             {relatedProducts.length > 0 && <section className="cross-sell" aria-labelledby="cross-sell-title">
