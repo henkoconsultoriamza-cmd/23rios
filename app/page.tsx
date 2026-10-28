@@ -95,16 +95,19 @@ function inCategory(product: Product, category: MenuCategory, now: Date) {
   return product.category === "Cocina";
 }
 
+/** Lo que hoy se puede pedir en FUDO: productos disponibles y opciones que acepta cada uno */
+type FudoAvailable = { ids: Set<string>; options: Record<string, string[]> };
+
 /**
- * IDs de FUDO que se pueden pedir ahora. null = FUDO no respondió (no se oculta nada);
+ * Disponibilidad en FUDO. null = FUDO no respondió (no se oculta nada);
  * undefined = falló la red. fresh = saltear la caché de la CDN (para el control antes de lanzar).
  */
-async function fetchFudoAvailable(fresh: boolean): Promise<Set<string> | null | undefined> {
+async function fetchFudoAvailable(fresh: boolean): Promise<FudoAvailable | null | undefined> {
   try {
     const res = await fetch(`/api/fudo-disponibles${fresh ? `?t=${Date.now()}` : ""}`, { cache: "no-store" });
     if (!res.ok) return undefined;
-    const { ids } = (await res.json()) as { ids: string[] | null };
-    return ids ? new Set(ids) : null;
+    const { ids, options } = (await res.json()) as { ids: string[] | null; options?: Record<string, string[]> };
+    return ids ? { ids: new Set(ids), options: options ?? {} } : null;
   } catch {
     return undefined;
   }
@@ -112,16 +115,22 @@ async function fetchFudoAvailable(fresh: boolean): Promise<Set<string> | null | 
 
 // Disponibilidad en FUDO. available = null: no se sabe (o modo evento) y no se oculta nada.
 // Lo desactivado, agotado o sin vínculo no se muestra: FUDO rechazaría el pedido entero.
-function idInFudo(available: Set<string> | null, id?: string) {
-  return !available || (!!id && available.has(String(id)));
+function idInFudo(available: FudoAvailable | null, id?: string) {
+  return !available || (!!id && available.ids.has(String(id)));
 }
-function servingInFudo(available: Set<string> | null, product: Product, label: string) {
+/** La opción existe y FUDO la tiene cargada en ese producto (ej. la Coca Zero en el combo de Ron) */
+function optionInFudo(available: FudoAvailable | null, productId: string | undefined, optionId: string) {
+  if (!available) return true;
+  const accepted = productId ? available.options[String(productId)] : undefined;
+  return idInFudo(available, optionId) && (!accepted || accepted.includes(String(optionId)));
+}
+function servingInFudo(available: FudoAvailable | null, product: Product, label: string) {
   return !product.fudoData?.servingIds || idInFudo(available, product.fudoData.servingIds[label]);
 }
-function optionsInFudo(available: Set<string> | null, product: Product) {
-  return (product.fudoData?.modifierOptions ?? []).filter((o) => idInFudo(available, o.fudoProductId));
+function optionsInFudo(available: FudoAvailable | null, product: Product) {
+  return (product.fudoData?.modifierOptions ?? []).filter((o) => optionInFudo(available, product.fudoData?.productId, o.fudoProductId));
 }
-function productInFudo(available: Set<string> | null, product: Product) {
+function productInFudo(available: FudoAvailable | null, product: Product) {
   if (!available) return true;
   const linked = product.servings?.length && product.fudoData?.servingIds
     ? product.servings.some((s) => servingInFudo(available, product, s.label))
@@ -289,7 +298,7 @@ function EventsBannerSlider({ events, brandName, onOpen, tr }: { events: EventIt
 export default function Home() {
   const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
   // IDs que FUDO tiene disponibles ahora (null = no se sabe: no se oculta nada)
-  const [fudoAvailable, setFudoAvailable] = useState<Set<string> | null>(null);
+  const [fudoAvailable, setFudoAvailable] = useState<FudoAvailable | null>(null);
   const [cartNotice, setCartNotice] = useState("");
   const [checkingCart, setCheckingCart] = useState(false);
   const [launching, setLaunching] = useState(false);
@@ -622,7 +631,7 @@ export default function Home() {
     if (available) {
       setFudoAvailable(available);
       const gone = orderItems.filter((item) =>
-        !available.has(String(item.fudoProductId ?? "")) || (item.modifiers ?? []).some((m) => !available.has(String(m.fudoProductId))));
+        !idInFudo(available, item.fudoProductId) || (item.modifiers ?? []).some((m) => !optionInFudo(available, item.fudoProductId, m.fudoProductId)));
       if (gone.length) {
         setOrderItems((current) => current.filter((item) => !gone.some((g) => g.key === item.key)));
         setCartNotice(`${tr("Ya no está disponible y lo sacamos del pedido:")} ${gone.map((g) => tr(g.name)).join(", ")}. ${tr("Revisá el pedido y lanzalo de nuevo.")}`);
