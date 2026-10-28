@@ -654,6 +654,9 @@ export default function Home() {
     // Primero se guarda en el servidor; recién con su OK se vacía el carrito.
     // Si lo rechaza, el pedido queda en el carrito con el motivo, para corregirlo y volver a lanzarlo.
     pendingOrderKey.current ??= crypto.randomUUID();
+    // «2 personas» o un campo vacío no pueden frenar el pedido: si no es un número válido, va 1
+    const peopleCount = Number.parseInt(guestCount, 10);
+    const people = peopleCount >= 1 && peopleCount <= 100 ? peopleCount : 1;
     const lines = orderItems.map((item) => ({
       lineId: item.key,
       productId: item.productId,
@@ -676,7 +679,7 @@ export default function Home() {
         body: JSON.stringify({
           idempotencyKey: pendingOrderKey.current,
           mesaNumero: confirmedTable,
-          people: guestCount ? Number(guestCount) : 1,
+          people,
           customerName: guestName || undefined,
           customerPhone: guestPhone || undefined,
           lines,
@@ -709,7 +712,7 @@ export default function Home() {
       tableNumber: confirmedTable,
       guestName: guestName || undefined,
       guestPhone: guestPhone || undefined,
-      guestCount: guestCount ? Number(guestCount) : undefined,
+      guestCount: guestCount ? people : undefined,
       status: "En preparación",
     };
     setLaunchedOrders((current) => [record, ...current].slice(0, 30));
