@@ -117,12 +117,17 @@ export async function insertAnalyticsEvent(event: AnalyticsEvent): Promise<void>
   });
 }
 
+// Las métricas se reinician a esta hora: desde entonces solo cuentan los eventos posteriores (los anteriores eran de prueba)
+const METRICAS_DESDE = new Date("2026-10-30T16:00:00-03:00").toISOString();
+
 export async function fetchAnalyticsEvents(): Promise<AnalyticsEvent[]> {
-  const { data, error } = await supabase
+  let query = supabase
     .from("analytics_events")
     .select("*")
     .order("timestamp", { ascending: false })
     .limit(5000);
+  if (new Date().toISOString() >= METRICAS_DESDE) query = query.gte("timestamp", METRICAS_DESDE);
+  const { data, error } = await query;
   if (error || !data) return [];
   return data.map((row) => ({
     id: row.id,
