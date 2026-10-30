@@ -820,6 +820,24 @@ export default function AdminPage() {
     setNotice("Datos de analiticas actualizados.");
   }
 
+  // Nombre y teléfono de quienes lanzaron pedidos, en un Excel que se arma en el momento
+  async function downloadClientes() {
+    const res = await fetch("/api/admin/clientes").catch(() => null);
+    if (!res?.ok) {
+      const data = await res?.json().catch(() => null);
+      setNotice(data?.error ?? "No se pudo descargar el Excel de clientes.");
+      return;
+    }
+    const name = res.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] ?? "Clientes_23_Rios.xlsx";
+    const url = URL.createObjectURL(await res.blob());
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    setNotice("Excel de clientes descargado.");
+  }
+
   function handleClearAnalytics() {
     if (!window.confirm("¿Borrar todos los eventos registrados? Esta accion no se puede deshacer.")) return;
     clearStoredEvents().then(() => { setAnalyticsEvents([]); setNotice("Historial de analiticas borrado."); });
@@ -1023,7 +1041,7 @@ export default function AdminPage() {
               <button className="admin-primary-action admin-action-outline" onClick={runFudoSync} disabled={fudoSyncing} title="Trae de FUDO el precio y la categoría de cada producto vinculado">{fudoSyncing ? "Actualizando…" : "↻ Actualizar desde FUDO"}</button>
               <button className="admin-primary-action admin-action-outline" onClick={() => setShowFudoNew((open) => !open)} disabled={!fudoCatalog} title="Productos del menú QR de FUDO que todavía no están en el menú">Nuevos en FUDO{fudoCatalog ? ` (${fudoNew.length})` : ""}</button>
               <button className="admin-primary-action" onClick={() => startNew()}>＋ Nuevo producto</button>
-            </div> : tab === "banners" ? <div className="admin-heading-actions"><button className="admin-primary-action admin-action-outline" onClick={addEvent}>＋ Nuevo evento</button><button className="admin-primary-action admin-action-outline" onClick={addBanner}>＋ Nuevo banner</button></div> : tab === "analytics" ? <button className="admin-primary-action" onClick={refreshAnalytics}>↺ Actualizar</button> : null}
+            </div> : tab === "banners" ? <div className="admin-heading-actions"><button className="admin-primary-action admin-action-outline" onClick={addEvent}>＋ Nuevo evento</button><button className="admin-primary-action admin-action-outline" onClick={addBanner}>＋ Nuevo banner</button></div> : tab === "analytics" ? <div className="admin-heading-actions"><button className="admin-primary-action admin-action-outline" onClick={downloadClientes} title="Nombre y teléfono de quienes lanzaron pedidos">⬇ Clientes en Excel</button><button className="admin-primary-action" onClick={refreshAnalytics}>↺ Actualizar</button></div> : null}
           </div>
 
           {(tab === "products" || tab === "evento") && (() => {
